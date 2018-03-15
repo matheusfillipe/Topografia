@@ -1,0 +1,529 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TopoDialogBase</class>
+ <widget class="QDialog" name="TopoDialogBase">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>900</width>
+    <height>426</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Topo</string>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <property name="sizeGripEnabled">
+   <bool>false</bool>
+  </property>
+  <widget class="QDialogButtonBox" name="button_box">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>350</y>
+     <width>176</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Save</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>251</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Sistema de coordenada do projeto:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="txtCRS">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>30</y>
+     <width>391</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QTableWidget" name="tableCRS">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>60</y>
+     <width>391</width>
+     <height>321</height>
+    </rect>
+   </property>
+   <property name="editTriggers">
+    <set>QAbstractItemView::NoEditTriggers</set>
+   </property>
+   <property name="sortingEnabled">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="planoMin">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>90</y>
+     <width>111</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="planoMax">
+   <property name="geometry">
+    <rect>
+     <x>780</x>
+     <y>90</y>
+     <width>111</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="value">
+    <double>8.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="onduladoMin">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>140</y>
+     <width>111</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="value">
+    <double>8.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="onduladoMax">
+   <property name="geometry">
+    <rect>
+     <x>780</x>
+     <y>140</y>
+     <width>111</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="value">
+    <double>20.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="montanhosoMin">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>190</y>
+     <width>111</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="value">
+    <double>20.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="montanhosoMax">
+   <property name="geometry">
+    <rect>
+     <x>780</x>
+     <y>190</y>
+     <width>111</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="maximum">
+    <double>100.000000000000000</double>
+   </property>
+   <property name="value">
+    <double>100.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>90</y>
+     <width>151</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Taxa i para Plano(%)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>140</y>
+     <width>171</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Taxa i para Ondulado(%)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>190</y>
+     <width>191</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Taxa i para Montanhoso(%)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>750</x>
+     <y>90</y>
+     <width>21</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>até</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_6">
+   <property name="geometry">
+    <rect>
+     <x>750</x>
+     <y>140</y>
+     <width>21</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>até</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_7">
+   <property name="geometry">
+    <rect>
+     <x>750</x>
+     <y>190</y>
+     <width>21</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>até</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>420</x>
+     <y>10</y>
+     <width>471</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Configurações do projeto:</string>
+   </property>
+   <widget class="QComboBox" name="comboClasse">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>451</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="acceptDrops">
+     <bool>false</bool>
+    </property>
+    <property name="editable">
+     <bool>false</bool>
+    </property>
+    <item>
+     <property name="text">
+      <string>Selecione a classe do projeto</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>0 - Via Expressa, controle total de acesso</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>1(A) - Pista dupla, controle parcial de acesso</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>1 (B) - Pista simples, controle parcial de acesso</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>2 - Pista simples</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>3 - Pista simples</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>4 (A) - Pista simples</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>4 (B) - Pista simples</string>
+     </property>
+    </item>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_2">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>290</y>
+     <width>471</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Servidor de mapas</string>
+   </property>
+   <widget class="QComboBox" name="comboMap">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>451</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="acceptDrops">
+     <bool>false</bool>
+    </property>
+    <property name="editable">
+     <bool>false</bool>
+    </property>
+    <item>
+     <property name="text">
+      <string>Selecione um servidor de mapas</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Google® Maps Satelite</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Google® Maps Street</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Bing® Maps Satelite</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Bing® Maps Street</string>
+     </property>
+    </item>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="label_8">
+   <property name="geometry">
+    <rect>
+     <x>-10</x>
+     <y>390</y>
+     <width>881</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>8</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>[Nota Legal] As marcas Google® Maps e Bing® Maps são marcas comerciais pertencentes a Google Inc. e Microsoft Inc. respectivamente,
+ e são das mesmas os direitos do recurso de abertura de mapas. Tambem agradecemos ao projeto OpenLayers.</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+   <property name="indent">
+    <number>-1</number>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="txtCSV">
+   <property name="geometry">
+    <rect>
+     <x>540</x>
+     <y>230</y>
+     <width>51</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>;</string>
+   </property>
+   <property name="maxLength">
+    <number>1</number>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>230</y>
+     <width>111</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Separador CSV</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>650</x>
+     <y>230</y>
+     <width>111</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Padrão Medidas</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="comboUnits">
+   <property name="geometry">
+    <rect>
+     <x>760</x>
+     <y>230</y>
+     <width>131</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="acceptDrops">
+    <bool>false</bool>
+   </property>
+   <property name="editable">
+    <bool>false</bool>
+   </property>
+   <item>
+    <property name="text">
+     <string>Metros</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>Kilometros</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>Milimetros</string>
+    </property>
+   </item>
+  </widget>
+  <action name="actionOpenFolderAction">
+   <property name="text">
+    <string>openFolderAction</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>button_box</sender>
+   <signal>accepted()</signal>
+   <receiver>TopoDialogBase</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>button_box</sender>
+   <signal>rejected()</signal>
+   <receiver>TopoDialogBase</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>txtCRS</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>tableCRS</receiver>
+   <slot>update()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>205</x>
+     <y>43</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>205</x>
+     <y>205</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

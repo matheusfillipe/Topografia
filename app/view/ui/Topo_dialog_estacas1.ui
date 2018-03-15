@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ProjetoEstradas</class>
+ <widget class="QDialog" name="ProjetoEstradas">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>731</width>
+    <height>374</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Projeto de Estradas</string>
+  </property>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>721</width>
+     <height>371</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Arquivos de estacas salvos no projeto</string>
+   </property>
+   <widget class="QTableWidget" name="tableEstacas">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>491</width>
+      <height>341</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>516</x>
+      <y>30</y>
+      <width>191</width>
+      <height>194</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QPushButton" name="btnNovo">
+       <property name="text">
+        <string>Novo arquivo de estacas</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnOpen">
+       <property name="text">
+        <string>Abrir</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnOpenCSV">
+       <property name="text">
+        <string>Abrir Arquivo CSV</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnGerarTracado">
+       <property name="text">
+        <string>Gerar Traçado</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">buttonGroup_2</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnApagar">
+       <property name="text">
+        <string>Apagar Arquivo</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">buttonGroup_2</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnCancela">
+       <property name="text">
+        <string>Cancelar</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>btnCancela</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjetoEstradas</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>429</x>
+     <y>440</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>336</x>
+     <y>245</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnOpen</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjetoEstradas</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>576</x>
+     <y>440</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>336</x>
+     <y>245</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnNovo</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjetoEstradas</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>260</x>
+     <y>440</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>336</x>
+     <y>245</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnOpenCSV</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjetoEstradas</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>91</x>
+     <y>440</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>336</x>
+     <y>245</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnGerarTracado</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjetoEstradas</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>260</x>
+     <y>403</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>336</x>
+     <y>233</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <buttongroups>
+  <buttongroup name="buttonGroup_2"/>
+ </buttongroups>
+</ui>

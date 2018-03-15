@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/plugins/TopoGrafia">
+	<file>app/resources/icons/logo.png</file>
+	<file>app/resources/icons/iconnew.png</file>
+	<file>app/resources/icons/iconopen.png</file>
+	<file>app/resources/icons/iconsave.png</file>
+	<file>app/resources/icons/iconcurva.png</file>
+	<file>app/resources/icons/iconmap.png</file>
+	<file>app/resources/icons/iconcarta.png</file>
+	<file>app/resources/icons/icontools.png</file>
+    </qresource>
+</RCC>

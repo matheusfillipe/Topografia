@@ -1,10 +1,13 @@
+from __future__ import print_function
+from builtins import range
+from builtins import object
 # -*- coding: utf-8 -*-
 import webbrowser
-from PyQt4 import Qt
+from qgis.PyQt import Qt
 from qgis.PyQt import QtGui
 
-from PyQt4.QtCore import QObject
-from PyQt4.QtCore import SIGNAL
+from qgis.PyQt.QtCore import QObject
+
 from qgis._gui import QgsMapToolEmitPoint
 from PIL import Image
 
@@ -12,25 +15,30 @@ from PIL import Image
 
 import math
 
-from ...perfil import Ui_Perfil
+from ...perfil import Ui_Perfil, cv as CV
 from ..model.estacas import Estacas as EstacasModel
 from ..model.knn import KNN
 from ..model.utils import *
-from ..view.estacas import Estacas as EstacasView, EstacasUI
+from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv
 from ..view.curvas import Curvas as CurvasView
 
 
-class Estacas:
+class Estacas(object):
     def __init__(self, iface):
         self.iface = iface
         self.model = EstacasModel()
         self.preview = EstacasUI(iface)
         self.view = EstacasView(iface)
+
         self.events()
         self.elemento = -1
         self.click = False
         self.edit = False
         self.points = []
+
+        self.nextView=self.view 
+        self.viewCv = EstacasCv(iface)
+
 
     def mudancaCelula(self,item):
         if item.column() > 1:
@@ -58,21 +66,27 @@ class Estacas:
         self.preview.btnApagar.clicked.connect(self.deleteEstaca)
         self.preview.btnGerarTracado.clicked.connect(self.geraTracado)
         self.preview.tableEstacas.itemClicked.connect(self.itemClickTableEstacas)
+        self.preview.btnOpenCv.clicked.connect(self.openCv)
+       
+
         '''
             ------------------------------------------------
         '''
+
         self.view.btnSave.clicked.connect(self.saveEstacas)
         self.view.btnSaveCSV.clicked.connect(self.saveEstacasCSV)
         self.view.btnLayer.clicked.connect(self.plotar)
         self.view.btnEstacas.clicked.connect(self.recalcular)
         self.view.btnRead.clicked.connect(self.run)
-        self.view.btnPerfil.clicked.connect(self.perfil)
+        self.view.btnPerfil.clicked.connect(self.perfilView)
         self.view.btnCurva.clicked.connect(self.curva)
         self.view.btnCotaTIFF.clicked.connect(self.obterCotasTIFF)
         self.view.btnCotaPC.clicked.connect(self.obterCotasPC)
         self.view.btnCota.clicked.connect(self.obterCotas)
         self.view.tableWidget.itemDoubleClicked.connect(self.linkGoogle)
         self.view.tableWidget.itemClicked.connect(self.mudancaCelula)
+
+
 
 
 
@@ -88,18 +102,20 @@ class Estacas:
                 self.view.fill_table(tuple(item))
             self.model.save(id_estaca)
 
-    def perfil(self):
+    def perfilView(self):
         tipo, class_project = self.model.tipo()
-        self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide())
+        self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename))
+
         self.perfil.save.connect(self.saveGreide)
-        self.perfil.show()
+       
+        self.perfil.showMaximized()
         self.perfil.exec_()
 
     def saveGreide(self):
         if self.model.id_filename == -1: return
         self.model.table = self.perfil.getVertices()
-
-        self.model.saveGreide()       
+        self.model.cvData=self.perfil.getCurvas()
+        self.model.saveGreide(self.model.id_filename)       
 
     def recalcular(self):
         self.view.clear()
@@ -158,7 +174,7 @@ class Estacas:
         except:
             from osgeo import gdal
             dataset = gdal.Open(filename, gdal.GA_ReadOnly)
-            for x in xrange(1, dataset.RasterCount + 1):
+            for x in range(1, dataset.RasterCount + 1):
                 band = dataset.GetRasterBand(x)
                 img = band.ReadAsArray()
             self.img_origem = dataset.GetGeoTransform()[0],dataset.GetGeoTransform()[3]
@@ -181,7 +197,8 @@ class Estacas:
     def obterCotasThread(self, estacas, inicio=0, fim=None):
 
         for i in range(inicio, fim):
-            print i
+            # fix_print_with_import
+            print(i)
             try:
                 pixel = (int(abs(float(estacas[i][4]) - self.img_origem[0]) / self.tamanho_pixel[0]),
                          int(abs(float(estacas[i][3]) - self.img_origem[1]) / self.tamanho_pixel[1]))
@@ -190,7 +207,8 @@ class Estacas:
                 self.terminou += 1
                 self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
                 return
-        print "Terminou"
+        # fix_print_with_import
+        print("Terminou")
         self.terminou += 1
 
     def obterCotasPC3(self):
@@ -218,8 +236,10 @@ class Estacas:
         for p in all_points:
             ponto = points.index((int(p[0]), int(p[1])))
             estacas[ponto][5] = p[2]
-            print estacas[ponto]
-        print "terminou"
+            # fix_print_with_import
+            print(estacas[ponto])
+        # fix_print_with_import
+        print("terminou")
         self.model.table = estacas
         self.model.save(self.model.id_filename)
         self.openEstaca()
@@ -321,7 +341,8 @@ class Estacas:
                 if self.model.table[i][5] == 0:
                     return
             except Exception as e:
-                print e.message
+                # fix_print_with_import
+                print(e.message)
                 break
         self.model.save(self.model.id_filename)
         self.openEstaca()
@@ -381,7 +402,7 @@ class Estacas:
         self.points_end = p2
         self.pointerEmitter = QgsMapToolEmitPoint(self.iface.mapCanvas())
 
-        QObject.connect(self.pointerEmitter, SIGNAL("canvasClicked(const QgsPoint,Qt::MouseButton)"), self.get_click)
+        self.pointerEmitter.canvasClicked.connect(self.get_click)
         name_tracado = self.preview.gera_tracado_vertices(self.pointerEmitter)
         self.preview.dialog.btnClose.clicked.connect(self.exit_dialog)
         return name_tracado
@@ -391,11 +412,90 @@ class Estacas:
     '''
 
     def openEstaca(self):
+      
         if self.model.id_filename == -1: return
         self.view.clear()
         estacas = self.model.loadFilename()
         for e in estacas:
             self.view.fill_table(tuple(e), True)
+        self.nextView=self.view 
+
+    def openCv(self):
+        self.openEstaca()
+        if self.model.id_filename == -1: return
+        self.viewCv.clear()
+
+        estacas=[]
+
+        tipo, class_project = self.model.tipo()
+        self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename))
+
+        (estaca,descricao,progressiva,cota) = (0,"V0",0,self.perfil.getVertices()[0][1])
+        estacas.append((estaca,descricao,progressiva,cota))
+
+        for i in range(1, len(self.perfil.roi.handles)-1):
+            if  not (i>=self.perfil.roi.countHandles()-1 or i==0):
+
+                i1=self.perfil.roi.getSegIncl(i-1,i)/100
+                i2=self.perfil.roi.getSegIncl(i,i+1)/100
+
+                L=0
+
+                if self.perfil.cvList[i][1]!="None":
+                    L=float(self.perfil.cvList[i][1])
+        
+
+                pontosCv=CV(i1, i2, L,self.perfil.roi.getHandlePos(i), self.perfil.roi.getHandlePos(i-1))               
+
+                estacas.append(("debug",str(L),str(i1),str(i2)))
+                for n in range(0,int((pontosCv.xpcv-progressiva)/20)):    
+                    
+                    if(n==0 and i==1):
+                        continue
+
+                    (estaca,descricao,progressiva,cota) = (
+                        estaca+1,
+                        "PTV " + str(i-1) if n==0 else "",
+                        progressiva+20,
+                        (progressiva+20)*i1+pontosCv.lastHandlePos.y()
+                    )
+
+                    estacas.append((estaca,descricao,progressiva,cota))
+
+                for n in range(0,len(pontosCv.x)-1):
+
+                    (estaca,descricao,progressiva,cota) = (
+                        estaca+1 if n!= 0 else str(estaca)+" + "+str(pontosCv.x[n]-progressiva),
+                        "PCV " + str(i) if n == 0 else "",
+                        pontosCv.x[n],
+                        pontosCv.y[n]
+                    )
+
+                    estacas.append((estaca,descricao,progressiva,cota))
+
+                if(i==len(self.perfil.roi.handles)-2):
+    
+                    for n in range(0,int((pontosCv.xpcv-progressiva)/20)+1):    
+                        
+                        (estaca,descricao,progressiva,cota) = (
+                            estaca+1,
+                            "PTV " + str(i) if n==0 else "V1" if n==int((pontosCv.xpcv-progressiva)/20) else "",
+                            progressiva+20,
+                            (progressiva+20)*i2
+                        )
+
+                        estacas.append((estaca,descricao,progressiva,cota))
+                                 
+                    
+                
+
+
+        for e in estacas:
+            self.viewCv.fill_table(tuple(e), True)
+
+        self.nextView=self.viewCv 
+
+
 
     def itemClickTableEstacas(self, item):
         self.click = True
@@ -425,9 +525,11 @@ class Estacas:
         self.update()
         self.click = False
         self.preview.show()
+
         result = self.preview.exec_()
 
         if result:
             self.preview.close()
-            self.view.show()
-            self.view.exec_()
+            self.nextView.show()
+            self.nextView.exec_()
+           

@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
 # -*- coding: utf-8 -*-
 if __name__ == '__main__':
     import sys, os
@@ -150,7 +153,8 @@ class Canvas(QtGui.QWidget):
             if parent is None:
                 tree = li.treeWidget()
                 if tree is None:
-                    print("Skipping item", i, i.name)
+                    # fix_print_with_import
+                    print(("Skipping item", i, i.name))
                     continue
                 tree.removeTopLevelItem(li)
             else:

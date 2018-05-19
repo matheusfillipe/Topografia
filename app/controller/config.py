@@ -1,12 +1,15 @@
+from __future__ import print_function
+from builtins import str
+from builtins import object
 # -*- coding: utf-8 -*-
 
-from PyQt4 import QtGui
+from qgis.PyQt import QtGui, QtWidgets
 
 from ..model.config import Config as ModelConfig
 from ..view.config import TopoConfig
 
 
-class Config:
+class Config(object):
     def __init__(self,iface):
         """
             ----view------
@@ -38,8 +41,8 @@ class Config:
         k = 0
         for x in crs:
             self.conf.tableCRS.insertRow(self.conf.tableCRS.rowCount())
-            self.conf.tableCRS.setItem(k, 0, QtGui.QTableWidgetItem(str(x[1])))
-            self.conf.tableCRS.setItem(k, 1, QtGui.QTableWidgetItem(str(x[0])))
+            self.conf.tableCRS.setItem(k, 0, QtWidgets.QTableWidgetItem(str(x[1])))
+            self.conf.tableCRS.setItem(k, 1, QtWidgets.QTableWidgetItem(str(x[0])))
             k += 1
 
     def itemClick(self, item):
@@ -61,22 +64,25 @@ class Config:
         self.model.UNITS = self.model.ordem_units[pos]
 
     def newfile(self):
-        filename = u"%s" % self.conf.new_file()
+        filename = u"{0}".format(self.conf.new_file()[0])
         if filename in ["",None]:
             return
         self.model.newfile(filename)
 
     def openfile(self):
-        filename = u"%s" % self.conf.open_file()
+        filename = u"{0}".format(self.conf.open_file()[0])
+
         if filename in ["",None] or not(filename.endswith('lzip')):
-            self.conf.error('SELECIONE UM ARQUIVO lzip PARA SER ABERTO')
+            self.conf.error('SELECIONE UM ARQUIVO lzip PARA SER ABERTO\n'+filename+' invalido!')
             return
         self.model.openfile(filename)
         self.update()
         self.carregamapa()
 
+        
+
     def savefile(self):
-        self.model.filename = u"%s" % self.model.filename
+        self.model.filename = u"{0}".format(self.model.filename)
         try:
             self.model.savefile()
             self.update()
@@ -117,8 +123,8 @@ class Config:
             ]
             self.model.dataTopo = self.dataTopo
             self.model.CSV_DELIMITER = self.conf.txtCSV.text()
-            print self.model.CSV_DELIMITER
-            print self.model.UNITS
+            print(self.model.CSV_DELIMITER)
+            print(self.model.UNITS)
             self.crs = self.model.crs
             self.update()
         else:

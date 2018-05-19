@@ -1,6 +1,7 @@
+from builtins import object
 import numpy as np
 import math
-class KNN:
+class KNN(object):
     def __init__(self,k=3):
         self.x = np.array([])
         self.y = np.array([])

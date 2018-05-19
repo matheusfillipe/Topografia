@@ -20,22 +20,26 @@
  *                                                                         *
  ***************************************************************************/
 """
+from __future__ import absolute_import
+from builtins import object
 # Initialize Qt resources from file resources.py
 # Import the code for the dialog
 import os.path
 from qgis.utils import *
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtGui import QAction
+from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtWidgets import QAction
+
+from .app.controller.config import Config
+from .app.controller.estacas import Estacas
+
+from . import resources
 
 
-import resources
-from app.controller.config import Config
-from app.controller.estacas import Estacas
 
 
-class TopoGrafia:
+class TopoGrafia(object):
     """QGIS Plugin Implementation."""
 
     def __init__(self, iface):
@@ -248,8 +252,10 @@ class TopoGrafia:
 
     def run_tracado(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
-        if not self.conf.savefile() is None:
-            self.estacas.run()
+        if self.conf.model.filename in [None,'']:
+            self.conf.openfile()
+            
+        self.estacas.run()
 
     def run(self):
         pass

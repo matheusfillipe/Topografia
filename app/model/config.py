@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import object
 # -*- coding: utf-8 -*-
 import json
 import os
@@ -25,7 +27,7 @@ def compactZIP(filename):
     shutil.rmtree('tmp')
 
 
-class Config:
+class Config(object):
     fileName = ''
     UNITS = 'm'
     CSV_DELIMITER = ';'
@@ -118,14 +120,28 @@ class Config:
         con.execute("CREATE TABLE if not exists GREIDE"
                     "(id INTEGER primary key AUTOINCREMENT,"
                     "x DOUBLE,"
-                    "cota DOUBLE"
+                    "cota DOUBLE,"
+                    "TABLEESTACA_id INTEGER,"
+                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
+
                     ")")
 ## TABELA A IMPLEMENTAR:
-        con.execute("CREATE TABLE if not exists CURVA_VERTICAL"
+        con.execute("CREATE TABLE if not exists CURVA_VERTICAL_DADOS"
                     "(id INTEGER primary key AUTOINCREMENT,"
-                    "x DOUBLE,"
-                    "cota DOUBLE"
+                    "CURVA_id INTEGER,"
+                    "L DOUBLE,"
+                    "TABLEESTACA_id INTEGER,"
+                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
                     ")")
+        con.execute("CREATE TABLE if not exists TRANSVERSAL"
+                    "(id INTEGER primary key AUTOINCREMENT,"
+                    "CURVA_id INTEGER,"
+                    "L DOUBLE,"
+                    "TABLEESTACA_id INTEGER,"
+                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
+                    ")")
+
+
 
         con.commit()
         return con
@@ -166,7 +182,7 @@ class Config:
             j = json.dumps({
                 'csv_delimiter': ';',
                 'units': 'm'
-            },outfile)
+            })
             outfile.write(j)
 
         z.write('data/data.db', "data/data.db", zipfile.ZIP_DEFLATED)
@@ -227,7 +243,7 @@ class Config:
         shutil.rmtree('tmp')
 
     def listCRS(self, txt=''):
-        con = sqlite3.connect(QgsApplication.srsDbFilePath())
+        con = sqlite3.connect(QgsApplication.srsDatabaseFilePath())
         cur = con.cursor()
         cur.execute(
             "select description, srs_id from vw_srs where description like '%" + txt + "%' ORDER BY srs_id limit 0,30")
@@ -237,7 +253,7 @@ class Config:
 
     def listCRSID(self):
         txt = 'select description from vw_srs where srs_id=' + str(self.crs)
-        con = sqlite3.connect(QgsApplication.srsDbFilePath())
+        con = sqlite3.connect(QgsApplication.srsDatabaseFilePath())
         cur = con.cursor()
         cur.execute(txt)
         f = cur.fetchone()

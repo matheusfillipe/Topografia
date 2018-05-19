@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import map
 # ~*~ coding: utf8 ~*~
 import sys
 import pytest
@@ -59,16 +61,16 @@ def test_types():
 
     # int
     types = ['int0', 'int', 'float', 'bigfloat', 'npfloat', 'npint', 'bool']
-    inttyps = int if sys.version[0] >= '3' else (int, long) 
+    inttyps = int if sys.version[0] >= '3' else (int, int) 
     check_param_types(param.child('int'), inttyps, int, 0, all_objs, types)
     
     # str  (should be able to make a string out of any type)
-    types = all_objs.keys()
-    strtyp = str if sys.version[0] >= '3' else unicode
+    types = list(all_objs.keys())
+    strtyp = str if sys.version[0] >= '3' else str
     check_param_types(param.child('str'), strtyp, asUnicode, '', all_objs, types)
     
     # bool  (should be able to make a boolean out of any type?)
-    types = all_objs.keys()
+    types = list(all_objs.keys())
     check_param_types(param.child('bool'), bool, bool, False, all_objs, types)
 
     # color
@@ -105,7 +107,7 @@ def check_param_types(param, types, map_func, init, objs, keys):
     
     # test valid input types
     good_inputs = [objs[k] for k in keys if k in objs]
-    good_outputs = map(map_func, good_inputs)
+    good_outputs = list(map(map_func, good_inputs))
     for x,y in zip(good_inputs, good_outputs):
         param.setValue(x)
         val = param.value()
@@ -114,7 +116,7 @@ def check_param_types(param, types, map_func, init, objs, keys):
                 "but resulted in %r (type: %r) instead." % (param, x, y, types, val, type(val)))
         
     # test invalid input types
-    for k,v in objs.items():
+    for k,v in list(objs.items()):
         if k in keys:
             continue
         try:

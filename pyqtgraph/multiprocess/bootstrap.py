@@ -1,4 +1,5 @@
 """For starting up remote processes"""
+from __future__ import print_function
 import sys, pickle, os
 
 if __name__ == '__main__':
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     pyqtapis = opts.pop('pyqtapis', None)
     if pyqtapis is not None:
         import sip
-        for k,v in pyqtapis.items():
+        for k,v in list(pyqtapis.items()):
             sip.setapi(k, v)
         
     if opts.pop('pyside', False):
@@ -37,7 +38,8 @@ if __name__ == '__main__':
     try:
         target = pickle.loads(targetStr)  ## unpickling the target should import everything we need
     except:
-        print("Current sys.path:", sys.path)
+        # fix_print_with_import
+        print(("Current sys.path:", sys.path))
         raise
     target(**opts)  ## Send all other options to the target function
     sys.exit(0)

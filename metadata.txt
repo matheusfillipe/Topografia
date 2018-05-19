@@ -8,16 +8,18 @@
 
 [general]
 name=Topografia
-qgisMinimumVersion=2.0
+qgisMinimumVersion=3.0
 description=TOPO
-version=0.1
-author=Lucas
-email=lucaophp@hotmail.com
+version=0.2
+author=Lucas, Matheus
+email=matheusfillipeag@gmail.com
+qgisMaximumVersion=3.99
+
 
 about=Plugin
 
-tracker=http://github.com/lucaophp/topo
-repository=http://github.com/lucaophp/topo
+tracker=https://github.com/matheusfillipe/Topografia
+repository=https://github.com/matheusfillipe/Topografia
 # End of mandatory metadata
 
 # Recommended items:
@@ -28,7 +30,7 @@ repository=http://github.com/lucaophp/topo
 # Tags are comma separated with spaces allowed
 tags=topo
 
-homepage=http://github.com/lucaophp/topo
+homepage=https://github.com/matheusfillipe/Topografia
 category=Plugins
 icon=app/resources/icons/logo.png
 # experimental flag

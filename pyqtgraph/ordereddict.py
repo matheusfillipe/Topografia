@@ -1,3 +1,4 @@
+from builtins import zip
 # Copyright (c) 2009 Raymond Hettinger
 #
 # Permission is hereby granted, free of charge, to any person
@@ -74,9 +75,9 @@ else:
             if not self:
                 raise KeyError('dictionary is empty')
             if last:
-                key = reversed(self).next()
+                key = next(reversed(self))
             else:
-                key = iter(self).next()
+                key = next(iter(self))
             value = self.pop(key)
             return key, value
 
@@ -105,7 +106,7 @@ else:
         def __repr__(self):
             if not self:
                 return '%s()' % (self.__class__.__name__,)
-            return '%s(%r)' % (self.__class__.__name__, self.items())
+            return '%s(%r)' % (self.__class__.__name__, list(self.items()))
 
         def copy(self):
             return self.__class__(self)
@@ -121,7 +122,7 @@ else:
             if isinstance(other, OrderedDict):
                 if len(self) != len(other):
                     return False
-                for p, q in  zip(self.items(), other.items()):
+                for p, q in  zip(list(self.items()), list(other.items())):
                     if p != q:
                         return False
                 return True

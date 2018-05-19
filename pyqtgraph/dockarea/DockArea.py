@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
 # -*- coding: utf-8 -*-
 import weakref
 from ..Qt import QtCore, QtGui
@@ -5,7 +8,7 @@ from .Container import *
 from .DockDrop import *
 from .Dock import Dock
 from .. import debug as debug
-from ..python2_3 import basestring
+from ..python2_3 import str
 
 
 class DockArea(Container, QtGui.QWidget, DockDrop):
@@ -58,7 +61,7 @@ class DockArea(Container, QtGui.QWidget, DockDrop):
                 container = self.topContainer
                 neighbor = None
         else:
-            if isinstance(relativeTo, basestring):
+            if isinstance(relativeTo, str):
                 relativeTo = self.docks[relativeTo]
             container = self.getContainer(relativeTo)
             if container is None:
@@ -241,7 +244,7 @@ class DockArea(Container, QtGui.QWidget, DockDrop):
             a.apoptose()  # ask temp area to close itself if it is empty
         
         ## 4) Add any remaining docks to a float
-        for d in docks.values():
+        for d in list(docks.values()):
             if extra == 'float':
                 a = self.addTempArea()
                 a.addDock(d, 'below')
@@ -321,7 +324,7 @@ class DockArea(Container, QtGui.QWidget, DockDrop):
                 
     def clear(self):
         docks = self.findAll()[1]
-        for dock in docks.values():
+        for dock in list(docks.values()):
             dock.close()
             
     ## PySide bug: We need to explicitly redefine these methods

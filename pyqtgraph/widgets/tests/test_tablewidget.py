@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import range
 import pyqtgraph as pg
 import numpy as np
 from pyqtgraph.pgcollections import OrderedDict

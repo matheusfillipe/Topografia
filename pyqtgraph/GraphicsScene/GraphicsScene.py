@@ -1,3 +1,6 @@
+from past.builtins import cmp
+from builtins import map
+from builtins import str
 import weakref
 from ..Qt import QtCore, QtGui
 from ..python2_3 import sortList, cmp
@@ -100,7 +103,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
         self.lastHoverEvent = None
         self.minDragTime = 0.5  # drags shorter than 0.5 sec are interpreted as clicks
         
-        self.contextMenu = [QtGui.QAction("Export...", self)]
+        self.contextMenu = [QtGui.QAction("Exportar", self)]
         self.contextMenu[0].triggered.connect(self.showExportDialog)
         
         self.exportDialog = None
@@ -516,7 +519,8 @@ class GraphicsScene(QtGui.QGraphicsScene):
 
         for m in menusToAdd:
             if isinstance(m, QtGui.QMenu):
-                menu.addMenu(m)
+                pass
+                #menu.addMenu(m)
             elif isinstance(m, QtGui.QAction):
                 menu.addAction(m)
             else:

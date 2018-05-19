@@ -1,28 +1,31 @@
+from __future__ import print_function
+from builtins import str
 # -*- coding: utf-8 -*-
 import os
-from PyQt4 import Qt
+from qgis.PyQt import Qt
 
-from PyQt4 import QtGui, uic
+from qgis.PyQt import QtGui, uic, QtWidgets
+
 
 import qgis
 
 import shutil
 from ..model.config import extractZIP, Config, compactZIP
-from PyQt4.QtCore import QSettings
-from PyQt4.QtGui import QAbstractItemView
+from qgis.PyQt.QtCore import QSettings
+from qgis.PyQt.QtWidgets import QAbstractItemView
 
 from qgis._core import QgsCoordinateReferenceSystem,QgsCoordinateTransform
-from qgis._core import QgsMapLayerRegistry
+from qgis._core import QgsProject
 from qgis._core import QgsRectangle
 from qgis._core import QgsVectorFileWriter
 from qgis._core import QgsVectorLayer
-from qgis._core import QGis
-from qgis._gui import QgsMapCanvasLayer
+from qgis._core import Qgis
+from qgis._core import QgsMapLayer
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/Topo_dialog_conf.ui'))
 
-class TopoConfig(QtGui.QDialog, FORM_CLASS):
+class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, iface, parent=None):
         """Constructor."""
         # muda configuração padrão para aparecer prompt ao inves de pegar do projeto.
@@ -40,7 +43,7 @@ class TopoConfig(QtGui.QDialog, FORM_CLASS):
 
     def setup(self):
         self.setWindowTitle(u"Configurações")
-        self.txtCRS.setText(str(self.iface.mapCanvas().mapRenderer().destinationCrs().description()))
+        self.txtCRS.setText(str(self.iface.mapCanvas().mapSettings().destinationCrs().description()))
         self.txtCSV.setText(';')
         self.tableCRS.setColumnCount(2)
         self.tableCRS.setColumnWidth(1, 254)
@@ -63,24 +66,24 @@ class TopoConfig(QtGui.QDialog, FORM_CLASS):
             crs = 31983
         mycrs = QgsCoordinateReferenceSystem(int(crs), 0)
         # self.iface.mapCanvas().mapRenderer().setCrs( QgsCoordinateReferenceSystem(mycrs, QgsCoordinateReferenceSystem.EpsgCrsId) )
-        self.iface.mapCanvas().mapRenderer().setDestinationCrs(mycrs)  # set CRS to canvas
-        self.iface.mapCanvas().setMapUnits(QGis.Meters)
+        self.iface.mapCanvas().mapSettings().setDestinationCrs(mycrs)  # set CRS to canvas
+        #self.iface.mapCanvas().setMapUnits(QGis.Meters)
         self.iface.mapCanvas().refresh()
-        self.iface.mapCanvas().mapRenderer().setProjectionsEnabled(True)
+       # self.iface.mapCanvas().mapSettings().setProjectionsEnabled(True)
 
     def new_file(self):
-        filename = QtGui.QFileDialog.getSaveFileName()
+        filename = QtWidgets.QFileDialog.getSaveFileName()
         return filename
 
     def open_file(self):
-        filename = QtGui.QFileDialog.getOpenFileName(filter="Project files (*.lzip)")
+        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Project files (*.lzip)")
         return filename
 
     def error(self, msg):
-        msgBox = QtGui.QMessageBox(QtGui.QMessageBox.Warning, "AVISO",
+        msgBox = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning, "AVISO",
                                    u"%s" % msg,
-                                   QtGui.QMessageBox.NoButton, None)
-        msgBox.addButton("OK", QtGui.QMessageBox.AcceptRole)
+                                   QtWidgets.QMessageBox.NoButton, None)
+        msgBox.addButton("OK", QtWidgets.QMessageBox.AcceptRole)
         # msgBox.addButton("&Continue", QtGui.QMessageBox.RejectRole)
         msgBox.exec_()
 
@@ -133,8 +136,8 @@ class TopoConfig(QtGui.QDialog, FORM_CLASS):
         canvas.enableAntiAliasing(True)
 
         # not updated US6SP10M files from ENC_ROOT
-        source_dir = QtGui.QFileDialog.getExistingDirectory(None, 'Select a folder:', '',
-                                                            QtGui.QFileDialog.ShowDirsOnly)
+        source_dir = QtWidgets.QFileDialog.getExistingDirectory(None, 'Select a folder:', '',
+                                                            QtWidgets.QFileDialog.ShowDirsOnly)
         if source_dir in [None, '']: return
         # source_dir = "/home/lucas/python_work/TopoGraph"
         canvas_layers = []
@@ -188,10 +191,10 @@ class TopoConfig(QtGui.QDialog, FORM_CLASS):
                 vlayer.setCrs(crs)
                 registry.addMapLayer(vlayer)
                 extent.combineExtentWith(vlayer.extent())
-                canvas_layers.append(QgsMapCanvasLayer(vlayer))
+                canvas_layers.append(QgsMapLayer(vlayer))
 
                 
-                print writer
+                print(writer)
                 # set extent to the extent of our layer
                 # canvas.setExtent(vlayer.extent())
 

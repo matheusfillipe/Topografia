@@ -1,15 +1,21 @@
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
 # -*- coding: utf-8 -*-
 import math
 
-from PyQt4.QtCore import qDebug
+from qgis.PyQt.QtCore import qDebug
 from qgis._core import QgsFeature
 from qgis._core import QgsGeometry
-from qgis._core import QgsMapLayerRegistry
+from qgis._core import QgsProject
 from qgis._core import QgsPoint
 from qgis._core import QgsVectorLayer
 from qgis.core import *
 from qgis.gui import *
-import sys, os, httplib, json, tempfile, urllib
+import sys, os, http.client, json, tempfile, urllib.request, urllib.parse, urllib.error
 
 
 class Create_vlayer(object):
@@ -45,7 +51,7 @@ def diff(point2, point1):
 
 def length(point1,point2):
     # with PyQGIS: sqrDist
-    return math.sqrt(point1.sqrDist(point2))
+    return point1.distance(point2)
 
 
 def dircos(point):
@@ -153,12 +159,12 @@ def pointFromWGS84(point):
 def getElevation(crs,point):
     epsg4326 = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId)
     mycrs = QgsCoordinateReferenceSystem(int(crs), 0)
-    reprojectgeographic = QgsCoordinateTransform(mycrs, epsg4326)
-    pt = reprojectgeographic.transform(point)
-    conn = httplib.HTTPConnection("maps.googleapis.com")
-    QgsMessageLog.instance().logMessage(
-        "http://maps.googleapis.com/maps/api/elevation/json?locations=" + str(pt[1]) + "," + str(
-            pt[0]) + "&sensor=false", "Elevation")
+    reprojectgeographic = QgsCoordinateTransform(mycrs, epsg4326, QgsCoordinateTransformContext())
+    pt = reprojectgeographic.transform(QgsPointXY(point))
+    conn = http.client.HTTPConnection("maps.googleapis.com")
+   # QgsMessageLog.instance().logMessage(
+    #    "http://maps.googleapis.com/maps/api/elevation/json?locations=" + str(pt[1]) + "," + str(
+     #       pt[0]) + "&sensor=false", "Elevation")
 
     try:
         conn.request("GET", "/maps/api/elevation/json?locations=" + str(pt[1]) + "," + str(pt[0]) + "&sensor=false")
@@ -166,7 +172,8 @@ def getElevation(crs,point):
         jsonresult = response.read()
         elevation = 0.0
         results = json.loads(jsonresult).get('results')
-        print results
+        # fix_print_with_import
+        print(results)
         if 0 < len(results):
             elevation = float(round(results[0].get('elevation'),4))
 

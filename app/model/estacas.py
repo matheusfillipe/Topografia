@@ -1,3 +1,6 @@
+from builtins import str
+from builtins import range
+from builtins import object
 # -*- coding: utf-8 -*-
 import csv
 import math
@@ -13,8 +16,8 @@ from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation
 
 from qgis.PyQt import QtGui
 
-class Estacas:
-    def __init__(self, distancia=20, estaca=0, layer=None, filename='', table=list(), ultimo=-1, id_filename=-1):
+class Estacas(object):
+    def __init__(self, distancia=20, estaca=0, layer=None, filename='', table=list(), cvData=list(),ultimo=-1, id_filename=-1):
         self.distancia = distancia
 
         self.filename = filename
@@ -125,42 +128,84 @@ class Estacas:
             con.execute(
                 "INSERT INTO ESTACA (estaca,descricao,progressiva,norte,este,cota,azimute,TABLEESTACA_id)values(?,?,REPLACE(?,',','.'),REPLACE(?,',','.'),REPLACE(?,',','.'),REPLACE(?,',','.'),REPLACE(?,',','.'),?)",
                 lt)
+        con.isolation_level = None
         con.execute("VACUUM")
+        con.isolation_level = ''
         con.commit()
         con.close()
 
         compactZIP(Config.fileName)
 
-    def saveGreide(self):
+    def saveGreide(self, idEstacaTable):
         extractZIP(Config.fileName)
         con = sqlite3.connect("tmp/data/data.db")
-        con.execute("DELETE FROM GREIDE")
+        con.execute("DELETE FROM GREIDE WHERE TABLEESTACA_id = ?", (idEstacaTable,))
         con.commit()
         for linha in self.table:
-    
+            linha.append(int(idEstacaTable))
+
             lt = tuple(linha)
 
             con.execute(
-                   "INSERT INTO GREIDE (x,cota)values(?,?)",
+                   "INSERT INTO GREIDE (x,cota,TABLEESTACA_id)values(?,?,?)",
                    lt)
 
+        con.isolation_level = None
         con.execute("VACUUM")
+        con.isolation_level = ''
+ 
         con.commit()
+        con.execute("DELETE FROM CURVA_VERTICAL_DADOS WHERE TABLEESTACA_id = ?", (idEstacaTable,))
+        con.commit()
+
+        for linha in self.cvData:
+            linha.append(int(idEstacaTable))
+
+            lt = tuple(linha)
+
+            con.execute(
+                    "INSERT INTO CURVA_VERTICAL_DADOS (CURVA_id, L,TABLEESTACA_id)values(?,?,?)",
+                    lt)
+
+        con.isolation_level = None
+        con.execute("VACUUM")
+        con.isolation_level = ''
+       
+ 
+        con.commit()
+      
         con.close()
 
         compactZIP(Config.fileName)
     
-    def getGreide(self):
+    def getGreide(self, idEstacaTable):
         try:
             extractZIP(Config.fileName)
             con = sqlite3.connect("tmp/data/data.db")
-            est = con.execute("SELECT x,cota FROM GREIDE").fetchall()
+            est = con.execute("SELECT x,cota FROM GREIDE WHERE TABLEESTACA_id = ?",(idEstacaTable,)).fetchall()
             con.close()
             compactZIP(Config.fileName)
             return est
 
         except sqlite3.OperationalError:
             return False
+
+
+    def getCv(self, idEstacaTable):
+        try:
+            extractZIP(Config.fileName)
+            con = sqlite3.connect("tmp/data/data.db")
+            
+            cv = con.execute("SELECT CURVA_id,L FROM CURVA_VERTICAL_DADOS WHERE TABLEESTACA_id = ?",(idEstacaTable,)).fetchall()
+
+            con.close()
+            compactZIP(Config.fileName)
+            return cv
+
+        except sqlite3.OperationalError:
+            return False
+
+
 
     def openCSV(self, filename, fileDB):
         extractZIP(Config.fileName)

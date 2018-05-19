@@ -38,6 +38,12 @@ Procedure for unit-testing with images:
     versions.
 
 """
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import bytes
+from builtins import str
+from builtins import map
 
 
 # This is the name of a tag in the test-data repository that this version of
@@ -59,8 +65,8 @@ if sys.version[0] >= '3':
     import http.client as httplib
     import urllib.parse as urllib
 else:
-    import httplib
-    import urllib
+    import http.client
+    import urllib.request, urllib.parse, urllib.error
 from ..Qt import QtGui, QtCore, QtTest, QT_LIB
 from .. import functions as fn
 from .. import GraphicsLayoutWidget
@@ -90,7 +96,7 @@ axisImg = [
     "    1                            ",
     "    1                            ",
 ]
-axisImg = np.array([map(int, row[::2].replace(' ', '0')) for row in axisImg])
+axisImg = np.array([list(map(int, row[::2].replace(' ', '0'))) for row in axisImg])
 
 
 
@@ -307,8 +313,8 @@ def saveFailedTest(data, expect, filename):
 
     png = makePng(img)
     
-    conn = httplib.HTTPConnection(host)
-    req = urllib.urlencode({'name': filename,
+    conn = http.client.HTTPConnection(host)
+    req = urllib.parse.urlencode({'name': filename,
                             'data': base64.b64encode(png)})
     conn.request('POST', '/upload.py', req)
     response = conn.getresponse().read()
@@ -600,7 +606,7 @@ def scenegraphState(view, name):
     state = "====== Scenegraph state for %s ======\n" % name
     state += "view size: %dx%d\n" % (view.width(), view.height())
     state += "view transform:\n" + indent(transformStr(view.transform()), "  ")
-    for item in view.scene().items():
+    for item in list(view.scene().items()):
         if item.parentItem() is None:
             state += itemState(item) + '\n'
     return state

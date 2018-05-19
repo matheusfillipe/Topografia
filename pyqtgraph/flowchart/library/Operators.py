@@ -1,3 +1,4 @@
+from builtins import str
 # -*- coding: utf-8 -*-
 from ..Node import Node
 from .common import CtrlNode

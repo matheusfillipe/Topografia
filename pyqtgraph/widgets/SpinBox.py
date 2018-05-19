@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import range
 # -*- coding: utf-8 -*-
 from math import log
 from decimal import Decimal as D  ## Use decimal to avoid accumulating floating-point errors
@@ -6,7 +8,7 @@ import weakref
 import re
 
 from ..Qt import QtGui, QtCore
-from ..python2_3 import asUnicode, basestring
+from ..python2_3 import asUnicode, str
 from ..SignalProxy import SignalProxy
 from .. import functions as fn
 
@@ -176,7 +178,7 @@ class SpinBox(QtGui.QAbstractSpinBox):
         ============== ========================================================================
         """
         #print opts
-        for k,v in opts.items():
+        for k,v in list(opts.items()):
             if k == 'bounds':
                 self.setMinimum(v[0], update=False)
                 self.setMaximum(v[1], update=False)
@@ -190,7 +192,7 @@ class SpinBox(QtGui.QAbstractSpinBox):
                 pass   ## don't set value until bounds have been set
             elif k == 'format':
                 self.opts[k] = asUnicode(v)
-            elif k == 'regex' and isinstance(v, basestring):
+            elif k == 'regex' and isinstance(v, str):
                 self.opts[k] = re.compile(v)
             elif k in self.opts:
                 self.opts[k] = v

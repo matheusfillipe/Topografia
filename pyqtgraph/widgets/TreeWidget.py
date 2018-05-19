@@ -1,3 +1,7 @@
+from builtins import str
+from builtins import map
+from builtins import range
+from builtins import object
 # -*- coding: utf-8 -*-
 from ..Qt import QtGui, QtCore
 from weakref import *
@@ -201,7 +205,7 @@ class TreeWidget(QtGui.QTreeWidget):
         return item
 
     def topLevelItems(self):
-        return map(self.topLevelItem, xrange(self.topLevelItemCount()))
+        return list(map(self.topLevelItem, range(self.topLevelItemCount())))
         
     def clear(self):
         items = self.topLevelItems()
@@ -290,7 +294,7 @@ class TreeWidgetItem(QtGui.QTreeWidgetItem):
         self._tree = self.treeWidget()
         if tree is None:
             return
-        for col, widget in self._widgets.items():
+        for col, widget in list(self._widgets.items()):
             tree.setItemWidget(self, col, widget)
         QtGui.QTreeWidgetItem.setExpanded(self, self._expanded)
     

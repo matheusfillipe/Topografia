@@ -28,7 +28,7 @@ def description():
 def version(): 
     return "Version 0.4.0" 
 def qgisMinimumVersion():
-    return "2.0"
+    return "3.0"
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name

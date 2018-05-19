@@ -1,30 +1,31 @@
+from builtins import str
 # -*- coding: utf-8 -*-
 import os
 import sip
 sip.setapi('QString', 2)
-from PyQt4 import Qt
 
-from PyQt4 import QtGui, uic
+
+from qgis.PyQt import QtGui, uic, Qt, QtWidgets
 
 import qgis
 
 import shutil
 from ..model.config import extractZIP, Config, compactZIP
-from PyQt4.QtCore import QSettings
-from PyQt4.QtGui import QAbstractItemView
+from qgis.PyQt.QtCore import QSettings
+from qgis.PyQt.QtWidgets import QAbstractItemView
 
 from qgis._core import QgsCoordinateReferenceSystem,QgsCoordinateTransform
-from qgis._core import QgsMapLayerRegistry
+
 from qgis._core import QgsRectangle
 from qgis._core import QgsVectorFileWriter
 from qgis._core import QgsVectorLayer
-from qgis._core import QGis
-from qgis._gui import QgsMapCanvasLayer
+from qgis._core import Qgis
+
 from qgis.utils import *
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtGui import QAction
+from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtWidgets import QAction
 
 from ..model.helper.calculos import *
 from ..model.curvas import Curvas as CurvasModel
@@ -39,7 +40,7 @@ ESTE = 5
 COTA = 6
 AZIMUTE = 7
 
-class Curvas(QtGui.QDialog,FORMCURVA_CLASS):
+class Curvas(QtWidgets.QDialog,FORMCURVA_CLASS):
 	def __init__(self, iface, id_filename, curvas,tipoClasseProjeto):
 		super(Curvas, self).__init__(None)
 		self.iface = iface

@@ -1,3 +1,6 @@
+from builtins import map
+from builtins import str
+from builtins import range
 # -*- coding: utf-8 -*-
 from ..Qt import QtGui, QtCore
 from ..pgcollections import OrderedDict
@@ -57,7 +60,7 @@ class DataTreeWidget(QtGui.QTreeWidget):
             }
             
         if isinstance(data, dict):
-            for k in data.keys():
+            for k in list(data.keys()):
                 self.buildTree(data[k], node, str(k))
         elif isinstance(data, list) or isinstance(data, tuple):
             for i in range(len(data)):

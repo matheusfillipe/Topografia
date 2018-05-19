@@ -1,3 +1,7 @@
+from builtins import map
+from builtins import str
+from builtins import range
+from builtins import object
 import pyqtgraph as pg
 import numpy as np
 import sys
@@ -110,7 +114,7 @@ def test_subArray():
     
     
 def test_rescaleData():
-    dtypes = map(np.dtype, ('ubyte', 'uint16', 'byte', 'int16', 'int', 'float'))
+    dtypes = list(map(np.dtype, ('ubyte', 'uint16', 'byte', 'int16', 'int', 'float')))
     for dtype1 in dtypes:
         for dtype2 in dtypes:
             data = (np.random.random(size=10) * 2**32 - 2**31).astype(dtype1)
@@ -300,7 +304,7 @@ def test_eq():
     
     zeros = [0, 0.0, np.float(0), np.int(0)]
     if sys.version[0] < '3':
-        zeros.append(long(0))
+        zeros.append(int(0))
     for i,x in enumerate(zeros):
         for y in zeros[i:]:
             assert eq(x, y)

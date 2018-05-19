@@ -1,8 +1,9 @@
+from builtins import str
 import sys
 from ..Qt import QtGui, QtCore
 from ..SignalProxy import SignalProxy
 from ..pgcollections import OrderedDict
-from ..python2_3 import asUnicode, basestring
+from ..python2_3 import asUnicode, str
 
 
 class ComboBox(QtGui.QComboBox):
@@ -37,7 +38,7 @@ class ComboBox(QtGui.QComboBox):
     def setValue(self, value):
         """Set the selected item to the first one having the given value."""
         text = None
-        for k,v in self._items.items():
+        for k,v in list(self._items.items()):
             if v == value:
                 text = k
                 break
@@ -159,7 +160,7 @@ class ComboBox(QtGui.QComboBox):
     def addItem(self, *args, **kwds):
         # Need to handle two different function signatures for QComboBox.addItem
         try:
-            if isinstance(args[0], basestring):
+            if isinstance(args[0], str):
                 text = args[0]
                 if len(args) == 2:
                     value = args[1]
@@ -204,7 +205,7 @@ class ComboBox(QtGui.QComboBox):
                 raise Exception('ComboBox already has item named "%s".' % t)
                 
         
-        for k,v in items.items():
+        for k,v in list(items.items()):
             self._items[k] = v
         QtGui.QComboBox.addItems(self, list(texts))
         

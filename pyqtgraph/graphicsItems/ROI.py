@@ -11,6 +11,8 @@ of array data from ImageItems.
 The ROI class is meant to serve as the base for more specific types; see several examples
 of how to build an ROI at the bottom of the file.
 """
+from __future__ import print_function
+from builtins import range
 
 from ..Qt import QtCore, QtGui
 import numpy as np
@@ -1205,7 +1207,8 @@ class Handle(UIGraphicsItem):
 
     sigClicked = QtCore.Signal(object, object)   # self, event
     sigRemoveRequested = QtCore.Signal(object)   # self
-    
+    sigEditRequest = QtCore.Signal(object)
+
     def __init__(self, radius, typ=None, pen=(200, 200, 220), parent=None, deletable=False):
         self.rois = []
         self.radius = radius
@@ -1243,6 +1246,9 @@ class Handle(UIGraphicsItem):
             
     def removeClicked(self):
         self.sigRemoveRequested.emit(self)
+    
+    def edit(self):
+        self.sigEditRequest.emit(self)
 
     def hoverEvent(self, ev):
         hover = False
@@ -1275,10 +1281,14 @@ class Handle(UIGraphicsItem):
                 
     def buildMenu(self):
         menu = QtGui.QMenu()
-        menu.setTitle("CV")
-        self.removeAction = menu.addAction("Remover Curva vertical", self.removeClicked) 
+        menu.setTitle("Cv")
+        self.removeAction = menu.addAction("Remover a Curva vertical", self.removeClicked) 
+        self.cvEdit = menu.addAction("Editar Curva", self.edit) 
         return menu
-        
+   
+   
+   
+
     def getMenu(self):
         return self.menu
 
@@ -1290,6 +1300,8 @@ class Handle(UIGraphicsItem):
         self.removeAction.setEnabled(removeAllowed)
         pos = ev.screenPos()
         menu.popup(QtCore.QPoint(pos.x(), pos.y()))    
+
+
 
     def mouseDragEvent(self, ev):
         if ev.button() != QtCore.Qt.LeftButton:

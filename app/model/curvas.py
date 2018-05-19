@@ -1,3 +1,6 @@
+from builtins import str
+from builtins import range
+from builtins import object
 # -*- coding: utf-8 -*-
 import sqlite3
 import math
@@ -6,7 +9,7 @@ import csv
 from ..model.config import extractZIP, Config, compactZIP
 
 
-class Curvas:
+class Curvas(object):
     def __init__(self, id_filename):
         self.id_filename = id_filename
 

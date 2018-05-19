@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 # -*- coding: utf-8 -*-
 from ..Qt import QtCore, QtGui, USE_PYSIDE, USE_PYQT5
 from .Node import *
@@ -26,7 +28,7 @@ from . import FlowchartGraphicsView
 from .. import functions as fn
 
 def strDict(d):
-    return dict([(str(k), v) for k, v in d.items()])
+    return dict([(str(k), v) for k, v in list(d.items())])
 
 
         
@@ -78,7 +80,7 @@ class Flowchart(Node):
         
         self.viewBox.autoRange(padding = 0.04)
             
-        for name, opts in terminals.items():
+        for name, opts in list(terminals.items()):
             self.addTerminal(name, **opts)
       
     def setLibrary(self, lib):
@@ -259,7 +261,7 @@ class Flowchart(Node):
         #print "ORDER:", order
         
         ## Record inputs given to process()
-        for n, t in self.inputNode.outputs().items():
+        for n, t in list(self.inputNode.outputs().items()):
             # if n not in args:
             #     raise Exception("Parameter %s required to process this chart." % n)
             if n in args:
@@ -326,9 +328,9 @@ class Flowchart(Node):
         ## first collect list of nodes/terminals and their dependencies
         deps = {}
         tdeps = {}   ## {terminal: [nodes that depend on terminal]}
-        for name, node in self._nodes.items():
+        for name, node in list(self._nodes.items()):
             deps[node] = node.dependentNodes()
-            for t in node.outputs().values():
+            for t in list(node.outputs().values()):
                 tdeps[t] = t.dependentNodes()
             
         #print "DEPS:", deps
@@ -341,7 +343,7 @@ class Flowchart(Node):
         
         ## determine when it is safe to delete terminal values
         dels = []
-        for t, nodes in tdeps.items():
+        for t, nodes in list(tdeps.items()):
             lastInd = 0
             lastNode = None
             for n in nodes:  ## determine which node is the last to be processed according to order
@@ -374,9 +376,9 @@ class Flowchart(Node):
         self.processing = True
         try:
             deps = {}
-            for name, node in self._nodes.items():
+            for name, node in list(self._nodes.items()):
                 deps[node] = []
-                for t in node.outputs().values():
+                for t in list(node.outputs().values()):
                     deps[node].extend(t.dependentNodes())
             
             ## determine order of updates 
@@ -433,9 +435,9 @@ class Flowchart(Node):
 
     def listConnections(self):
         conn = set()
-        for n in self._nodes.values():
+        for n in list(self._nodes.values()):
             terms = n.outputs()
-            for n, t in terms.items():
+            for n, t in list(terms.items()):
                 for c in t.connections():
                     conn.add((t, c))
         return conn
@@ -447,7 +449,7 @@ class Flowchart(Node):
         state['nodes'] = []
         state['connects'] = []
         
-        for name, node in self._nodes.items():
+        for name, node in list(self._nodes.items()):
             cls = type(node)
             if hasattr(cls, 'nodeName'):
                 clsName = cls.nodeName
@@ -516,7 +518,7 @@ class Flowchart(Node):
             self.fileDialog.fileSelected.connect(self.loadFile)
             return
             ## NOTE: was previously using a real widget for the file dialog's parent, but this caused weird mouse event bugs..
-        fileName = unicode(fileName)
+        fileName = str(fileName)
         state = configfile.readConfigFile(fileName)
         self.restoreState(state, clear=True)
         self.viewBox.autoRange()
@@ -535,7 +537,7 @@ class Flowchart(Node):
             self.fileDialog.show()
             self.fileDialog.fileSelected.connect(self.saveFile)
             return
-        fileName = unicode(fileName)
+        fileName = str(fileName)
         configfile.writeConfigFile(self.saveState(), fileName)
         self.sigFileSaved.emit(fileName)
 
@@ -568,7 +570,7 @@ class FlowchartGraphicsItem(GraphicsObject):
         inp = self.chart.inputs()
         dy = bounds.height() / (len(inp)+1)
         y = dy
-        for n, t in inp.items():
+        for n, t in list(inp.items()):
             item = t.graphicsItem()
             self.terminals[n] = item
             item.setParentItem(self)
@@ -577,7 +579,7 @@ class FlowchartGraphicsItem(GraphicsObject):
         out = self.chart.outputs()
         dy = bounds.height() / (len(out)+1)
         y = dy
-        for n, t in out.items():
+        for n, t in list(out.items()):
             item = t.graphicsItem()
             self.terminals[n] = item
             item.setParentItem(self)
@@ -659,7 +661,7 @@ class FlowchartCtrlWidget(QtGui.QWidget):
         #self.setCurrentFile(newFile)
         
     def fileSaved(self, fileName):
-        self.setCurrentFile(unicode(fileName))
+        self.setCurrentFile(str(fileName))
         self.ui.saveBtn.success("Saved.")
         
     def saveClicked(self):
@@ -688,7 +690,7 @@ class FlowchartCtrlWidget(QtGui.QWidget):
         #self.setCurrentFile(newFile)
             
     def setCurrentFile(self, fileName):
-        self.currentFileName = unicode(fileName)
+        self.currentFileName = str(fileName)
         if fileName is None:
             self.ui.fileNameLabel.setText("<b>[ new ]</b>")
         else:
@@ -828,7 +830,7 @@ class FlowchartWidget(dockarea.DockArea):
         
     def buildMenu(self, pos=None):
         def buildSubMenu(node, rootMenu, subMenus, pos=None):
-            for section, node in node.items():
+            for section, node in list(node.items()):
                 menu = QtGui.QMenu(section)
                 rootMenu.addMenu(menu)
                 if isinstance(node, OrderedDict): 

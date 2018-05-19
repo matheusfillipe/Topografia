@@ -1,7 +1,10 @@
+from __future__ import print_function
+from builtins import str
+from builtins import object
 from ..Qt import QtGui, QtCore
 import os, weakref, re
 from ..pgcollections import OrderedDict
-from ..python2_3 import asUnicode, basestring
+from ..python2_3 import asUnicode, str
 from .ParameterItem import ParameterItem
 
 PARAM_TYPES = {}
@@ -176,7 +179,7 @@ class Parameter(QtCore.QObject):
         self.blockTreeChangeEmit = 0
         #self.monitoringChildren = False  ## prevent calling monitorChildren more than once
         
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise Exception("Parameter must have a string name specified in opts.")
         self.setName(name)
         
@@ -328,7 +331,7 @@ class Parameter(QtCore.QObject):
         ## list of children may be stored either as list or dict.
         if isinstance(childState, dict):
             cs = []
-            for k,v in childState.items():
+            for k,v in list(childState.items()):
                 cs.append(v.copy())
                 cs[-1].setdefault('name', k)
             childState = cs
@@ -514,7 +517,7 @@ class Parameter(QtCore.QObject):
         ## If children was specified as dict, then assume keys are the names.
         if isinstance(children, dict):
             ch2 = []
-            for name, opts in children.items():
+            for name, opts in list(children.items()):
                 if isinstance(opts, dict) and 'name' not in opts:
                     opts = opts.copy()
                     opts['name'] = name
@@ -645,7 +648,7 @@ class Parameter(QtCore.QObject):
         
             param[('child', 'grandchild')] = value
         """
-        if isinstance(names, basestring):
+        if isinstance(names, str):
             names = (names,)
         return self.param(*names).setValue(value)
 

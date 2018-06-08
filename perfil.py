@@ -36,6 +36,7 @@ from copy import deepcopy
 
 
 
+
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
@@ -113,7 +114,7 @@ class cv():
             self.xpcv=xpcv
             self.ypcv=ypcv
             self.xptv=xpcv+L
-            self.yptv=handlePos.y()+i2*(self.xptv-handlePos.x())
+            self.yptv=self.getCota(self.xptv)
             self.x=x
             self.y=y
             
@@ -121,6 +122,10 @@ class cv():
 
 
             self.curve.setData(x,y,pen=pg.mkPen('r', width=3, style=QtCore.Qt.DashLine)) 
+    
+    def getCota(self, x):
+        return False if x < self.xpcv or x > self.xptv else (-self.G/(2*self.L))*(x-self.xpcv)**2+self.i1*(x-self.xpcv)/100+self.ypcv
+
 
 
 class cvEditDialog(QtWidgets.QDialog):

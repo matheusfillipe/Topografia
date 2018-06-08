@@ -1,7 +1,8 @@
 # Topografia
 ## Descrição
 
-Plugin para qgis que possibilita o desenvolvimento do projeto geométrico de estradas. Permite a realização do traçado a partir de diretrizes sore o mapa com imagens de satélite e realiza cálculos de curvas horizontais, verticais e volumes.
+Plugin para qgis 3.x que possibilita o desenvolvimento do projeto geométrico de estradas. Permite a realização do traçado a partir de diretrizes sore o mapa com imagens de satélite e realiza cálculos de curvas horizontais, verticais e volumes.
+
 
 ## Estado de desenvolvimento
 
@@ -11,11 +12,11 @@ Plugin para qgis que possibilita o desenvolvimento do projeto geométrico de est
 * Geração da tabela Horizontal
 * Cálculo de curvas horizontais
 * Interface para traçado greide (perfil vertical)
+* Cálculo de curvas verticais
+* Geração da tabela Vertical
 
 ### A Fazer
 
-* Cálculo de curvas verticais
-* Geração da tabela Vertical
 * Geração dos perfis transverçais a partir de uma seção tipo
 * Cálculo de Volumes
 * Geração e Exportação dos desenhos
@@ -43,7 +44,32 @@ PROJ.4:  +proj=utm +zone=23 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m 
 Erro: tolerance condition error
 
 ```
+###TODO:
+Corrigir bugs: reposicionamento dos handles quando outro é arrastado, 
+
+limpar curva vertical quando outra é criada por cima (handle.curve) ou quando handle é exluído
+
+reposicionar curvas verticais e replotar quando segmentos ou handles são movidos
+
+checar se as curvas são possíveis
+
+###Funções para Adicionas
+Zoom button no menu de curva vertical
+Cálculo de aterro imbutido 
+função desfazer (ctrl+Z )
+
+##Dependências
+[Download](qgis.org/downloads/QGIS-OSGeo4W-3.0.3-1-Setup-x86_64.exe) - Qgis 3 for Windows 64 bits
+
+[Download](https://qgis.org/en/site/forusers/alldownloads.html#debian-ubuntu) - Qgis 3 for Linux Debian 
+
+[Download](https://qgis.org/en/site/forusers/download.html) - Other Downloads
+
+
+
 
 
 ## Links
 [Qgis](https://www.qgis.org) - A Free and Open Source Geographic Information System 
+
+

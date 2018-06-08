@@ -430,70 +430,125 @@ class Estacas(object):
         tipo, class_project = self.model.tipo()
         self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename))
 
-        (estaca,descricao,progressiva,cota) = (0,"V0",0,self.perfil.getVertices()[0][1])
+        (estaca,descricao,progressiva,cota) = (0,"V1",0,self.perfil.getVertices()[0][1])
         estacas.append((estaca,descricao,progressiva,cota))
 
+
+
+######################################
+#TODO: Detectar V's sem curvas e colocar a descrição
+#
+#
+#
+#
+######################################
+
+
+
+        y=float(cota)
+        points=[]
+
         for i in range(1, len(self.perfil.roi.handles)-1):
-            if  not (i>=self.perfil.roi.countHandles()-1 or i==0):
+            i1=self.perfil.roi.getSegIncl(i-1,i)
+            i2=self.perfil.roi.getSegIncl(i,i+1)
+            L=0
+            if self.perfil.cvList[i][1]!="None":
+                L=float(self.perfil.cvList[i][1])
 
-                i1=self.perfil.roi.getSegIncl(i-1,i)/100
-                i2=self.perfil.roi.getSegIncl(i,i+1)/100
 
-                L=0
+            pontosCv=CV(i1, i2, L,self.perfil.roi.getHandlePos(i), self.perfil.roi.getHandlePos(i-1))
 
-                if self.perfil.cvList[i][1]!="None":
-                    L=float(self.perfil.cvList[i][1])
-        
+            points.append({"cv": pontosCv, "i1": i1/100, "i2": i2/100, "L": L, "i": i})
 
-                pontosCv=CV(i1, i2, L,self.perfil.roi.getHandlePos(i), self.perfil.roi.getHandlePos(i-1))               
 
-                estacas.append(("debug",str(L),str(i1),str(i2)))
-                for n in range(0,int((pontosCv.xpcv-progressiva)/20)):    
-                    
-                    if(n==0 and i==1):
-                        continue
+        x=0
+        i=points[0]["i1"]
+        s=0
+        c=1
+        fpcv=0
+        fptv=0
+        est=1
 
-                    (estaca,descricao,progressiva,cota) = (
-                        estaca+1,
-                        "PTV " + str(i-1) if n==0 else "",
-                        progressiva+20,
-                        (progressiva+20)*i1+pontosCv.lastHandlePos.y()
-                    )
+        while est <= int(self.perfil.roi.getHandlePos(self.perfil.roi.countHandles()-1).x()/20):
 
-                    estacas.append((estaca,descricao,progressiva,cota))
+             if fptv:
+                 dx=20-dx
+                 dy=point["i1"]*dx
+                 fptv=0
 
-                for n in range(0,len(pontosCv.x)-1):
+             elif fpcv:
+                 dx=20-dx
+                 dy=point["i1"]*dx
+                 fpcv=0
+             else:
+                dx=20
+                dy=i*dx
 
-                    (estaca,descricao,progressiva,cota) = (
-                        estaca+1 if n!= 0 else str(estaca)+" + "+str(pontosCv.x[n]-progressiva),
-                        "PCV " + str(i) if n == 0 else "",
-                        pontosCv.x[n],
-                        pontosCv.y[n]
-                    )
+             desc=""
 
-                    estacas.append((estaca,descricao,progressiva,cota))
+             if len(points)>0:
+                 point=points[0]
+                 pt=x+dx>=point["cv"].xptv
+                 pv=x+dx>=point["cv"].xpcv and not pt and not s
+                 i=points[0]["i1"]
+             else:
+                 pt=False
+                 pv=False
+                 i=point["cv"].i2/100
 
-                if(i==len(self.perfil.roi.handles)-2):
-    
-                    for n in range(0,int((pontosCv.xpcv-progressiva)/20)+1):    
-                        
-                        (estaca,descricao,progressiva,cota) = (
-                            estaca+1,
-                            "PTV " + str(i) if n==0 else "V1" if n==int((pontosCv.xpcv-progressiva)/20) else "",
-                            progressiva+20,
-                            (progressiva+20)*i2
-                        )
+             if(pv):
+                 estacas.append(("debug",point["i"],point["i1"],point["cv"].ypcv))
+                 dx=point["cv"].xpcv-x
+                 desc="PCV"+str(c)
+                 s=1
+                 dy=point["cv"].ypcv-y
+                 est-=1
+                 fpcv=1
 
-                        estacas.append((estaca,descricao,progressiva,cota))
-                                 
-                    
-                
+             elif(pt):
+                  dx=point["cv"].xptv-x
+                  desc="PTV"+str(c)
+                  s=0
+                  dy=point["cv"].yptv-y
+                  est-=1
+                  points.pop(0)
+                  fptv=1
+                  c+=1
+
+             x+=dx
+
+             if s and not (pv or pt):
+                 dy=point["cv"].getCota(x)-y
+
+             y+=dy
+
+
+
+             (estaca,descricao,progressiva,cota) = (
+                est if not (pv or pt) else str(est)+' + ' + str(dx),
+                desc,
+                x,
+                y
+             )
+             estacas.append((estaca,descricao,progressiva,cota))
+
+
+             est+=1
+
+        dx=float(self.perfil.getVertices()[-1:][0][0])-x
+        x+=dx
+        dy=float(self.perfil.getVertices()[-1:][0][1])-y
+        y+=dy
+
+
+        (estaca,descricao,progressiva,cota) = (str(est-1)+' + ' + str(dx),"V2",x,y)
+        estacas.append((estaca,descricao,progressiva,cota))
 
 
         for e in estacas:
             self.viewCv.fill_table(tuple(e), True)
 
-        self.nextView=self.viewCv 
+        self.nextView=self.viewCv
 
 
 

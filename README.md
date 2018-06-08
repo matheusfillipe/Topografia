@@ -46,19 +46,16 @@ Erro: tolerance condition error
 ```
 ### TODO:
 
-Corrigir bugs: reposicionamento dos handles quando outro é arrastado, 
-
-limpar curva vertical quando outra é criada por cima (handle.curve) ou quando handle é exluído
-
-reposicionar curvas verticais e replotar quando segmentos ou handles são movidos
-
-checar se as curvas são possíveis
+* Corrigir bugs: reposicionamento dos handles quando outro é arrastado, 
+* limpar curva vertical quando outra é criada por cima (handle.curve) ou quando handle é exluído
+* reposicionar curvas verticais e replotar quando segmentos ou handles são movidos
+* checar se as curvas são possíveis quando criadas
 
 ### Funções para Adicionas
 
-Zoom button no menu de curva vertical
-Cálculo de aterro imbutido 
-função desfazer (ctrl+Z )
+* Zoom button no menu de curva vertical
+* Cálculo de aterro imbutido 
+* função desfazer (ctrl+Z )
 
 ## Dependências
 

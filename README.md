@@ -44,7 +44,7 @@ PROJ.4:  +proj=utm +zone=23 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m 
 Erro: tolerance condition error
 
 ```
-###TODO:
+### TODO:
 
 Corrigir bugs: reposicionamento dos handles quando outro é arrastado, 
 
@@ -54,13 +54,13 @@ reposicionar curvas verticais e replotar quando segmentos ou handles são movido
 
 checar se as curvas são possíveis
 
-###Funções para Adicionas
+### Funções para Adicionas
 
 Zoom button no menu de curva vertical
 Cálculo de aterro imbutido 
 função desfazer (ctrl+Z )
 
-##Dependências
+## Dependências
 
 [Download](qgis.org/downloads/QGIS-OSGeo4W-3.0.3-1-Setup-x86_64.exe) - Qgis 3 for Windows 64 bits
 

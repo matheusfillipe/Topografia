@@ -23,6 +23,16 @@ Plugin para qgis 3.x que possibilita o desenvolvimento do projeto geométrico de
 
 ### Como Instalar
 
+#### Instalação fácil
+
+1 Baixe o arquivo daqui ou click nesse [link](https://github.com/matheusfillipe/Topografia/archive/master.zip)
+
+2 Abra o qgis 3, entre no menu Plugins->Manage and Install Plugins->Install From Zip File
+
+3 Na linha zip file, clique no botão "..." e escolha o arquivo zip do plugin. 
+
+#### Instalação Alternativa
+
 Coloque a estes arquivos dentro da pasta Topograph, no caminho .qgis/plugins/python/Topograph
 
 

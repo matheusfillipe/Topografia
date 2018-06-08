@@ -45,6 +45,7 @@ Erro: tolerance condition error
 
 ```
 ###TODO:
+
 Corrigir bugs: reposicionamento dos handles quando outro é arrastado, 
 
 limpar curva vertical quando outra é criada por cima (handle.curve) ou quando handle é exluído
@@ -54,11 +55,13 @@ reposicionar curvas verticais e replotar quando segmentos ou handles são movido
 checar se as curvas são possíveis
 
 ###Funções para Adicionas
+
 Zoom button no menu de curva vertical
 Cálculo de aterro imbutido 
 função desfazer (ctrl+Z )
 
 ##Dependências
+
 [Download](qgis.org/downloads/QGIS-OSGeo4W-3.0.3-1-Setup-x86_64.exe) - Qgis 3 for Windows 64 bits
 
 [Download](https://qgis.org/en/site/forusers/alldownloads.html#debian-ubuntu) - Qgis 3 for Linux Debian 

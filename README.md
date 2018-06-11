@@ -61,7 +61,7 @@ Erro: tolerance condition error
 * reposicionar curvas verticais e replotar quando segmentos ou handles são movidos
 * checar se as curvas são possíveis quando criadas
 
-### Funções para Adicionas
+### Funções a Adicionar
 
 * Zoom button no menu de curva vertical
 * Cálculo de aterro imbutido 

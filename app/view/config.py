@@ -2,28 +2,29 @@ from __future__ import print_function
 from builtins import str
 # -*- coding: utf-8 -*-
 import os
-from qgis.PyQt import Qt
 
-from qgis.PyQt import QtGui, uic, QtWidgets
-
+from qgis.PyQt import uic, QtWidgets
 
 import qgis
 
-import shutil
-from ..model.config import extractZIP, Config, compactZIP
+from ..model.config import Config
 from qgis.PyQt.QtCore import QSettings
 from qgis.PyQt.QtWidgets import QAbstractItemView
 
-from qgis._core import QgsCoordinateReferenceSystem,QgsCoordinateTransform
-from qgis._core import QgsProject
+from qgis._core import QgsCoordinateReferenceSystem
 from qgis._core import QgsRectangle
 from qgis._core import QgsVectorFileWriter
 from qgis._core import QgsVectorLayer
-from qgis._core import Qgis
 from qgis._core import QgsMapLayer
+from qgis._core import QgsMessageLog
+
+
+
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/Topo_dialog_conf.ui'))
+
 
 class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, iface, parent=None):
@@ -60,16 +61,18 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.cmpMontanhosoMin = self.montanhosoMin
         self.cmpMontanhosoMax = self.montanhosoMax
         self.comboUnits = self.comboUnits
+        self.sessaoTipoButton.clicked.connect(lambda: QgsMessageLog.logMessage("Sessao tipo", "Topografia", level=0))
 
-    def changeCRS(self,crs):
+    def changeCRS(self, crs):
         if crs == None:
             crs = 31983
         mycrs = QgsCoordinateReferenceSystem(int(crs), 0)
         # self.iface.mapCanvas().mapRenderer().setCrs( QgsCoordinateReferenceSystem(mycrs, QgsCoordinateReferenceSystem.EpsgCrsId) )
         self.iface.mapCanvas().mapSettings().setDestinationCrs(mycrs)  # set CRS to canvas
-        #self.iface.mapCanvas().setMapUnits(QGis.Meters)
+        # self.iface.mapCanvas().setMapUnits(QGis.Meters)
         self.iface.mapCanvas().refresh()
-       # self.iface.mapCanvas().mapSettings().setProjectionsEnabled(True)
+
+    # self.iface.mapCanvas().mapSettings().setProjectionsEnabled(True)
 
     def new_file(self):
         filename = QtWidgets.QFileDialog.getSaveFileName()
@@ -81,17 +84,17 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
 
     def error(self, msg):
         msgBox = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning, "AVISO",
-                                   u"%s" % msg,
-                                   QtWidgets.QMessageBox.NoButton, None)
+                                       u"%s" % msg,
+                                       QtWidgets.QMessageBox.NoButton, None)
         msgBox.addButton("OK", QtWidgets.QMessageBox.AcceptRole)
         # msgBox.addButton("&Continue", QtGui.QMessageBox.RejectRole)
         msgBox.exec_()
 
-    def update(self, model,txtcrs):
+    def update(self, model, txtcrs):
         self.txtCRS.setText(U"%s" % txtcrs)
-        #print model.CSV_DELIMITER
+        # print model.CSV_DELIMITER
         self.txtCSV.setText(U"%s" % model.CSV_DELIMITER)
-        self.comboClasse.setCurrentIndex(model.class_project+1)
+        self.comboClasse.setCurrentIndex(model.class_project + 1)
         self.cmpPlanoMin.setValue(model.dataTopo[0])
         self.cmpPlanoMax.setValue(model.dataTopo[1])
         self.cmpOnduladoMin.setValue(model.dataTopo[2])
@@ -111,7 +114,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         route = d.GetDirections(origin, dest, mode="driving", waypoints=None, avoid=None, units="imperial")'''
         layerType = openLyrs._olLayerTypeRegistry.getById(tmap)
         openLyrs.addLayer(layerType)
-        #QgsCoordinateReferenceSystem.createFromProj4('+proj=tmerc', u'lat_0=0', u'lon_0=126', u'k=1', u'x_0=42500000', u'y_0=0', u'ellps=krass', u'towgs84=24.47,-130.89,-81.56,-0,-0,0.13,-0.22', u'units=m', u'no_defs')
+        # QgsCoordinateReferenceSystem.createFromProj4('+proj=tmerc', u'lat_0=0', u'lon_0=126', u'k=1', u'x_0=42500000', u'y_0=0', u'ellps=krass', u'towgs84=24.47,-130.89,-81.56,-0,-0,0.13,-0.22', u'units=m', u'no_defs')
         # mycrs = QgsCoordinateReferenceSystem(31983)
         # self.iface.mapCanvas().mapRenderer().setCrs( QgsCoordinateReferenceSystem(31983, QgsCoordinateReferenceSystem.EpsgCrsId) )
 
@@ -127,17 +130,17 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         layer = QgsRasterLayer(path, baseName)
         QgsMapLayerRegistry.instance().addMapLayer(layer)'''
 
-    def carregacarta(self,model):
+    def carregacarta(self, model):
         # create Qt widget
         canvas = self.iface.mapCanvas()
-        #canvas.setCanvasColor(Qt.black)
+        # canvas.setCanvasColor(Qt.black)
 
         # enable this for smooth rendering
         canvas.enableAntiAliasing(True)
 
         # not updated US6SP10M files from ENC_ROOT
         source_dir = QtWidgets.QFileDialog.getExistingDirectory(None, 'Select a folder:', '',
-                                                            QtWidgets.QFileDialog.ShowDirsOnly)
+                                                                QtWidgets.QFileDialog.ShowDirsOnly)
         if source_dir in [None, '']: return
         # source_dir = "/home/lucas/python_work/TopoGraph"
         canvas_layers = []
@@ -159,17 +162,17 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                 vlayer = QgsVectorLayer(source_dir + "/" + files, files, "ogr")
 
                 # add layer to the registry
-                #registry.addMapLayer(vlayer)
-                #extent.combineExtentWith(vlayer.extent())
-                #canvas_layers.append(QgsMapCanvasLayer(vlayer))
+                # registry.addMapLayer(vlayer)
+                # extent.combineExtentWith(vlayer.extent())
+                # canvas_layers.append(QgsMapCanvasLayer(vlayer))
 
-                writer = QgsVectorFileWriter.writeAsVectorFormat(vlayer, r"%s/tmp/%s.shp"%(source_dir,files), "utf-8",
-                                                                  None, "ESRI Shapefile")
+                writer = QgsVectorFileWriter.writeAsVectorFormat(vlayer, r"%s/tmp/%s.shp" % (source_dir, files),
+                                                                 "utf-8",
+                                                                 None, "ESRI Shapefile")
 
-                vlayer = QgsVectorLayer(r"%s/tmp/%s.shp"%(source_dir,files), files, "ogr")
+                vlayer = QgsVectorLayer(r"%s/tmp/%s.shp" % (source_dir, files), files, "ogr")
 
-                
-                attr={}
+                attr = {}
                 vlayerUser = vlayer.crs().toProj4()
                 for elem in vlayerUser.strip().split('+'):
                     key_value = elem.strip().split('=')
@@ -183,9 +186,9 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                     if a == '':
                         continue
                     if attr[a] is None:
-                        string_proj += '+%s '%a
+                        string_proj += '+%s ' % a
                     else:
-                        string_proj += '+%s=%s '%(a, attr[a])
+                        string_proj += '+%s=%s ' % (a, attr[a])
                 crs = QgsCoordinateReferenceSystem()
                 crs.createFromProj4(string_proj)
                 vlayer.setCrs(crs)
@@ -193,7 +196,6 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                 extent.combineExtentWith(vlayer.extent())
                 canvas_layers.append(QgsMapLayer(vlayer))
 
-                
                 print(writer)
                 # set extent to the extent of our layer
                 # canvas.setExtent(vlayer.extent())
@@ -203,6 +205,3 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
 
         canvas.setExtent(extent)
         canvas.setLayerSet(canvas_layers)
-
-
-

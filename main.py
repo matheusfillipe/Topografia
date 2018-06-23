@@ -50,7 +50,9 @@ class TopoGrafia(object):
             application at run time.
         :type iface: QgsInterface
         """
-        # Save reference to the QGIS interface
+
+
+            # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)

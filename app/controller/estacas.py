@@ -1,21 +1,15 @@
 from __future__ import print_function
-from builtins import range
-from builtins import object
 # -*- coding: utf-8 -*-
 import webbrowser
-from qgis.PyQt import Qt
 from qgis.PyQt import QtGui
 
-from qgis.PyQt.QtCore import QObject
-
 from qgis._gui import QgsMapToolEmitPoint
-from PIL import Image
+try:
+    from PIL import Image
+except:
+    from ...PIL import Image
 
-
-
-import math
-
-from ...perfil import Ui_Perfil, cv as CV
+from ..controller.perfil import Ui_Perfil, cv as CV
 from ..model.estacas import Estacas as EstacasModel
 from ..model.knn import KNN
 from ..model.utils import *
@@ -193,6 +187,8 @@ class Estacas(object):
         self.model.table = estacas
         self.model.save(self.model.id_filename)
         self.openEstaca()
+
+
 
     def obterCotasThread(self, estacas, inicio=0, fim=None):
 
@@ -497,7 +493,7 @@ class Estacas(object):
                  i=point["cv"].i2/100
 
              if(pv):
-                 estacas.append(("debug",point["i"],point["i1"],point["cv"].ypcv))
+                 #estacas.append(("debug",point["i"],point["i1"],point["cv"].ypcv))
                  dx=point["cv"].xpcv-x
                  desc="PCV"+str(c)
                  s=1

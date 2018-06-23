@@ -7,7 +7,8 @@ from qgis.PyQt import QtGui, QtWidgets
 
 from ..model.config import Config as ModelConfig
 from ..view.config import TopoConfig
-
+from ..model.estacas import Estacas
+from ..controller import perfil
 
 class Config(object):
     def __init__(self,iface):
@@ -105,6 +106,17 @@ class Config(object):
         self.changeCRS()
         txt = self.model.listCRSID()
         self.conf.update(self.model, txt)
+        self.conf.sessaoTipoButton.clicked.connect(self.runTrasversalDialog)
+
+    def runTrasversalDialog(self):
+        self.trasversalDialog=perfil.Ui_sessaoTipo(self.conf)
+        self.trasversalDialog.save.connect(self.savePerfil)
+        self.trasversalDialog.showMaximized()
+        self.trasversalDialog.exec_()
+
+    def savePerfil(self):
+        pass
+
 
     def run(self):
         self.conf.show()

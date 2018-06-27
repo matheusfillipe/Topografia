@@ -10,7 +10,7 @@ from qgis.PyQt import QtCore, QtWidgets, QtGui
 import numpy as np
 
 from ... import PyQtGraph as pg
-from ..view.estacas import cvEdit, closeDialog, rampaDialog
+from ..view.estacas import cvEdit, closeDialog, rampaDialog, QgsMessageLog
 import functools
 from copy import deepcopy
 
@@ -51,15 +51,15 @@ except AttributeError:
 class CustomViewBox(pg.ViewBox):
       def __init__(self, *args, **kwds):
           pg.ViewBox.__init__(self, *args, **kwds)
-          self.setMouseMode(self.RectMode)
-          
+          self.setMouseMode(self.PanMode)
+
       ## reimplement mid-click to zoom out
       def mouseClickEvent(self, ev):
           if ev.button() == QtCore.Qt.MidButton:
               self.autoRange()
 
       def mouseDragEvent(self, ev):
-          if ev.button() == QtCore.Qt.RightButton:
+          if ev.button() == QtCore.Qt.LeftButton:
               ev.ignore()
           else:
               pg.ViewBox.mouseDragEvent(self, ev)
@@ -147,7 +147,7 @@ class cvEditDialog(QtWidgets.QDialog):
         self.cota=self.getHandlePos(i).y()
         self.horizontal=self.getHandlePos(i).x()
         self.redefineUI(-10) 
-        self.updateCota();      
+        self.updateCota()
         self.ui.cota.textChanged.connect(self.updateCota)
         self.ui.horizontal.textChanged.connect(self.updateAbscissa)
         self.ui.i1.setReadOnly(True)
@@ -162,11 +162,16 @@ class cvEditDialog(QtWidgets.QDialog):
 
         self.handle=self.roi.handles[i]['item']
 
-        self.ui.L.setText(str(self.handle.curve.L))
-        self.initialCurve=cv(self.handle.curve.i1,self.handle.curve.i2, self.handle.curve.L, self.handle.curve.handlePos, self.handle.curve.lastHandlePos)
+        try:
+            self.ui.L.setText(str(self.handle.curve.L))
+        except AttributeError:
+            self.handle.curve = cv(self.i1, self.i2, 0, self.handle.pos, self.getHandlePos(i-1))
+            self.ui.L.setText(str(self.handle.curve.L))
+
+        self.initialCurve = cv(self.handle.curve.i1,self.handle.curve.i2, self.handle.curve.L, self.handle.curve.handlePos, self.handle.curve.lastHandlePos)
 
 
-        self.ui.groupBox.setTitle("Vertice: "+str(i+1))
+        self.ui.groupBox.setTitle("Vertice: " + str(i+1))
 
         self.ui.L.textChanged.connect(self.updateL)
 
@@ -294,8 +299,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
     wasModified=QtCore.pyqtSignal()
 
     def __init__(self, *args, **kwds):
-        self.wasInitialized=False   
-
+        self.wasInitialized=False
         pg.PolyLineROI.__init__(self,*args,**kwds)
 
     def setPlotWidget(self, plotWidget):
@@ -317,7 +321,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
 
     def setPoints(self, points, closed=None):
         self.wasInitialized=False   
-
+        QgsMessageLog.logMessage("Iniciando pontos", "Topografia", level=0)
         if closed is not None:
             self.closed = closed
         
@@ -349,21 +353,21 @@ class CustomPolyLineROI(pg.PolyLineROI):
                 except:
                     pass
 
-        
+            QgsMessageLog.logMessage("Atualiando Vertices", "Topografia", level=0)
             self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
             start = -1 if self.closed else 0
 
             for i in range(start, len(self.handles)-1):
-    
                 j=i+1
                 self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))       
-
+            self.wasInitialized=True
 
     def addHandle(self, info, index=None):
         h = pg.ROI.addHandle(self, info, index=index)
         h.sigRemoveRequested.connect(self.removeHandle)        
         self.stateChanged(finish=True)
-       
+        QgsMessageLog.logMessage("Adicionando Vertice", "Topografia", level=0)
+        self.wasInitialized=True
         self.updateHandles()
 
         return h
@@ -513,18 +517,16 @@ class Ui_Perfil(QtWidgets.QDialog):
                 pos=(x,cota)
                 L.append(pos)
             self.roi = CustomPolyLineROI(L)
-            self.roi.wasModified.connect(self.__setAsNotSaved)
-            self.roi.setAcceptedMouseButtons(QtCore.Qt.RightButton)
-            self.perfilPlot.addItem(self.roi)
 
 
         else:
             self.roi = CustomPolyLineROI([(x[0],w[0]*x[0]+w[1]), (x[len(x)-1],w[0]*x[len(x)-1]+w[1])])
-            self.roi.wasModified.connect(self.__setAsNotSaved)
-            self.roi.setAcceptedMouseButtons(QtCore.Qt.RightButton)
-            self.perfilPlot.addItem(self.roi)
-      
-      
+
+        self.roi.wasModified.connect(self.__setAsNotSaved)
+        self.roi.setAcceptedMouseButtons(QtCore.Qt.RightButton)
+        self.perfilPlot.addItem(self.roi)
+
+
         self.lastGreide=self.getVertices()
         self.lastCurvas=self.getCurvas()
         self.roi.setPlotWidget(self.perfilPlot)

@@ -17,7 +17,7 @@ Plugin para qgis 3.x que possibilita o desenvolvimento do projeto geométrico de
 
 ### A Fazer
 
-* Geração dos perfis transverçais a partir de uma seção tipo
+* Geração dos perfis transversais a partir de uma seção tipo
 * Cálculo de Volumes
 * Geração e Exportação dos desenhos
 

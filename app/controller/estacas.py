@@ -484,8 +484,19 @@ class Estacas(object):
 
              if len(points)>0:
                  point=points[0]
-                 pt=x+dx>=point["cv"].xptv
-                 pv=x+dx>=point["cv"].xpcv and not pt and not s
+
+                 try:
+                     pt=x+dx>=point["cv"].xptv
+                     pv=x+dx>=point["cv"].xpcv and not pt and not s
+
+                 except AttributeError:
+                    point["cv"].xptv=point["cv"].handlePos.x()
+                    point["cv"].xpcv=point["cv"].handlePos.x()
+                    point["cv"].ypcv=point["cv"].handlePos.y()
+                    point["cv"].yptv=point["cv"].handlePos.y()
+                    pt=x+dx>=point["cv"].xptv
+                    pv=x+dx>=point["cv"].xpcv and not pt and not s
+
                  i=points[0]["i1"]
              else:
                  pt=False

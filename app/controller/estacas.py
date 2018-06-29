@@ -430,15 +430,7 @@ class Estacas(object):
         estacas.append((estaca,descricao,progressiva,cota))
 
 
-
-######################################
-#TODO: Detectar V's sem curvas e colocar a descrição
-#
-#
-#
-#
-######################################
-
+        missingCurveDialog=[]
 
 
         y=float(cota)
@@ -494,6 +486,9 @@ class Estacas(object):
                     point["cv"].xpcv=point["cv"].handlePos.x()
                     point["cv"].ypcv=point["cv"].handlePos.y()
                     point["cv"].yptv=point["cv"].handlePos.y()
+
+                    missingCurveDialog.append(c)
+
                     pt=x+dx>=point["cv"].xptv
                     pv=x+dx>=point["cv"].xpcv and not pt and not s
 
@@ -514,7 +509,12 @@ class Estacas(object):
 
              elif(pt):
                   dx=point["cv"].xptv-x
-                  desc="PTV"+str(c)
+
+                  if point["cv"].xptv == point["cv"].handlePos.x():
+                      desc="PV"+str(c)
+                  else:
+                      desc="PTV"+str(c)
+
                   s=0
                   dy=point["cv"].yptv-y
                   est-=1
@@ -529,8 +529,6 @@ class Estacas(object):
 
              y+=dy
 
-
-
              (estaca,descricao,progressiva,cota) = (
                 est if not (pv or pt) else str(est)+' + ' + str(dx),
                 desc,
@@ -541,6 +539,10 @@ class Estacas(object):
 
 
              est+=1
+
+        if len(missingCurveDialog) > 0:
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.about(self.viewCv, "Atenção!", "Nenhum comprimento de curva foi definido no perfil vertical para os vértices: " + str(missingCurveDialog)[1:-1])
 
         dx=float(self.perfil.getVertices()[-1:][0][0])-x
         x+=dx

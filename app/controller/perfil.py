@@ -118,7 +118,12 @@ class cv():
             self.curve.clear()
 
 
-            self.curve.setData(x,y,pen=pg.mkPen('r', width=3, style=QtCore.Qt.DashLine)) 
+            self.curve.setData(x,y,pen=pg.mkPen('r', width=3, style=QtCore.Qt.DashLine))
+
+
+        else:
+            self.L=0
+
     
     def getCota(self, x):
         return False if x < self.xpcv or x > self.xptv else (-self.G/(2*self.L))*(x-self.xpcv)**2+self.i1*(x-self.xpcv)/100+self.ypcv

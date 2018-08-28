@@ -9,6 +9,7 @@ from builtins import range
 from qgis.PyQt import QtCore, QtWidgets, QtGui
 import numpy as np
 
+from ..model.utils import *
 from ... import PyQtGraph as pg
 from ..view.estacas import cvEdit, closeDialog, rampaDialog, QgsMessageLog
 import functools
@@ -21,7 +22,7 @@ from copy import deepcopy
 #limpar curva vertical quando outra é criada por cima (handle.curve) ou quando handle é exluído
 #reposicionar curvas verticais e replotar quando segmentos ou handles são movidos
 #checar se as curvas são possíveis
-#Features to  add
+#Features to  ADD
 #Zoom button no menu de curva vertical
 #Cálculo de aterro imbutido 
 #ctrl+Z utility
@@ -302,6 +303,7 @@ class cvEditDialog(QtWidgets.QDialog):
 
 class CustomPolyLineROI(pg.PolyLineROI):
     wasModified=QtCore.pyqtSignal()
+    modified=QtCore.pyqtSignal(object)
 
     def __init__(self, *args, **kwds):
         self.wasInitialized=False
@@ -316,12 +318,15 @@ class CustomPolyLineROI(pg.PolyLineROI):
 
 
     def mouseClickEvent(self, ev):
+
         if ev.button() == QtCore.Qt.RightButton and self.isMoving:
+            self.modified.emit(self)
             ev.accept()
             self.cancelMove()
 
         self.wasModified.emit()
         ev.accept()
+        self.modified.emit(self)
         self.sigClicked.emit(self, ev)
 
     def setPoints(self, points, closed=None):
@@ -358,13 +363,14 @@ class CustomPolyLineROI(pg.PolyLineROI):
                 except:
                     pass
 
-            QgsMessageLog.logMessage("Atualiando Vertices", "Topografia", level=0)
+
             self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
             start = -1 if self.closed else 0
 
             for i in range(start, len(self.handles)-1):
                 j=i+1
-                self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))       
+                self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+
             self.wasInitialized=True
 
     def addHandle(self, info, index=None):
@@ -462,7 +468,7 @@ class Ui_Perfil(QtWidgets.QDialog):
     
     save = QtCore.pyqtSignal()
 
-    def __init__(self, ref_estaca, tipo, classeProjeto, greide, cvList):
+    def __init__(self, ref_estaca, tipo, classeProjeto, greide, cvList, wintitle="Perfil Longitudinal"):
         super(Ui_Perfil, self).__init__(None)
 
         self.ref_estaca = ref_estaca
@@ -473,7 +479,7 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.greide=greide
         self.cvList=cvList
         self.vb=CustomViewBox() 
-        self.perfilPlot = pg.PlotWidget(viewBox=self.vb,  enableMenu=False, title="Perfil Longitudinal")
+        self.perfilPlot = pg.PlotWidget(viewBox=self.vb,  enableMenu=False, title=wintitle)
         self.perfilPlot.curves=[]
         self.saved=False 
         self.setupUi(self)
@@ -484,8 +490,7 @@ class Ui_Perfil(QtWidgets.QDialog):
 
 
     def perfil_grafico(self):
-        
-        
+
         pontos = []
         k = 0
         while True:
@@ -738,15 +743,54 @@ class Ui_Perfil(QtWidgets.QDialog):
 
 
 class Ui_sessaoTipo(Ui_Perfil):
-    def __init__(self, iface):
-        super(Ui_sessaoTipo, self).__init__(iface, 0, 0, [[0,0],[5,0],[5,2], [12,2], [12,0], [17,0]], [0])
+
+    save = QtCore.pyqtSignal()
+
+    def __init__(self, iface, terreno, hor, ver=False, st=False, estacanum=0):
+
+        self.progressiva=[]
+        self.terreno=[]
+
+        if not st:
+            msgLog("Creating new terrain")
+            st=[]
+            self.terreno=terreno
+            for item in hor:
+                self.progressiva.append(float(item[2]))
+                defaultST=[[-9.8,-5.0],[-8.3,-5.0],[-7.3,0], [-7.0,0.006], [0,0.14], [7,0], [7.08,-0.1],[7.12,-0.1], [7.2,0], [7.3,0], [8.3,5], [9.8,5]]
+                newST=[]
+                for pt in defaultST:
+                   newST.append([pt[0],pt[1]+float(item[5])])
+                st.append(newST)
+
+            self.st=st
+        else:
+            msgLog("Using existing terrain")
+            self.terreno=terreno
+            self.progressiva=ver
+            self.st=st
+
+        self.current=estacanum
+
+
+        super(Ui_sessaoTipo, self).__init__(iface, 0, 0, st[self.current], [], "Perfil Transversal")
+
+        self.setFixedSize(1000, 600)
+        self.roi.sigRegionChangeFinished.connect(self.updateData)
+
+
+    def createLabels(self):
+
+        self.banquetaLbC=pg.TextItem(text="Banqueta em corte", color=(200,200,200), anchor=(.5,0))
+        self.taludeLbC=pg.TextItem(text="Talude de corte", anchor=(.5,0))
+        self.pistaLb=pg.TextItem(text="Pista", anchor=(.5,0))
+        self.banquetaLbA=pg.TextItem(text="Banqueta em aterro", color=(200,200,200), anchor=(.5,0))
+        self.taludeLbA=pg.TextItem(text="Talude de aterro", anchor=(.5,0))
 
     def perfil_grafico(self):
-
-
         self.perfilPlot.setWindowTitle('Sessao Tipo')
-
-        if self.greide:
+        self.createLabels()
+        if self.GREIDE:
             lastHandleIndex=len(self.greide)-1
             L=[]
             for pt in self.greide:
@@ -754,14 +798,79 @@ class Ui_sessaoTipo(Ui_Perfil):
                 cota=pt[1]
                 pos=(x,cota)
                 L.append(pos)
+
+
+
             self.roi = CustomPolyLineROI(L)
             self.roi.wasModified.connect(self.setAsNotSaved)
             self.roi.setAcceptedMouseButtons(QtCore.Qt.RightButton)
             self.perfilPlot.addItem(self.roi)
 
+
         self.lastGreide=self.getVertices()
         self.lastCurvas=self.getCurvas()
         self.roi.setPlotWidget(self.perfilPlot)
+
+        X=[]
+        Y=[]
+        for x, y in self.terreno[self.current]:
+            X.append(x)
+            Y.append(y)
+
+
+        self.perfilPlot.plot(X,Y)
+
+        self.updateLabels()
+
+    def updateLabels(self):
+
+
+        self.banquetaLbC.setPos(self.roi.getHandlePos(0).x(), self.roi.getHandlePos(0).y())
+        self.taludeLbC.setPos((self.roi.getHandlePos(2).x()+self.roi.getHandlePos(1).x())/2, (self.roi.getHandlePos(1).y()+self.roi.getHandlePos(2).y())/2)
+        middle=self.terreno[self.current][int(len(self.terreno[self.current])/2)][1]
+        self.pistaLb.setPos(0, middle)
+        self.banquetaLbA.setPos(self.roi.getHandlePos(len(self.roi.handles)-1).x(), self.roi.getHandlePos(len(self.roi.handles)-1).y())
+        self.taludeLbA.setPos((self.roi.getHandlePos(len(self.roi.handles)-3).x()+self.roi.getHandlePos(len(self.roi.handles)-2).x())/2, (self.roi.getHandlePos(len(self.roi.handles)-3).y()+self.roi.getHandlePos(len(self.roi.handles)-2).y())/2)
+
+        self.perfilPlot.removeItem(self.banquetaLbA)
+        self.perfilPlot.removeItem(self.taludeLbA)
+        self.perfilPlot.removeItem(self.banquetaLbC)
+        self.perfilPlot.removeItem(self.taludeLbC)
+        self.perfilPlot.removeItem(self.pistaLb)
+
+
+        self.perfilPlot.addItem(self.banquetaLbA)
+        self.perfilPlot.addItem(self.taludeLbA)
+        self.perfilPlot.addItem(self.banquetaLbC)
+        self.perfilPlot.addItem(self.taludeLbC)
+        self.perfilPlot.addItem(self.pistaLb)
+
+
+        self.perfilPlot.scale(1,1)
+
+    def updateData(self):
+        self.updateLabels()
+        newST=[]
+
+
+
+    def getMatrixVertices(self):
+
+        r=[]
+        r.append([])
+        r.append([])
+
+        for i,_ in enumerate(self.progressiva):
+            r[1].append(self.terreno[i])
+            r[0].append(self.st[i])
+
+        return r
+
+    def getTerrenoVertices(self):
+        return self.terreno
+
+    def getxList(self):
+        return self.progressiva
 
 
     def setAsNotSaved(self):

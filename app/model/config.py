@@ -133,12 +133,32 @@ class Config(object):
                     "TABLEESTACA_id INTEGER,"
                     "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
                     ")")
+
         con.execute("CREATE TABLE if not exists TRANSVERSAL"
                     "(id INTEGER primary key AUTOINCREMENT,"
-                    "CURVA_id INTEGER,"
-                    "L DOUBLE,"
+                    "x DOUBLE,"
                     "TABLEESTACA_id INTEGER,"
                     "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
+                    ")")
+
+        con.execute("CREATE TABLE if not exists SESSAO_TIPO"
+                    "(id INTEGER primary key AUTOINCREMENT,"
+                    "y DOUBLE,"
+                    "cota DOUBLE,"
+                    "TRANSVERSAL_id INTEGER,"
+                    "TABLEESTACA_id INTEGER,"
+                    "FOREIGN KEY(TRANSVERSAL_id) REFERENCES TRANSVERSAL(id),"
+                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"                 
+                    ")")
+
+        con.execute("CREATE TABLE if not exists RELEVO_SESSAO"
+                    "(id INTEGER primary key AUTOINCREMENT,"
+                    "y DOUBLE,"
+                    "cota DOUBLE,"
+                    "TRANSVERSAL_id INTEGER,"
+                    "TABLEESTACA_id INTEGER,"
+                    "FOREIGN KEY(TRANSVERSAL_id) REFERENCES TRANSVERSAL(id),"
+                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"                 
                     ")")
 
 

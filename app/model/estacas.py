@@ -24,6 +24,7 @@ class Estacas(object):
         self.estaca = estaca
         self.layer = layer
         self.table = table
+        self.xList = []
         self.ultimo = ultimo
         self.id_filename = id_filename
 
@@ -34,6 +35,9 @@ class Estacas(object):
             for i in geom:
                 linhas.append(i)
         return linhas
+
+
+
 
     def new(self, distancia, estaca, layer, filename):
         self.__init__(distancia, estaca, layer, filename, list(), self.ultimo, self.id_filename)
@@ -177,7 +181,119 @@ class Estacas(object):
         con.close()
 
         compactZIP(Config.fileName)
-    
+
+    def saveTrans(self, id_filename):
+        extractZIP(Config.fileName)
+        con = sqlite3.connect("tmp/data/data.db")
+
+        con.execute("DELETE FROM TRANSVERSAL WHERE TABLEESTACA_id = ?", (id_filename,))
+        con.commit()
+
+        con.execute("DELETE FROM SESSAO_TIPO WHERE TABLEESTACA_id = ?", (id_filename,))
+        con.commit()
+
+        con.execute("DELETE FROM RELEVO_SESSAO WHERE TABLEESTACA_id = ?", (id_filename,))
+        con.commit()
+
+        cursor=con.cursor()
+
+        c=0
+        for linha in self.xList:
+            linha=[linha]
+            linha.append(int(id_filename))
+
+            lt = tuple(linha)
+
+            cursor.execute(
+                   "INSERT INTO TRANSVERSAL (x,TABLEESTACA_id)values(?,?)",
+                   lt)
+
+            transId=int(cursor.lastrowid)
+
+            for rev in list(self.table[1][c]):
+                rev=list(rev)
+                rev.append(transId)
+                rev.append(int(id_filename))
+                lt=tuple(rev)
+                cursor.execute(
+                   "INSERT INTO RELEVO_SESSAO (y, cota,TRANSVERSAL_id,TABLEESTACA_id)values(?,?,?,?)",
+                   lt)
+
+            for rev in list(self.table[0][c]):
+               rev=list(rev)
+               rev.append(transId)
+               rev.append(int(id_filename))
+               lt=tuple(rev)
+               cursor.execute(
+                  "INSERT INTO SESSAO_TIPO (y, cota,TRANSVERSAL_id,TABLEESTACA_id)values(?,?,?,?)",
+                  lt)
+            c+=1
+
+        con.isolation_level = None
+        con.execute("VACUUM")
+        con.isolation_level = ''
+
+        con.commit()
+
+
+        con.close()
+
+        compactZIP(Config.fileName)
+
+    def cleanTrans(self, idEstacaTable):
+        extractZIP(Config.fileName)
+        con = sqlite3.connect("tmp/data/data.db")
+
+        con.execute("DELETE FROM TRANSVERSAL WHERE TABLEESTACA_id = ?", (idEstacaTable,))
+        con.commit()
+
+        con.execute("DELETE FROM SESSAO_TIPO WHERE TABLEESTACA_id = ?", (idEstacaTable,))
+        con.commit()
+
+        con.execute("DELETE FROM RELEVO_SESSAO WHERE TABLEESTACA_id = ?", (idEstacaTable,))
+        con.commit()
+        con.isolation_level = None
+        con.execute("VACUUM")
+        con.isolation_level = ''
+
+        con.commit()
+
+
+        con.close()
+
+        compactZIP(Config.fileName)
+
+
+
+
+    def getTrans(self, idEstacaTable):
+         try:
+            extractZIP(Config.fileName)
+            con = sqlite3.connect("tmp/data/data.db")
+
+            est = con.execute("SELECT id, x FROM TRANSVERSAL WHERE TABLEESTACA_id = ?",(idEstacaTable,)).fetchall()
+
+            table=[]
+            table.append([])
+            table.append([])
+            c=0
+            xList=[]
+
+            for e in est:
+                table[0].append(con.execute("SELECT y, cota FROM SESSAO_TIPO WHERE TRANSVERSAL_id = ?", (e[0],)).fetchall())
+                table[1].append(con.execute("SELECT y, cota FROM RELEVO_SESSAO WHERE TRANSVERSAL_id = ?", (e[0],)).fetchall())
+                xList.append(e[1])
+                c+=1
+
+            con.close()
+            compactZIP(Config.fileName)
+
+            return xList, table
+
+         except:
+            return False, False
+
+
     def getGreide(self, idEstacaTable):
         try:
             extractZIP(Config.fileName)
@@ -369,3 +485,5 @@ class Estacas(object):
         estaca.extend([txtId, 'vf', lg, ultimo.y(), ultimo.x(), ultimo.x(), az])
         estacas.append(estaca)
         return estacas
+
+

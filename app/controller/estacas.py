@@ -9,20 +9,26 @@ try:
 except:
     from ...PIL import Image
 
-from ..controller.perfil import Ui_Perfil, cv as CV
+from ..controller.perfil import Ui_Perfil, cv as CV, Ui_sessaoTipo
 from ..model.estacas import Estacas as EstacasModel
 from ..model.knn import KNN
 from ..model.utils import *
-from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv
+from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv, EstacasIntersec
 from ..view.curvas import Curvas as CurvasView
 
 
 class Estacas(object):
     def __init__(self, iface):
+
         self.iface = iface
+
+        self.estacasVerticalList=[]
+        self.estacasHorizontalList=[]
+
         self.model = EstacasModel()
         self.preview = EstacasUI(iface)
         self.view = EstacasView(iface)
+        self.viewCv = EstacasCv(iface)
 
         self.events()
         self.elemento = -1
@@ -31,7 +37,7 @@ class Estacas(object):
         self.points = []
 
         self.nextView=self.view 
-        self.viewCv = EstacasCv(iface)
+
 
 
     def mudancaCelula(self,item):
@@ -80,6 +86,61 @@ class Estacas(object):
         self.view.tableWidget.itemDoubleClicked.connect(self.linkGoogle)
         self.view.tableWidget.itemClicked.connect(self.mudancaCelula)
 
+        self.viewCv.btnGen.clicked.connect(self.generateIntersec)
+        self.viewCv.btnTrans.clicked.connect(self.generateTrans)
+        self.viewCv.btnClean.clicked.connect(self.cleanTrans)
+
+
+    def cleanTrans(self):
+        self.model.cleanTrans(idEstacaTable=self.model.id_filename)
+
+    def generateIntersec(self):
+
+        viewIntersec=EstacasIntersec
+
+
+        self.openEstaca()
+        self.openCv()
+
+        table=[]
+
+        QgsMessageLog.logMessage("Iniciando comparação", "Topografia", level=0)
+
+        l=len(self.estacasVerticalList)
+        if len(self.estacasHorizontalList)>l:
+            l=len(self.estacasHorizontalList)
+
+        horizontal=self.estacasHorizontalList
+        vertical=self.estacasVerticalList
+
+        for i in range(0,l):
+            hor=horizontal[i]
+            vert=vertical[i]
+            res=()
+
+            if hor[2]<vert[2]:
+                res = (hor[0],hor[1],hor[2],vert[3],hor[5],hor[3],hor[4],hor[6])
+
+            elif hor[2]==vert[2]:
+                if(len(vert[1])>0):
+                    res=(hor[0],hor[1]+" & "+vert[1],hor[2],vert[3],hor[5],hor[3],hor[4],hor[6])
+                else:
+                    res=(hor[0],hor[1],hor[2],vert[3],hor[5],hor[3],hor[4],hor[6])
+            else:
+                res = (hor[0],hor[1],hor[2],vert[3],hor[5],hor[3],hor[4],hor[6])
+
+# 0u"Estaca" 1,u"Descrição",2u"Progressiva",3u"Norte",4u"Este",5u"Cota",6u"Azimute"))
+# 0u"Estaca" 1u"Descrição",2u"Progressiva"3,u"Cota"))
+# 0u"Estaca",1u"Descrição",2u"Progressiva",3u"Cota", 4u"Relevo",5Norte ,6Este, 7u"Azimute"))
+
+            table.append(res)
+
+        QgsMessageLog.logMessage("Fim comparação", "Topografia", level=0)
+
+        for e in table:
+            self.viewCv.fill_table(tuple(e), True)
+
+        self.nextView=self.viewCv
 
 
 
@@ -92,9 +153,12 @@ class Estacas(object):
             id_estaca, table = self.model.new(dist, estaca, lyr, filename)
             self.elemento = id_estaca
             self.model.id_filename = id_estaca
+
             for item in table:
                 self.view.fill_table(tuple(item))
+                self.estacasHorizontalList.append(tuple(item))
             self.model.save(id_estaca)
+
 
     def perfilView(self):
         tipo, class_project = self.model.tipo()
@@ -109,7 +173,30 @@ class Estacas(object):
         if self.model.id_filename == -1: return
         self.model.table = self.perfil.getVertices()
         self.model.cvData=self.perfil.getCurvas()
-        self.model.saveGreide(self.model.id_filename)       
+        self.model.saveGreide(self.model.id_filename)
+
+    def generateTrans(self):
+        prog, est = self.model.getTrans(self.model.id_filename)
+
+        if prog:
+            #Database Trans
+            self.trans=Ui_sessaoTipo(self.iface, est[1], self.estacasHorizontalList, est[0])
+        else:
+            #New trans
+            terreno = self.obterTerrenoTIFF()
+            self.trans=Ui_sessaoTipo(self.iface, terreno, self.estacasHorizontalList, self.estacasVerticalList)
+
+        self.trans.save.connect(self.saveTrans)
+        self.trans.show()
+        self.trans.exec_()
+
+
+    def saveTrans(self):
+        if self.model.id_filename == -1: return
+        self.model.table = self.trans.getMatrixVertices()
+        self.model.xList = self.trans.getxList()
+        self.model.saveTrans(self.model.id_filename)
+
 
     def recalcular(self):
         self.view.clear()
@@ -145,7 +232,132 @@ class Estacas(object):
         curvas = self.model.getCurvas(self.model.id_filename)
         curvaView = CurvasView(self.iface,self.model.id_filename,curvas,self.model.tipo())
         curvaView.exec_()
-        
+
+    def obterTerrenoTIFF(self):
+        filename = self.view.openTIFF()
+        if filename in ['', None]:  return
+
+        terreno=[]
+
+        try:
+            img = Image.open(filename)
+            self.img_origem = img.tag.get(33922)[3:5]
+            self.tamanho_pixel = img.tag.get(33550)[:2]
+            self.estacas = self.view.get_estacas()
+
+            estacas = self.estacas
+
+            sn=0
+            se=0
+
+            # fazer multithreading
+            for i, _ in enumerate(estacas):
+                v=[]
+                az=float(estacas[i][6])
+                perp=az+90
+                if perp>360:
+                    perp=perp-360
+
+                if i==0:
+                    sn=abs((float(estacas[i][3])-float(estacas[i+1][3]))/(20*math.sin(az*math.pi/180)))
+                    se=abs((float(estacas[i][4])-float(estacas[i+1][4]))/(20*math.cos(az*math.pi/180)))
+
+                elif az==float(estacas[i-1][6]):
+                    sn=abs((float(estacas[i][3])-float(estacas[i-1][3]))/(20*math.sin(az*math.pi/180)))
+                    se=abs((float(estacas[i][4])-float(estacas[i-1][4]))/(20*math.cos(az*math.pi/180)))
+
+                nsign=1
+                esign=1
+                if perp<90:
+                    nsign=-1
+                    esign=1
+                elif perp<180:
+                    nsign=-1
+                    esign=-1
+                elif perp<270:
+                    nsign=1
+                    esign=-1
+                elif perp<360:
+                    nsign=1
+                    esign=1
+
+
+                for y in range(-30, 31):
+
+                    yangleE=se*esign*y*abs(math.cos(az))
+                    yangleN=sn*nsign*y*abs(math.sin(az))
+
+                    try:
+                        pixel = (int(abs(float(float(estacas[i][4])+yangleE) - self.img_origem[0]) / self.tamanho_pixel[0]),
+                                 int(abs(float(float(estacas[i][3])+yangleN) - self.img_origem[1]) / self.tamanho_pixel[1]))
+
+                        v.append([y,float(img.getpixel(pixel))])
+
+                    except:
+                        self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
+                        return False
+                terreno.append(v)
+
+        except:
+            from osgeo import gdal
+            dataset = gdal.Open(filename, gdal.GA_ReadOnly)
+            for x in range(1, dataset.RasterCount + 1):
+                band = dataset.GetRasterBand(x)
+                img = band.ReadAsArray()
+            self.img_origem = dataset.GetGeoTransform()[0],dataset.GetGeoTransform()[3]
+            self.tamanho_pixel = abs(dataset.GetGeoTransform()[1]),abs(dataset.GetGeoTransform()[5])
+            self.estacas = self.view.get_estacas()
+            estacas = self.estacas
+            sn=0
+            se=0
+
+            # fazer multithreading
+            for i, _ in enumerate(estacas):
+                v=[]
+                az=float(estacas[i][6])
+                perp=az+90
+                if perp>360:
+                    perp=perp-360
+
+                if i==0:
+                    sn=abs((float(estacas[i][3])-float(estacas[i+1][3]))/(20*math.sin(az*math.pi/180)))
+                    se=abs((float(estacas[i][4])-float(estacas[i+1][4]))/(20*math.cos(az*math.pi/180)))
+
+                elif az==float(estacas[i-1][6]):
+                    sn=abs((float(estacas[i][3])-float(estacas[i-1][3]))/(20*math.sin(az*math.pi/180)))
+                    se=abs((float(estacas[i][4])-float(estacas[i-1][4]))/(20*math.cos(az*math.pi/180)))
+
+                nsign=1
+                esign=1
+                if perp<90:
+                    nsign=-1
+                    esign=1
+                elif perp<180:
+                    nsign=-1
+                    esign=-1
+                elif perp<270:
+                    nsign=1
+                    esign=-1
+                elif perp<360:
+                    nsign=1
+                    esign=1
+
+
+                for y in range(-30, 31):
+
+                    yangleE=se*esign*y*abs(math.cos(az))
+                    yangleN=sn*nsign*y*abs(math.sin(az))
+
+                    try:
+                        pixel = (int(abs(float(float(estacas[i][4])+yangleE) - self.img_origem[0]) / self.tamanho_pixel[0]),
+                                 int(abs(float(float(estacas[i][3])+yangleN) - self.img_origem[1]) / self.tamanho_pixel[1]))
+                        v.append([y,float(img[pixel])])
+                    except:
+                        self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
+                        return False
+                terreno.append(v)
+        return terreno
+
 
     def obterCotasTIFF(self):
         filename = self.view.openTIFF()
@@ -187,7 +399,6 @@ class Estacas(object):
         self.model.table = estacas
         self.model.save(self.model.id_filename)
         self.openEstaca()
-
 
 
     def obterCotasThread(self, estacas, inicio=0, fim=None):
@@ -414,6 +625,7 @@ class Estacas(object):
         estacas = self.model.loadFilename()
         for e in estacas:
             self.view.fill_table(tuple(e), True)
+            self.estacasHorizontalList.append(tuple(e))
         self.nextView=self.view 
 
     def openCv(self):
@@ -553,6 +765,7 @@ class Estacas(object):
         (estaca,descricao,progressiva,cota) = (str(est-1)+' + ' + str(dx),"V2",x,y)
         estacas.append((estaca,descricao,progressiva,cota))
 
+        self.estacasVerticalList=estacas
 
         for e in estacas:
             self.viewCv.fill_table(tuple(e), True)
@@ -590,10 +803,34 @@ class Estacas(object):
         self.click = False
         self.preview.show()
 
-        result = self.preview.exec_()
+        finalResult=False
+        result = True
 
-        if result:
-            self.preview.close()
-            self.nextView.show()
-            self.nextView.exec_()
+        lastFinalResult=True
+        lastResult=False
+
+        while finalResult or result:
+            result = self.preview.exec_()
+
+            if result:
+                self.preview.close()
+                self.nextView.show()
+                finalResult = self.nextView.exec_()
+
+            if lastResult == result:
+                lastResult = not result
+
+            elif lastFinalResult == finalResult:
+                lastFinalResult = not finalResult
+
+            else:
+                lastFinalResult=finalResult
+                lastResult=result
+
+
+
+
+
+
+
            

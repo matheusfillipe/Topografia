@@ -38,5 +38,12 @@ def classFactory(iface):  # pylint: disable=invalid-name
     :type iface: QgsInterface
     """
     #
+#    import sys
+#    import os
+#    path=os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
+#    path="~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Topografia/"
+#    sys.path.append(path)
+
+
     from .main import TopoGrafia
     return TopoGrafia(iface)

@@ -51,7 +51,6 @@ class TopoGrafia(object):
         :type iface: QgsInterface
         """
 
-
             # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
@@ -62,6 +61,15 @@ class TopoGrafia(object):
             self.plugin_dir,
             'i18n',
             'TopoGrafia_{}.qm'.format(locale))
+
+        #DEBUG CLIENT
+        try:
+            import sys
+            sys.path.append('/home/matheus/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/181.5087.37/debug-eggs/pycharm-debug.egg')
+            import pydevd
+            pydevd.settrace('localhost', port=5553, stdoutToServer=True, stderrToServer=True)
+        except:
+            pass
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -242,6 +250,8 @@ class TopoGrafia(object):
             parent=self.iface.mainWindow()
         )
 
+
+
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
@@ -260,5 +270,6 @@ class TopoGrafia(object):
         self.estacas.run()
 
     def run(self):
+
         pass
 

@@ -61,7 +61,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.cmpMontanhosoMin = self.montanhosoMin
         self.cmpMontanhosoMax = self.montanhosoMax
         self.comboUnits = self.comboUnits
-        self.sessaoTipoButton.clicked.connect(lambda: QgsMessageLog.logMessage("Sessao tipo", "Topografia", level=0))
+
 
     def changeCRS(self, crs):
         if crs == None:

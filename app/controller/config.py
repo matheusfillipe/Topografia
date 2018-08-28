@@ -106,7 +106,7 @@ class Config(object):
         self.changeCRS()
         txt = self.model.listCRSID()
         self.conf.update(self.model, txt)
-        self.conf.sessaoTipoButton.clicked.connect(self.runTrasversalDialog)
+
 
     def runTrasversalDialog(self):
         self.trasversalDialog=perfil.Ui_sessaoTipo(self.conf)

@@ -18,6 +18,7 @@ from qgis.gui import *
 import sys, os, http.client, json, tempfile, urllib.request, urllib.parse, urllib.error
 
 
+
 class Create_vlayer(object):
     '''creation of a virtual layer'''
     def __init__(self,nom,type):
@@ -184,3 +185,6 @@ def getElevation(crs,point):
         elevation=0.0
 
     return elevation
+
+def msgLog(msg):
+    QgsMessageLog.logMessage(msg, tag="Topografia", level=0)

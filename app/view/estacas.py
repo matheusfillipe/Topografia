@@ -348,6 +348,94 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         self.tableEstacas.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableEstacas.setHorizontalHeaderLabels((u"ID",u"Arquivo",u"Data criação"))
 
+class EstacasIntersec(QtWidgets.QDialog):
+
+    def __init__(self,iface):
+        super(EstacasIntersec, self).__init__(None)
+        self.iface = iface
+        self.setupUi(self)
+
+    def clear(self):
+        self.tableWidget.setRowCount(0)
+        self.tableWidget.clearContents()
+
+    def saveEstacasCSV(self):
+        filename = QtWidgets.QFileDialog.getSaveFileName()
+        return filename
+
+    def fill_table(self, xxx_todo_changeme,f=False):
+        (estaca,descricao,progressiva,cota) = xxx_todo_changeme
+        self.tableWidget.insertRow(self.tableWidget.rowCount())
+        k = self.tableWidget.rowCount() - 1
+        self.tableWidget.setItem(k, 0, QtWidgets.QTableWidgetItem(u"%s" % estaca))
+        self.tableWidget.setItem(k, 1, QtWidgets.QTableWidgetItem(u"%s" % descricao))
+        self.tableWidget.setItem(k, 2, QtWidgets.QTableWidgetItem(u"%s" % progressiva))
+        self.tableWidget.setItem(k, 3, QtWidgets.QTableWidgetItem(u"%s" % cota))
+        '''if not f:
+            naz = decdeg2dms(azimute)
+            str_az = "%s* %s\' %s\'\'" % (int(naz[0]), int(naz[1]), naz[2])
+            self.tableWidget.setItem(k, 6, QtWidgets.QTableWidgetItem(str_az))
+        else:'''
+
+
+    def get_estacas(self):
+        estacas = []
+        for i in range(self.tableWidget.rowCount()):
+            estaca = []
+            for j in range(self.tableWidget.columnCount()):
+                estaca.append(self.tableWidget.item(i,j).text())
+            estacas.append(estaca)
+        return estacas
+
+    def setupUi(self, Form):
+        Form.setObjectName(_fromUtf8(u"Traçado Horizontal"))
+        Form.resize(919, 510)
+        self.tableWidget = QtWidgets.QTableWidget(Form)
+        self.tableWidget.setGeometry(QtCore.QRect(0, 0, 750, 511))
+        self.tableWidget.setObjectName(_fromUtf8("tableWidget"))
+        self.modelSource = self.tableWidget.model()
+
+
+        self.tableWidget.setColumnCount(8)
+        self.tableWidget.setRowCount(0)
+        self.tableWidget.setHorizontalHeaderLabels((u"Estaca",u"Descrição",u"Progressiva",u"Cota", u"Relevo", u"Norte",u"Este",u"Azimute"))
+
+
+
+        self.btnGen = QtWidgets.QPushButton(Form)
+        self.btnGen.setText("Tabela de Verticais")
+        self.btnGen.setGeometry(QtCore.QRect(755, 16, 180, 45))
+        self.btnGen.setObjectName(_fromUtf8("btnGen"))
+        #self.btnGen.clicked.connect(self.generate)
+
+        self.btnTrans = QtWidgets.QPushButton(Form)
+        self.btnTrans.setText("Definir Sessão Tipo")
+        self.btnTrans.setGeometry(QtCore.QRect(760, 50+16, 160, 30))
+        self.btnTrans.setObjectName(_fromUtf8("btnTrans"))
+        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+
+        self.btnPrint = QtWidgets.QPushButton(Form)
+        self.btnPrint.setText("Imprimir")
+        self.btnPrint.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
+        self.btnPrint.setObjectName(_fromUtf8("btnPrint"))
+        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+
+        self.btnClean = QtWidgets.QPushButton(Form)
+        self.btnClean.setText("Apagar Dados")
+        self.btnClean.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
+        self.btnClean.setObjectName(_fromUtf8("btnClean"))
+
+
+
+
+        self.retranslateUi(Form)
+        QtCore.QMetaObject.connectSlotsByName(Form)
+
+
+
+    def retranslateUi(self, Form):
+        Form.setWindowTitle(_translate("Traçado Horizontal", "Traçado Vertial", None))
+
 
 class EstacasCv(QtWidgets.QDialog):
 
@@ -388,119 +476,48 @@ class EstacasCv(QtWidgets.QDialog):
             estacas.append(estaca)
         return estacas
 
-    def plotar(self):
-        vl = QgsVectorLayer("Point", "temporary_points", "memory")
-        pr = vl.dataProvider()
 
-        # Enter editing mode
-        vl.startEditing()
-
-        # add fields
-        pr.addAttributes([QgsField("estaca", QVariant.String), QgsField("descrição", QVariant.String),
-                          QgsField("north", QVariant.String), QgsField("este", QVariant.String),
-                          QgsField("cota", QVariant.String), QgsField("azimite", QVariant.String)])
-        fets = []
-
-        for r in range(self.tableWidget.rowCount()):
-            ident = self.tableWidget.item(r, 0).text()
-            if ident in ["", None]: break
-            fet = QgsFeature(vl.pendingFields())
-            n = 0.0
-            e = 0.0
-            try:
-                es = self.tableWidget.item(r, 0).text()
-                d = self.tableWidget.item(r, 1).text()
-                n = float(self.tableWidget.item(r, 3).text())
-                e = float(self.tableWidget.item(r, 4).text())
-                c = float(self.tableWidget.item(r, 5).text())
-                a = self.tableWidget.item(r, 6).text()
-            except:
-                break
-            fet.setGeometry(QgsGeometry.fromPoint(QgsPoint(e, n)))
-            fet.setAttributes([es, d, n, e, c, a])
-            fets.append(fet)
-        pr.addFeatures(fets)
-        vl.commitChanges()
-        QgsProject .instance().addMapLayer(vl)
-
-    def openTIFF(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Image files (*.tiff *.tif)")
-        return filename[0]
-        
-    def openDXF(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Autocad files (*.dxf)")
-        return filename
-        
     def setupUi(self, Form):
         Form.setObjectName(_fromUtf8(u"Traçado Horizontal"))
         Form.resize(919, 510)
         self.tableWidget = QtWidgets.QTableWidget(Form)
-        self.tableWidget.setGeometry(QtCore.QRect(0, 0, 761, 511))
+        self.tableWidget.setGeometry(QtCore.QRect(0, 0, 750, 511))
         self.tableWidget.setObjectName(_fromUtf8("tableWidget"))
         self.modelSource = self.tableWidget.model()
         self.tableWidget.setColumnCount(4)
         self.tableWidget.setRowCount(0)
         self.tableWidget.setHorizontalHeaderLabels((u"Estaca",u"Descrição",u"Progressiva",u"Cota"))
 
-        self.btnRead = QtWidgets.QPushButton(Form)
-        self.btnRead.setText("Abrir Arquivo")
-        self.btnRead.setGeometry(QtCore.QRect(769, 16, 143, 30))
-        self.btnRead.setObjectName(_fromUtf8("btnRead"))
-        #self.btnRead.clicked.connect(self.carrega)
+        self.btnGen = QtWidgets.QPushButton(Form)
+        self.btnGen.setText("Tabela de intersecção")
+        self.btnGen.setGeometry(QtCore.QRect(755, 16, 180, 45))
+        self.btnGen.setObjectName(_fromUtf8("btnGen"))
+        #self.btnGen.clicked.connect(self.generate)
 
-        self.btnEstacas = QtWidgets.QPushButton(Form)
-        self.btnEstacas.setText("Recalcular Estacas")
-        self.btnEstacas.setGeometry(QtCore.QRect(769, 50, 143, 30))
-        self.btnEstacas.setObjectName(_fromUtf8("btnEstacas"))
+        self.btnTrans = QtWidgets.QPushButton(Form)
+        self.btnTrans.setText("Definir Sessão Tipo")
+        self.btnTrans.setGeometry(QtCore.QRect(760, 50+16, 160, 30))
+        self.btnTrans.setObjectName(_fromUtf8("btnTrans"))
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
 
-        self.btnLayer = QtWidgets.QPushButton(Form)
-        self.btnLayer.setText("Plotar")
-        self.btnLayer.setGeometry(QtCore.QRect(769, 84, 143, 30))
-        self.btnLayer.setObjectName(_fromUtf8("btnLayer"))
-        #self.btnLayer.clicked.connect(self.plot)
+        self.btnPrint = QtWidgets.QPushButton(Form)
+        self.btnPrint.setText("Imprimir")
+        self.btnPrint.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
+        self.btnPrint.setObjectName(_fromUtf8("btnPrint"))
+        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
 
-        self.btnPerfil = QtWidgets.QPushButton(Form)
-        self.btnPerfil.setText("Perfil do trecho")
-        self.btnPerfil.setGeometry(QtCore.QRect(769, 118, 143, 30))
-        self.btnPerfil.setObjectName(_fromUtf8("btnPerfil"))
-        #self.btnPerfil.clicked.connect(self.perfil)
-
-        self.btnSaveCSV = QtWidgets.QPushButton(Form)
-        self.btnSaveCSV.setText("Salvar em CSV")
-        self.btnSaveCSV.setGeometry(QtCore.QRect(769, 152, 143, 30))
-        self.btnSaveCSV.setObjectName(_fromUtf8("btnSave"))
-        #self.btnSave.clicked.connect(self.save)
-        self.btnSave = QtWidgets.QPushButton(Form)
-        self.btnSave.setText("Salvar")
-        self.btnSave.setGeometry(QtCore.QRect(769, 186, 143, 30))
-        self.btnSave.setObjectName(_fromUtf8("btnSave"))
-
-        self.btnCurva = QtWidgets.QPushButton(Form)
-        self.btnCurva.setText("Curvas")
-        self.btnCurva.setGeometry(QtCore.QRect(769, 220, 143, 30))
-        self.btnCurva.setObjectName(_fromUtf8("btnCurva"))
-        #self.btnCurva.clicked.connect(self.perfil)
-
-     
-        self.btnCotaTIFF = QtWidgets.QPushButton(Form)
-        self.btnCotaTIFF.setText("Obter Cotas\nvia GeoTIFF")
-        self.btnCotaTIFF.setGeometry(QtCore.QRect(769, 300, 143, 60))
-        self.btnCotaTIFF.setObjectName(_fromUtf8("btnCotaTIFF"))
-
-        self.btnCotaPC = QtWidgets.QPushButton(Form)
-        self.btnCotaPC.setText("Obter Cotas\nvia Pontos cotados\nDXF")
-        self.btnCotaPC.setGeometry(QtCore.QRect(769, 375, 143,60))
-        self.btnCotaPC.setObjectName(_fromUtf8("btnCotaPC"))
+        self.btnClean = QtWidgets.QPushButton(Form)
+        self.btnClean.setText("Apagar Dados")
+        self.btnClean.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
+        self.btnClean.setObjectName(_fromUtf8("btnClean"))
 
 
-        self.btnCota = QtWidgets.QPushButton(Form)
-        self.btnCota.setText("Obter Cotas\nvia Google")
-        self.btnCota.setGeometry(QtCore.QRect(769, 450, 143, 60))
-        self.btnCota.setObjectName(_fromUtf8("btnCota"))
+
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
+
+        self.Form=Form
 
     def retranslateUi(self, Form):
         Form.setWindowTitle(_translate("Traçado Horizontal", "Traçado Vertial", None))

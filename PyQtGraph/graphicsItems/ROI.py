@@ -1281,9 +1281,9 @@ class Handle(UIGraphicsItem):
                 
     def buildMenu(self):
         menu = QtGui.QMenu()
-        menu.setTitle("Cv")
-        self.removeAction = menu.addAction("Remover a Curva vertical", self.removeClicked) 
-        self.cvEdit = menu.addAction("Editar Curva", self.edit) 
+        menu.setTitle("Vértice")
+        self.removeAction = menu.addAction("Remover o vértice", self.removeClicked)
+        self.cvEdit = menu.addAction("Editar o vértice", self.edit)
         return menu
    
    

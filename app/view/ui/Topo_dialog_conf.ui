@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>900</width>
-    <height>499</height>
+    <height>491</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -314,8 +314,8 @@
   <widget class="QGroupBox" name="groupBox_2">
    <property name="geometry">
     <rect>
-     <x>420</x>
-     <y>340</y>
+     <x>430</x>
+     <y>320</y>
      <width>471</width>
      <height>61</height>
     </rect>
@@ -468,22 +468,6 @@
      <string>Milimetros</string>
     </property>
    </item>
-  </widget>
-  <widget class="QPushButton" name="sessaoTipoButton">
-   <property name="geometry">
-    <rect>
-     <x>770</x>
-     <y>280</y>
-     <width>105</width>
-     <height>39</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Definir Sessão Tipo Transversal</string>
-   </property>
-   <property name="text">
-    <string>Sessão Tipo</string>
-   </property>
   </widget>
   <action name="actionOpenFolderAction">
    <property name="text">

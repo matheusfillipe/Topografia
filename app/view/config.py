@@ -17,6 +17,7 @@ from qgis._core import QgsVectorFileWriter
 from qgis._core import QgsVectorLayer
 from qgis._core import QgsMapLayer
 from qgis._core import QgsMessageLog
+from qgis._core import QgsProject
 
 
 
@@ -105,15 +106,20 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.comboUnits.setCurrentIndex(model.ordem_units.index(model.UNITS))
 
     def carregamapa(self, tmap=3):
-        openLyrs = qgis.utils.plugins['openlayers_plugin']
+        #openLyrs = qgis.utils.plugins['openlayers_plugin']
         # g = geosearchdialog.GeoSearchDialog(self.iface)
         '''g.SearchRoute([])
         d = GoogleMapsApi.directions.Directions()
         origin = "Boston, MA"
         dest = "2517 Main Rd, Dedham, ME 04429"
         route = d.GetDirections(origin, dest, mode="driving", waypoints=None, avoid=None, units="imperial")'''
-        layerType = openLyrs._olLayerTypeRegistry.getById(tmap)
-        openLyrs.addLayer(layerType)
+
+       # my_crs = QgsCoordinateReferenceSystem(3857)
+       # QgsProject.instance().setCrs(my_crs)
+
+        #layerType = openLyrs._olLayerTypeRegistry.getById(tmap)
+        #openLyrs.addLayer(layerType)
+
         # QgsCoordinateReferenceSystem.createFromProj4('+proj=tmerc', u'lat_0=0', u'lon_0=126', u'k=1', u'x_0=42500000', u'y_0=0', u'ellps=krass', u'towgs84=24.47,-130.89,-81.56,-0,-0,0.13,-0.22', u'units=m', u'no_defs')
         # mycrs = QgsCoordinateReferenceSystem(31983)
         # self.iface.mapCanvas().mapRenderer().setCrs( QgsCoordinateReferenceSystem(31983, QgsCoordinateReferenceSystem.EpsgCrsId) )
@@ -129,6 +135,10 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
 
         layer = QgsRasterLayer(path, baseName)
         QgsMapLayerRegistry.instance().addMapLayer(layer)'''
+
+
+
+
 
     def carregacarta(self, model):
         # create Qt widget

@@ -32,15 +32,15 @@ class PointTool(QgsMapTool):
             if not linea:
                 rl.setColor ( Qt.red )
                 poin1 = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
-                rl.addPoint(point0)
-                rl.addPoint(point1)
+                rl.appendPoint(point0)
+                rl.appendPoint(point1)
                 linea=True
             else:
                 if linea:
                     point1 = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
                     rl.reset(QGis.Line)
-                    rl.addPoint(point0)
-                    rl.addPoint(point1)
+                    rl.appendPoint(point0)
+                    rl.appendPoint(point1)
 
 
 

@@ -11,7 +11,7 @@ import numpy as np
 
 from ..model.utils import *
 from ... import PyQtGraph as pg
-from ..view.estacas import cvEdit, closeDialog, rampaDialog, QgsMessageLog
+from ..view.estacas import cvEdit, closeDialog, rampaDialog, QgsMessageLog, ApplyTransDialog, SetCtAtiDialog
 import functools
 from copy import deepcopy
 
@@ -27,11 +27,6 @@ from copy import deepcopy
 #Cálculo de aterro imbutido 
 #ctrl+Z utility
 ##############################################################################################################
-
-
-
-
-
 
 
 
@@ -295,11 +290,6 @@ class cvEditDialog(QtWidgets.QDialog):
         self.isBeingModified=False
 
 
-   
-
-
-
-
 
 class CustomPolyLineROI(pg.PolyLineROI):
     wasModified=QtCore.pyqtSignal()
@@ -315,6 +305,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
     def HandleEditDialog(self, i):
         dialog=cvEditDialog(self, i)
         dialog.exec_()
+        self.sigRegionChangeFinished.emit(self)
 
 
     def mouseClickEvent(self, ev):
@@ -400,6 +391,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
             d = rampaDialog(self, segment, pos)
             d.exec_()
             self.wasModified.emit()
+            self.sigRegionChangeFinished.emit(self)
 
         elif ev.button() == QtCore.Qt.LeftButton:
             h1 = segment.handles[0]['item']
@@ -409,14 +401,31 @@ class CustomPolyLineROI(pg.PolyLineROI):
             self.addSegment(h3, h2, index=i+1)
             segment.replaceHandle(h2, h3)
             self.wasModified.emit()
+            self.sigRegionChangeFinished.emit(self)
+
 
     def getHandlePos(self, i):
-       
         return self.handles[i]['item'].pos()
+
+
+    def getVerticesList(self):
+        l=[]
+        for i in range(0,len(self.handles)):
+            p=self.getHandlePos(i)
+            l.append([p.x(),p.y()])
+
+        return l
+
        
+    def getYfromX(self,x):
+        for i in range(0,self.countHandles()-2):
+            h=self.handles[i]["item"].pos()
+            nh=self.handles[1+i]["item"].pos()
+            if h.x() <= x and nh.x() >= x:
+                return (nh.y()-h.y())/(nh.x()-h.x())*(x-h.x())+h.y()
+        raise ValueError
 
 
-                
 
     def getSegIncl(self, i, j):
         try:
@@ -470,7 +479,12 @@ class Ui_Perfil(QtWidgets.QDialog):
 
     def __init__(self, ref_estaca, tipo, classeProjeto, greide, cvList, wintitle="Perfil Longitudinal"):
         super(Ui_Perfil, self).__init__(None)
+        self.initVars(ref_estaca, tipo, classeProjeto, greide, cvList, wintitle)
+        self.setupUi(self)
 
+    def initVars(self, ref_estaca, tipo, classeProjeto, greide, cvList, wintitle):
+
+        self.everPloted=False
         self.ref_estaca = ref_estaca
         self.tipo = tipo
         self.classeProjeto = classeProjeto
@@ -478,11 +492,12 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.estaca2txt = -1
         self.greide=greide
         self.cvList=cvList
-        self.vb=CustomViewBox() 
+        self.vb=CustomViewBox()
         self.perfilPlot = pg.PlotWidget(viewBox=self.vb,  enableMenu=False, title=wintitle)
         self.perfilPlot.curves=[]
-        self.saved=False 
-        self.setupUi(self)
+        self.saved=False
+
+
 
     def __setAsNotSaved(self):
         self.lblTipo.setText("Modificado")
@@ -742,28 +757,46 @@ class Ui_Perfil(QtWidgets.QDialog):
 
 
 
+
+
+
+
+from .Geometria import Figure, Prismoide
+
+
 class Ui_sessaoTipo(Ui_Perfil):
 
     save = QtCore.pyqtSignal()
+    plotar = QtCore.pyqtSignal(int)
 
-    def __init__(self, iface, terreno, hor, ver=False, st=False, estacanum=0):
+    def __init__(self, iface, terreno, hor, ver=[], st=False, prism=None, estacanum=0, greide=[]):
 
         self.progressiva=[]
         self.terreno=[]
+        self.iface=iface
+        self.editMode=True
+
 
         if not st:
             msgLog("Creating new terrain")
             st=[]
             self.terreno=terreno
+            ptList=[]
+            for item in greide:
+                ptList.append(Figure.point(item[0],item[1]))
+            greide=Figure.curve()
+            greide.setPoints(ptList)
+
             for item in hor:
                 self.progressiva.append(float(item[2]))
-                defaultST=[[-9.8,-5.0],[-8.3,-5.0],[-7.3,0], [-7.0,0.006], [0,0.14], [7,0], [7.08,-0.1],[7.12,-0.1], [7.2,0], [7.3,0], [8.3,5], [9.8,5]]
+                defaultST=[[-9.8,-5.0],[-8.3,-5.0],[-7.3,0], [0,0.14], [7,0], [7.08,-0.1],[7.12,-0.1], [7.2,0], [7.3,0], [8.3,5], [9.8,5]]
                 newST=[]
                 for pt in defaultST:
-                   newST.append([pt[0],pt[1]+float(item[5])])
+                   newST.append([pt[0],pt[1]+greide.getY(float(item[2]))])
                 st.append(newST)
 
             self.st=st
+
         else:
             msgLog("Using existing terrain")
             self.terreno=terreno
@@ -772,25 +805,41 @@ class Ui_sessaoTipo(Ui_Perfil):
 
         self.current=estacanum
 
-
         super(Ui_sessaoTipo, self).__init__(iface, 0, 0, st[self.current], [], "Perfil Transversal")
+
+        if prism is None:
+            try:
+                self.prismoide
+            except AttributeError:
+                self.prismoide = Prismoide.QPrismoid(self.terreno, self.st, self.progressiva)
+                self.createPrismoid(self.current)
+        else:
+            self.prismoide=Prismoide(prism=prism, cti=7)
 
         self.setFixedSize(1000, 600)
         self.roi.sigRegionChangeFinished.connect(self.updateData)
 
+        self.updateAreaLabels()
+
+
+    def createPrismoid(self, j):
+        self.prismoide.generate(j)
+        self.updateAreaLabels()
+
 
     def createLabels(self):
-
-        self.banquetaLbC=pg.TextItem(text="Banqueta em corte", color=(200,200,200), anchor=(.5,0))
-        self.taludeLbC=pg.TextItem(text="Talude de corte", anchor=(.5,0))
+        self.banquetaLbC=pg.TextItem(text="Banqueta em aterro", color=(200,200,200), anchor=(.5,0))
+        self.taludeLbC=pg.TextItem(text="Talude de aterro", anchor=(.5,0))
         self.pistaLb=pg.TextItem(text="Pista", anchor=(.5,0))
-        self.banquetaLbA=pg.TextItem(text="Banqueta em aterro", color=(200,200,200), anchor=(.5,0))
-        self.taludeLbA=pg.TextItem(text="Talude de aterro", anchor=(.5,0))
+        self.banquetaLbA=pg.TextItem(text="Banqueta em corte", color=(200,200,200), anchor=(.5,0))
+        self.taludeLbA=pg.TextItem(text="Talude de corte", anchor=(.5,0))
+
 
     def perfil_grafico(self):
         self.perfilPlot.setWindowTitle('Sessao Tipo')
         self.createLabels()
-        if self.GREIDE:
+
+        if self.greide:
             lastHandleIndex=len(self.greide)-1
             L=[]
             for pt in self.greide:
@@ -798,8 +847,6 @@ class Ui_sessaoTipo(Ui_Perfil):
                 cota=pt[1]
                 pos=(x,cota)
                 L.append(pos)
-
-
 
             self.roi = CustomPolyLineROI(L)
             self.roi.wasModified.connect(self.setAsNotSaved)
@@ -817,13 +864,12 @@ class Ui_sessaoTipo(Ui_Perfil):
             X.append(x)
             Y.append(y)
 
-
         self.perfilPlot.plot(X,Y)
 
         self.updateLabels()
 
-    def updateLabels(self):
 
+    def updateLabels(self):
 
         self.banquetaLbC.setPos(self.roi.getHandlePos(0).x(), self.roi.getHandlePos(0).y())
         self.taludeLbC.setPos((self.roi.getHandlePos(2).x()+self.roi.getHandlePos(1).x())/2, (self.roi.getHandlePos(1).y()+self.roi.getHandlePos(2).y())/2)
@@ -846,12 +892,18 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.perfilPlot.addItem(self.pistaLb)
 
 
-        self.perfilPlot.scale(1,1)
-
     def updateData(self):
         self.updateLabels()
-        newST=[]
+        if not self.editMode:
+            self.plotTransCurve()
 
+#        if self.editMode:
+        vt=self.getVertices()
+        self.st[self.current]=vt
+        self.prismoide.st=self.st
+        self.createPrismoid(self.current)
+
+        self.perfilPlot.scale(1,1)
 
 
     def getMatrixVertices(self):
@@ -878,5 +930,274 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.saved=False
 
 
+    def plotTrans(self):
+
+        items=["Plotar transversal atual", "Plotar todas transversais"]
+        item, ok = QtWidgets.QInputDialog.getItem(None, "Plotar transversais", u"Escolha uma opção para gerar as linhas:",
+                                              items, 0, False)
+
+        if ok:
+            if item == items[0]:
+                self.plotar.emit(self.current)
+            elif item == items[1]:
+                self.plotar.emit(-1)
+
+
+
     def calcularGreide(self):
         pass
+
+
+    def setupUi(self, PerfilTrecho):
+
+
+        PerfilTrecho.setObjectName(_fromUtf8("PerfilTrecho"))
+        PerfilTrecho.resize(680, 320)
+
+        self.perfil_grafico()
+
+        self.lblTipo = QtWidgets.QLabel(PerfilTrecho)
+        self.lblTipo.setGeometry(QtCore.QRect(220, 140, 181, 21))
+        self.lblTipo.setAlignment(QtCore.Qt.AlignCenter)
+        self.lblTipo.setObjectName(_fromUtf8("lblTipo"))
+
+        self.btnCalcular = QtWidgets.QPushButton(PerfilTrecho)
+        self.btnCalcular.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnCalcular.setObjectName(_fromUtf8("btnCalcular"))
+        self.btnCalcular.clicked.connect(self.plotTrans)
+
+        self.btnAutoRange=QtWidgets.QPushButton(PerfilTrecho)
+        self.btnAutoRange.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnAutoRange.setText("Zoom")
+        self.btnAutoRange.clicked.connect(lambda: self.vb.autoRange())
+
+
+        self.btnSave=QtWidgets.QPushButton(PerfilTrecho)
+        self.btnSave.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnSave.setText("Salvar")
+        self.btnSave.clicked.connect(self.salvarPerfil)
+
+        self.btnCancel=QtWidgets.QPushButton(PerfilTrecho)
+        self.btnCancel.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnCancel.setText("Fechar")
+        self.btnCancel.clicked.connect(self.close)
+
+
+        self.btnPrevious=QtWidgets.QPushButton(PerfilTrecho)
+        self.btnPrevious.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnPrevious.setText("Anterior")
+        self.btnPrevious.clicked.connect(self.previousEstaca)
+
+
+        self.btnNext=QtWidgets.QPushButton(PerfilTrecho)
+        self.btnNext.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnNext.setText("Próxima")
+        self.btnNext.clicked.connect(self.nextEstaca)
+
+        self.btnEditToggle=QtWidgets.QPushButton(PerfilTrecho)
+        self.btnEditToggle.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnEditToggle.setText("Visualizar")
+        self.btnEditToggle.clicked.connect(self.editToggle)
+
+
+        self.selectEstacaComboBox=QtWidgets.QComboBox(PerfilTrecho)
+        self.selectEstacaComboBox.addItems(list(map(str, self.progressiva)))
+        self.selectEstacaComboBox.currentIndexChanged.connect(self.changeEstaca)
+
+        self.applyBtn=QtWidgets.QPushButton(PerfilTrecho)
+        self.applyBtn.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.applyBtn.setText("Aplicar")
+        self.applyBtn.clicked.connect(self.applyTrans)
+
+        self.ctatiBtn=QtWidgets.QPushButton(PerfilTrecho)
+        self.ctatiBtn.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.ctatiBtn.setText("Pontos")
+        self.ctatiBtn.clicked.connect(self.setAtCti)
+
+        self.areaCtLb=QtWidgets.QLabel(PerfilTrecho)
+        self.areaAtLb=QtWidgets.QLabel(PerfilTrecho)
+        self.areaLb=QtWidgets.QLabel(PerfilTrecho)
+        self.progressivaLb=QtWidgets.QLabel(PerfilTrecho)
+        self.volumeTotal=QtWidgets.QLabel(PerfilTrecho)
+
+        self.btnNext.setDisabled(self.current >= len(self.progressiva)-1)
+        self.btnPrevious.setDisabled(self.current == 0)
+        QtCore.QMetaObject.connectSlotsByName(PerfilTrecho)
+
+        self.layAllOut()
+
+        PerfilTrecho.setWindowTitle(_translate("PerfilTrecho", "Perfil do trecho", None))
+        self.calcularGreide()
+        self.btnCalcular.setText("Plotar")
+        self.btnCalcular.setToolTip("Plotar Layers com as tranversais sobre o traçado horizontal")
+
+        self.changingEstaca=False
+
+
+    def layAllOut(self):
+
+        layout=self.layout()
+
+        if layout is not None:
+            index = layout.count()-1
+            while (index >= 0):
+                element = layout.itemAt(index).widget()
+                if element is None:
+                    element = layout.itemAt(index).layout()
+                if element is not None:
+                    element.setParent(None)
+
+                index -= 1
+
+        Hlayout=QtWidgets.QHBoxLayout()
+        Hlayout2=QtWidgets.QHBoxLayout()
+        Hlayout3=QtWidgets.QHBoxLayout()
+        Vlayout=QtWidgets.QVBoxLayout()
+
+        Hlayout.addWidget(self.btnCalcular)
+        Hlayout.addWidget(self.applyBtn)
+        Hlayout.addWidget(self.btnAutoRange)
+        Hlayout.addWidget(self.btnSave)
+        Hlayout.addWidget(self.btnCancel)
+
+        Hlayout3.addWidget(self.areaLb)
+        Hlayout3.addWidget(self.areaCtLb)
+        Hlayout3.addWidget(self.areaAtLb)
+        Hlayout3.addWidget(self.volumeTotal)
+        Hlayout3.addWidget(self.progressivaLb)
+
+        Hlayout2.addWidget(self.btnEditToggle)
+        Hlayout2.addWidget(self.ctatiBtn)
+        Hlayout2.addWidget(self.selectEstacaComboBox)
+        Hlayout2.addWidget(self.btnPrevious)
+        Hlayout2.addWidget(self.btnNext)
+
+
+        Vlayout.addLayout(Hlayout)
+        Vlayout.addLayout(Hlayout3)
+        Vlayout.addWidget(self.lblTipo)
+        Vlayout.addWidget(self.perfilPlot)
+        Vlayout.addLayout(Hlayout2)
+
+        self.setLayout(Vlayout)
+        self.Vlayout=Vlayout
+
+    def disableArrowButtons(self, bool):
+        self.btnEditToggle.setDisabled(bool)
+        self.btnPrevious.setDisabled(bool)
+        self.btnNext.setDisabled(bool)
+        self.selectEstacaComboBox.setDisabled(bool)
+
+
+    def nextEstaca(self):
+        self.current+=1
+        self.changingEstaca=True
+        self.reset()
+
+    def previousEstaca(self):
+        self.current-=1
+        self.changingEstaca=True
+        self.reset()
+
+
+    def editToggle(self):
+        if self.editMode:
+            self.btnEditToggle.setText(u"Esconder")
+            self.plotTransCurve()
+
+        else:
+            self.btnEditToggle.setText("Visualizar")
+            self.curve.clear()
+            self.perfilPlot.removeItem(self.curve)
+
+        self.editMode = not self.editMode
+
+    def changeEstaca(self):
+
+        if not self.changingEstaca:
+
+            self.current = int(self.progressiva.index(float(self.selectEstacaComboBox.currentText())))
+            self.reset()
+
+
+    def reset(self):
+
+        perfilPlot=self.perfilPlot
+        self.disableArrowButtons(True)
+
+        self.initVars(self.iface, 0, 0, self.st[self.current], [], "Perfil Transversal")
+        self.perfil_grafico()
+        self.roi.sigRegionChangeFinished.connect(self.updateData)
+
+        self.btnNext.setDisabled(self.current == len(self.progressiva))
+        self.btnPrevious.setDisabled(self.current == 0)
+        self.selectEstacaComboBox.setCurrentIndex(self.current)
+
+        self.changingEstaca=False
+        self.Vlayout.replaceWidget(perfilPlot, self.perfilPlot)
+
+        self.disableArrowButtons(False)
+
+        if not self.editMode:
+            self.plotTransCurve()
+
+        if self.prismoide.lastGeneratedIndex<self.current:
+            self.createPrismoid(self.current)
+
+        self.btnNext.setDisabled(self.current >= len(self.progressiva)-1)
+        self.btnPrevious.setDisabled(self.current == 0)
+        self.updateAreaLabels()
+
+    def updateAreaLabels(self):
+
+        self.areaLb.setText("Area: " + str(round(self.prismoide.getFace(self.current).getArea(),4))+"m²")
+        self.progressivaLb.setText("E: " + str(int(self.progressiva[self.current]/20))+" + "+str(round((self.progressiva[self.current]/20-int(self.progressiva[self.current]/20))*20,4)))
+        act,aat = self.prismoide.getAreasCtAt(self.current)
+        self.areaCtLb.setText("Corte: " + str(round(act,4))+"m²")
+        self.areaAtLb.setText("Aterro: " + str(round(aat,4))+"m²")
+
+        if self.prismoide.lastGeneratedIndex>=self.prismoide.lastIndex:
+            self.volumeTotal.setText("Volume: " + str(round(self.prismoide.getVolume(),4)) + "m³")
+
+    def plotTransCurve(self):
+
+            if self.everPloted:
+                self.curve.clear()
+                self.perfilPlot.removeItem(self.curve)
+
+            self.everPloted = True
+
+            self.curve = pg.PlotCurveItem()
+
+            X, Y = Figure.plotCurve(self.prismoide.getCurve(self.current))
+
+            self.curve.clear()
+            self.curve.setData(X, Y, pen=pg.mkPen('b', width=4, style=QtCore.Qt.SolidLine))
+            self.perfilPlot.addItem(self.curve)
+
+
+    def applyTrans(self):
+        diag=ApplyTransDialog(self.iface,self.progressiva)
+        diag.show()
+        if diag.exec_()==QtWidgets.QDialog.Accepted:
+            st=self.st[self.current]
+
+            for p in diag.progressivas:
+                newST=[]
+                for pt in st:
+                    t=interpolList(self.terreno[self.current],1)
+                    tn=interpolList(self.terreno[p],1)
+                    newST.append([float(pt[0]),float(pt[1])-float(t)+float(tn)])
+
+                self.st[p]=newST
+
+            self.prismoide.st = self.st
+            for p in diag.progressivas:
+                self.createPrismoid(p)
+
+    def setAtCti(self):
+        diag=SetCtAtiDialog(self.iface, self.roi.getVerticesList())
+        diag.show()
+        if diag.exec_()==QtWidgets.QDialog.Accepted:
+            self.prismoide.ati=diag.ati
+            self.prismoide.cti=diag.cti

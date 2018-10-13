@@ -8,6 +8,7 @@ import sqlite3
 
 from qgis._core import QgsPoint
 
+from ..controller.Geometria.Figure import prismoide
 from ..model.config import extractZIP, Config, compactZIP
 from ..model.curvas import Curvas
 from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation
@@ -15,6 +16,8 @@ from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation
 
 
 from qgis.PyQt import QtGui
+
+#TODO change path tmp/dbatase to variable configurable
 
 class Estacas(object):
     def __init__(self, distancia=20, estaca=0, layer=None, filename='', table=list(), cvData=list(),ultimo=-1, id_filename=-1):
@@ -182,7 +185,7 @@ class Estacas(object):
 
         compactZIP(Config.fileName)
 
-    def saveTrans(self, id_filename):
+    def saveTrans(self, id_filename, prismoid:prismoide):
         extractZIP(Config.fileName)
         con = sqlite3.connect("tmp/data/data.db")
 
@@ -234,11 +237,12 @@ class Estacas(object):
         con.isolation_level = ''
 
         con.commit()
-
-
         con.close()
 
+        prismoid.save("tmp/data/"+str(id_filename)+".prism")
         compactZIP(Config.fileName)
+
+
 
     def cleanTrans(self, idEstacaTable):
         extractZIP(Config.fileName)
@@ -287,8 +291,13 @@ class Estacas(object):
 
             con.close()
             compactZIP(Config.fileName)
+            prismoid=prismoide()
 
-            return xList, table
+            if prismoid.restore("tmp/data/"+str(idEstacaTable)):
+                return xList, table, prismoid
+            else:
+                return xList, table, None
+
 
          except:
             return False, False
@@ -366,6 +375,9 @@ class Estacas(object):
                 ponto_final = QgsPoint(seg_end)
                 tamanho_da_linha = length(ponto_final, ponto_inicial)
                 ponto = diff(ponto_final, ponto_inicial)
+
+                if tamanho_da_linha == 0:
+                    continue
                 cosa, cosb = dircos(ponto)
                 az = azimuth(ponto_inicial, QgsPoint(ponto_inicial.x() + ((self.distancia) * cosa),
                                                      ponto_inicial.y() + ((self.distancia) * cosb)))

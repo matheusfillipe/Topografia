@@ -100,11 +100,11 @@ except ImportError as v:
     # see docs/porting.rst
     raise
 
-try:
-    import builtins
-except ImportError:
-    import __builtin__
-    builtins = __builtin__
+#try:
+import builtins
+#except ImportError:
+ #   import __builtin__
+#    builtins = __builtin__
 
 from . import ImageMode
 from ._binary import i8

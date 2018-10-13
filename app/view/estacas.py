@@ -1,4 +1,6 @@
 from __future__ import print_function
+
+import typing
 from builtins import range
 # -*- coding: utf-8 -*-
 
@@ -32,6 +34,7 @@ from qgis.PyQt.QtCore import *
 from qgis.PyQt.QtWidgets import *
 from qgis.core import *
 
+
 from ..model.utils import decdeg2dms
 import subprocess
 
@@ -60,6 +63,10 @@ FORMESTACA1_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/Topo_dialog_estacas1.ui'))
 FORMGERATRACADO_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/Topo_dialog_gera_tracado_1.ui'))
+APLICAR_TRANSVERSAL_DIALOG, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), '../view/ui/applyTransDiag.ui'))
+SETCTATI_DIALOG, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), '../view/ui/setTransPtsIndexes.ui'))
 
 rb = QgsRubberBand(iface.mapCanvas(), 1)
 premuto = False
@@ -602,8 +609,31 @@ class Estacas(QtWidgets.QDialog):
         QgsProject .instance().addMapLayer(vl)
 
     def openTIFF(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Image files (*.tiff *.tif)")
-        return filename[0]
+        mapCanvas = self.iface.mapCanvas()
+
+        itens = []
+        for i in range(mapCanvas.layerCount() - 1, -1, -1):
+            try:
+                layer = mapCanvas.layer(i)
+                layerName = layer.name()
+                itens.append(layerName)
+            except:
+                pass
+        item, ok = QtWidgets.QInputDialog.getItem(None, "Camada com tracado", u"Selecione o raster com as elevações:",
+                                              itens,
+                                              0, False)
+        if not(ok) or not(item):
+            return None
+        else:
+            layerList = QgsProject .instance().mapLayersByName(item)
+            layer = None
+            if layerList:
+                layer = layerList[0]
+
+        filename = layer.source()
+        #filename = QtWidgets.QFileDialog.getOpenFileName(filter="Image files (*.tiff *.tif)")
+
+        return filename
         
     def openDXF(self):
         filename = QtWidgets.QFileDialog.getOpenFileName(filter="Autocad files (*.dxf)")
@@ -973,11 +1003,6 @@ class cvEdit(object):
         self.widget4.hide()
         self.groupBox_2.setTitle('')
 
- 
-
-
-
-
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(745, 559)
@@ -1096,5 +1121,60 @@ class cvEdit(object):
 
 
 
+class ApplyTransDialog(QtWidgets.QDialog, APLICAR_TRANSVERSAL_DIALOG):
+    firstCb: QtWidgets.QComboBox
+    secondCb: QtWidgets.QComboBox
 
+    def __init__(self, iface, prog):
+        super(ApplyTransDialog, self).__init__(None)
+        self.iface=iface
+        self.setupUi(self)
+        self.progressiva=prog
+        self.progressivas=None
+        self.setupUi2()
+
+    def setupUi2(self):
+        self.firstCb.addItems(list(map(str, self.progressiva)))
+        self.firstCb.currentIndexChanged.connect(self.setSecondCb)
+        self.setSecondCb()
+
+    def setSecondCb(self):
+        self.secondCb.addItems(list(map(str, self.progressiva[self.firstCb.currentIndex()+1:])))
+        self.secondCb.currentIndexChanged.connect(self.setIndexes)
+        self.setIndexes()
+
+    def setIndexes(self):
+        self.progressivas=[self.firstCb.currentIndex(),self.secondCb.currentIndex()+self.firstCb.currentIndex()+1]
+
+
+class SetCtAtiDialog(QtWidgets.QDialog, SETCTATI_DIALOG):
+    firstCb: QtWidgets.QComboBox
+    secondCb: QtWidgets.QComboBox
+
+    def __init__(self, iface, prog):
+        super(SetCtAtiDialog, self).__init__(None)
+        self.iface=iface
+        self.setupUi(self)
+        self.roiIndexes=[]
+        self.firstOptions=[]
+        self.secondOptions=[]
+        for i, _ in enumerate(prog):
+            self.roiIndexes.append(i)
+            self.firstOptions.append(i+1)
+
+        self.indices=None
+        self.setupUi2()
+
+    def setupUi2(self):
+        self.firstCb.addItems(list(map(str, self.firstOptions)))
+        self.firstCb.currentIndexChanged.connect(self.setIndexes)
+        self.secondCb.addItems(list(map(str, self.firstOptions)))
+        self.secondCb.currentIndexChanged.connect(self.setIndexes)
+
+    def setIndexes(self):
+        try:
+            self.cti=int(self.firstCb.currentText())
+            self.ati=int(self.secondCb.currentText())
+        except:
+            pass
 

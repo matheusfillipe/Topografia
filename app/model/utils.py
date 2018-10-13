@@ -56,8 +56,15 @@ def length(point1,point2):
 
 
 def dircos(point):
-    cosa = point.x() / mag(point)
-    cosb = point.y()/ mag(point)
+    Mag=mag(point)
+
+    cosa = 0
+    cosb = 0
+
+    if Mag != 0:
+        cosa = point.x() / Mag
+        cosb = point.y() / Mag
+
     return cosa,cosb
 
 
@@ -180,7 +187,7 @@ def getElevation(crs,point):
 
 
     except Exception as e:
-        print (e.message)
+        print(e.message)
         qDebug(e.message)
         elevation=0.0
 
@@ -188,3 +195,10 @@ def getElevation(crs,point):
 
 def msgLog(msg):
     QgsMessageLog.logMessage(msg, tag="Topografia", level=0)
+
+def interpolList(l:list,i):
+    length=len(l)
+    if length%2!=0:
+        return l[int(length/2)][i]
+    else:
+        return (l[int(length/2)][i]+l[int(length/2)-1][i])/2

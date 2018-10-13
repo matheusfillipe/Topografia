@@ -5,6 +5,7 @@ from builtins import object
 
 from qgis.PyQt import QtGui, QtWidgets
 
+from ..model.utils import msgLog
 from ..model.config import Config as ModelConfig
 from ..view.config import TopoConfig
 from ..model.estacas import Estacas
@@ -97,7 +98,12 @@ class Config(object):
 
     def carregamapa(self):
         self.changeCRS()
-        self.conf.carregamapa(self.model.tipo_mapa)
+
+        try:
+            self.conf.carregamapa(self.model.tipo_mapa)
+        except Exception as e:
+            msgLog(str(e))
+            return
 
     def carregacarta(self):
         self.conf.carregacarta(self.model)

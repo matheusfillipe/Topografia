@@ -266,8 +266,8 @@ class TopoGrafia(object):
         """Removes the plugin menu item and icon from QGIS GUI."""
         if self.conf.model.filename in [None,'']:
             self.conf.openfile()
-            
-        self.estacas.run()
+        if not self.conf.model.filename in [None,'']:
+            self.estacas.run()
 
     def run(self):
 

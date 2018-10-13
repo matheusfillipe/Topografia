@@ -14,12 +14,14 @@ Plugin para qgis 3.x que possibilita o desenvolvimento do projeto geométrico de
 * Interface para traçado greide (perfil vertical)
 * Cálculo de curvas verticais
 * Geração da tabela Vertical
-
-### A Fazer
-
 * Geração dos perfis transversais a partir de uma seção tipo
 * Cálculo de Volumes
+
+### A Fazer
+* Superlargura e Superelevação
+* Tabela unificada de todas as estacas
 * Geração e Exportação dos desenhos
+
 
 ### Como Instalar
 
@@ -57,15 +59,21 @@ Erro: tolerance condition error
 ### TODO:
 
 * Corrigir bugs: reposicionamento dos handles quando outro é arrastado, 
-* limpar curva vertical quando outra é criada por cima (handle.curve) ou quando handle é exluído
-* reposicionar curvas verticais e replotar quando segmentos ou handles são movidos
-* checar se as curvas são possíveis quando criadas
+* Limpar curva vertical quando outra é criada por cima (handle.curve) ou quando handle é exluído
+* Reposicionar curvas verticais e replotar quando segmentos ou handles são movidos
+* Checar se as curvas são possíveis quando criadas
+* Aprimorar cálculo de volume
+* Aprimorar micro cad kenerl (Figure)
+* Restaurar objeto prismoide para evitar recálculo
+
 
 ### Funções a Adicionar
 
 * Zoom button no menu de curva vertical
 * Cálculo de aterro imbutido 
-* função desfazer (ctrl+Z )
+* Função desfazer para interface pyqtgraph(ctrl+Z )
+* Cálculo de distância de visibilidade embutido na janela de edição de curvas verticais
+* Plotagem das curvas horizontais
 
 ## Dependências
 

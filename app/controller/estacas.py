@@ -353,7 +353,6 @@ class Estacas(object):
         poly = QgsFeature()
 
         points=[]
-
         for i, _ in enumerate(estacas):
 
             point = QgsPointXY(float(estacas[i][4]), float(estacas[i][3]))

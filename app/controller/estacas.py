@@ -325,6 +325,7 @@ class Estacas(object):
         ft.setAttributes([1])
         ft.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(point[0], point[1])))
         pr.addFeatures([ft])
+        layer.setCrs(QgsProject.instance().crs())
         QgsProject.instance().addMapLayer(layer)
 
     def drawPoints(self, pointsList, name):
@@ -342,6 +343,7 @@ class Estacas(object):
         poly.setGeometry(QgsGeometry.fromPolylineXY(points))
         pr.addFeatures([poly])
         layer.updateExtents()
+        layer.setCrs(QgsProject.instance().crs())
         QgsProject.instance().addMapLayers([layer])
 
 

@@ -244,10 +244,6 @@ class cvEditDialog(QtWidgets.QDialog):
                 self.handle.curve.update(self.i1, self.i2, self.L,self.getHandlePos(self.i), self.getHandlePos(self.i-1))
                 self.roi.plotWidget.addItem(self.handle.curve.curve)
 
-               
-
-
-                
            
         except ValueError:
             pass
@@ -268,7 +264,7 @@ class cvEditDialog(QtWidgets.QDialog):
 
         updateList=[(self.ui.i1, self.i1), (self.ui.i2,self.i2), (self.ui.G,self.G), (self.ui.cota,self.cota), (self.ui.horizontal, self.horizontal)]
 
-        if i>=roi.countHandles()-1 or i==0 :
+        if i>=roi.countHandles()-1 or i==0:
             self.ui.removeCv()
         else:
             self.i1=self.getSegIncl(i-1,i)
@@ -300,12 +296,13 @@ class CustomPolyLineROI(pg.PolyLineROI):
         pg.PolyLineROI.__init__(self,*args,**kwds)
 
     def setPlotWidget(self, plotWidget):
-        self.plotWidget=plotWidget
+        self.plotWidget = plotWidget
 
     def HandleEditDialog(self, i):
         dialog=cvEditDialog(self, i)
         dialog.exec_()
         self.sigRegionChangeFinished.emit(self)
+        self.modified.emit(self)
 
 
     def mouseClickEvent(self, ev):
@@ -337,11 +334,12 @@ class CustomPolyLineROI(pg.PolyLineROI):
         self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
 
         for i in range(start, len(self.handles)-1):
-            self.addSegment(self.handles[i]['item'], self.handles[i+1]['item']) 
+            self.addSegment(self.handles[i]['item'], self.handles[i+1]['item'])
             j=i+1
-            self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))       
+            self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
 
         self.wasInitialized=True
+        self.updateHandles()
 
 
     def updateHandles(self):
@@ -361,6 +359,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
             for i in range(start, len(self.handles)-1):
                 j=i+1
                 self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+
 
             self.wasInitialized=True
 
@@ -556,6 +555,9 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.lastCurvas=self.getCurvas()
         self.roi.setPlotWidget(self.perfilPlot)
         self.roi.addCvs(self.cvList)
+
+        self.roi.sigRegionChangeFinished.connect(self.modifiedRoi)
+        self.roi.sigRegionChanged.connect(self.modifiedRoiStarted)
         
        # self.perfilPlot.plot(y,x)
 
@@ -626,6 +628,30 @@ class Ui_Perfil(QtWidgets.QDialog):
 #                for j in range(self.ref_estaca.tableWidget.columnCount()):
 #                    self.ref_estaca.tableWidget.item(k, j).setBackground(QtWidgets.QColor(255,51,51))
 
+
+        for a in A:
+            maxIndex=I.index(a)+1
+            if a==p1:
+                self.maxInclinationIndicatorLine=pg.PlotCurveItem()
+                self.maxInclinationIndicatorLine.setData([self.roi.getHandlePos(maxIndex-1).x(),self.roi.getHandlePos(maxIndex).x()],[self.roi.getHandlePos(maxIndex-1).y(), self.roi.getHandlePos(maxIndex).y()], pen=pg.mkPen("r", width=4))
+                self.perfilPlot.addItem(self.maxInclinationIndicatorLine)
+
+    def modifiedRoiStarted(self):
+
+        for h in self.roi.getHandles():
+            h.curve.update(self.i1, self.i2, self.L,self.getHandlePos(self.i), self.getHandlePos(self.i-1))
+            self.roi.plotWidget.addItem(h.curve.curve)
+
+
+        try:
+            self.maxInclinationIndicatorLine.clear()
+        except:
+            pass
+
+
+    def modifiedRoi(self):
+        self.modifiedRoiStarted()
+        pass
 
     def estaca1(self,ind):
         self.estaca1txt = ind-1

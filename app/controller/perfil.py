@@ -899,7 +899,7 @@ class Ui_sessaoTipo(Ui_Perfil):
 
         self.banquetaLbC.setPos(self.roi.getHandlePos(0).x(), self.roi.getHandlePos(0).y())
         self.taludeLbC.setPos((self.roi.getHandlePos(2).x()+self.roi.getHandlePos(1).x())/2, (self.roi.getHandlePos(1).y()+self.roi.getHandlePos(2).y())/2)
-        middle=self.st[self.current][int(len(self.st[self.current])/2)][1]
+        middle=float(self.st[self.current][int(len(self.st[self.current])/2)][1])
         self.pistaLb.setPos(0, middle)
         self.banquetaLbA.setPos(self.roi.getHandlePos(len(self.roi.handles)-1).x(), self.roi.getHandlePos(len(self.roi.handles)-1).y())
         self.taludeLbA.setPos((self.roi.getHandlePos(len(self.roi.handles)-3).x()+self.roi.getHandlePos(len(self.roi.handles)-2).x())/2, (self.roi.getHandlePos(len(self.roi.handles)-3).y()+self.roi.getHandlePos(len(self.roi.handles)-2).y())/2)

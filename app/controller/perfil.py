@@ -129,13 +129,13 @@ class cv():
 class cvEditDialog(QtWidgets.QDialog):
     
 
-    
+
     def __init__(self,roi, i):
         super(cvEditDialog, self).__init__(None)
         self.setWindowTitle(u"Modificar Rampa")
         self.ui = cvEdit()
         self.ui.setupUi(self)
-        self.isBeingModified=False 
+        self.isBeingModified=False
         self.i=i
         self.initialHandlesPos = []
         self.i1=0
@@ -171,15 +171,12 @@ class cvEditDialog(QtWidgets.QDialog):
 
         self.initialCurve = cv(self.handle.curve.i1,self.handle.curve.i2, self.handle.curve.L, self.handle.curve.handlePos, self.handle.curve.lastHandlePos)
 
-
         self.ui.groupBox.setTitle("Vertice: " + str(i+1))
 
         self.ui.L.textChanged.connect(self.updateL)
 
-        self.show()
 
     def save(self):
-         
         pass
 
 
@@ -250,17 +247,14 @@ class cvEditDialog(QtWidgets.QDialog):
 
 
 
-    def update(self): 
-
+    def update(self):
         self.roi.handles[self.i]["item"].setPos(self.horizontal, self.cota)
-      
 
-        
+
     def redefineUI(self, elm):
         self.isBeingModified=True
         i=self.i
         roi=self.roi
-        
 
         updateList=[(self.ui.i1, self.i1), (self.ui.i2,self.i2), (self.ui.G,self.G), (self.ui.cota,self.cota), (self.ui.horizontal, self.horizontal)]
 
@@ -270,7 +264,7 @@ class cvEditDialog(QtWidgets.QDialog):
             self.i1=self.getSegIncl(i-1,i)
             self.i2=self.getSegIncl(i,i+1)
             self.G=self.i1-self.i2
-            
+
         c=0
         for a,x in updateList:
             c+=1
@@ -278,7 +272,7 @@ class cvEditDialog(QtWidgets.QDialog):
                 if c-1==elm:
                     continue
                 else:
-                    a.setText(str(round(x,2)))       
+                    a.setText(str(round(x,2)))
             except:
                 continue
         self.updateL()
@@ -300,6 +294,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
 
     def HandleEditDialog(self, i):
         dialog=cvEditDialog(self, i)
+        dialog.show()
         dialog.exec_()
         self.sigRegionChangeFinished.emit(self)
         self.modified.emit(self)
@@ -346,7 +341,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
 
         if self.wasInitialized:
             for i in range(0, len(self.handles)-1):
-    
+
                 try:
                     self.handles[i]['item'].sigEditRequest.disconnect()
                 except:
@@ -359,6 +354,11 @@ class CustomPolyLineROI(pg.PolyLineROI):
             for i in range(start, len(self.handles)-1):
                 j=i+1
                 self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+                try:
+                    diag=cvEditDialog(self, j)
+                    diag.reset()
+                except:
+                    pass
 
 
             self.wasInitialized=True
@@ -557,7 +557,7 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.roi.addCvs(self.cvList)
 
         self.roi.sigRegionChangeFinished.connect(self.modifiedRoi)
-        self.roi.sigRegionChanged.connect(self.modifiedRoiStarted)
+
         
        # self.perfilPlot.plot(y,x)
 
@@ -637,10 +637,7 @@ class Ui_Perfil(QtWidgets.QDialog):
                 self.perfilPlot.addItem(self.maxInclinationIndicatorLine)
 
     def modifiedRoiStarted(self):
-
-        for h in self.roi.getHandles():
-            h.curve.update(self.i1, self.i2, self.L,self.getHandlePos(self.i), self.getHandlePos(self.i-1))
-            self.roi.plotWidget.addItem(h.curve.curve)
+        self.roi.updateHandles()
 
 
         try:
@@ -785,8 +782,6 @@ class Ui_Perfil(QtWidgets.QDialog):
 
 
 
-
-
 from .Geometria import Figure, Prismoide
 
 
@@ -818,7 +813,7 @@ class Ui_sessaoTipo(Ui_Perfil):
                 defaultST=[[-9.8,-5.0],[-8.3,-5.0],[-7.3,0], [0,0.14], [7,0], [7.08,-0.1],[7.12,-0.1], [7.2,0], [7.3,0], [8.3,5], [9.8,5]]
                 newST=[]
                 for pt in defaultST:
-                   newST.append([pt[0],pt[1]+greide.getY(float(item[2]))])
+                   newST.append([pt[0], pt[1]+greide.getY(float(item[2]))])
                 st.append(newST)
 
             self.st=st

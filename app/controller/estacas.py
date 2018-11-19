@@ -7,7 +7,11 @@ from qgis._gui import QgsMapToolEmitPoint
 try:
     from PIL import Image
 except:
-    from ...PIL import Image
+    from platform import system
+    if system()=="Linux":
+        from ...PIL import Image
+    elif system()=="Windows":
+        from ...PILWin import Image
 
 from ..controller.perfil import Ui_Perfil, cv as CV, Ui_sessaoTipo
 from ..model.estacas import Estacas as EstacasModel

@@ -62,14 +62,14 @@ class TopoGrafia(object):
             'i18n',
             'TopoGrafia_{}.qm'.format(locale))
 
-     #   #DEBUG CLIENT
-     #   try:
-     #       import sys
-     #       sys.path.append('/home/matheus/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/181.5087.37/debug-eggs/pycharm-debug.egg')
-     #       import pydevd
-     #       pydevd.settrace('localhost', port=5553, stdoutToServer=True, stderrToServer=True)
-     #   except:
-     #       pass
+    #    #DEBUG CLIENT
+    #    try:
+    #        import sys
+    #        sys.path.append('/home/matheus/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/181.5087.37/debug-eggs/pycharm-debug.egg')
+    #        import pydevd
+    #        pydevd.settrace('localhost', port=5553, stdoutToServer=True, stderrToServer=True)
+    #    except:
+    #        pass
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()

@@ -105,7 +105,7 @@ except ImportError as v:
     raise
 
 #try:
-    import builtins
+import builtins
 #except ImportError:
 #    import __builtin__
 #    builtins = __builtin__

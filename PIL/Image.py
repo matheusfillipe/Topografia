@@ -66,6 +66,8 @@ try:
                           (getattr(core, 'PILLOW_VERSION', None),
                            PILLOW_VERSION))
 
+
+
 except ImportError as v:
     core = _imaging_not_installed()
     # Explanations for ways that we know we might have an import error

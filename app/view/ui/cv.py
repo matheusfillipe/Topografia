@@ -105,7 +105,7 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "Modificar Curva Vertical"))
         self.groupBox.setTitle(_translate("Dialog", "Vértice"))
         self.cotaLabel.setText(_translate("Dialog", "Cota:"))
-        self.horizontalLabel.setText(_translate("Dialog", "Horizontal: "))
+        self.horizontalLabel.setText(_translate("Dialog", "Horizontal111: "))
         self.groupBox_2.setTitle(_translate("Dialog", "Curva Vertical"))
         self.pushButton.setText(_translate("Dialog", "Ver Curva"))
         self.cotaLabel_4.setText(_translate("Dialog", "i2: "))

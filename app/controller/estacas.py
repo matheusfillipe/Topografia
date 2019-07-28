@@ -1,16 +1,16 @@
 from __future__ import print_function
 # -*- coding: utf-8 -*-
 import webbrowser
-from qgis.PyQt import QtGui
+from qgis.PyQt import QtGui, QtWidgets
 
 from qgis._gui import QgsMapToolEmitPoint
 try:
     from PIL import Image
 except:
     from platform import system
-    if system()=="Linux":
+    if system() == "Linux":
         from ...PIL import Image
-    elif system()=="Windows":
+    elif system() == "Windows":
         from ...PILWin import Image
 
 from ..controller.perfil import Ui_Perfil, cv as CV, Ui_sessaoTipo
@@ -42,9 +42,6 @@ class Estacas(object):
 
         self.nextView=self.view
 
-
-
-
     def mudancaCelula(self,item):
         if item.column() > 1:
             campo = float(self.view.tableWidget.item(item.row(), item.column()).text().replace(',','.'))
@@ -67,6 +64,7 @@ class Estacas(object):
     def events(self):
         self.preview.btnNovo.clicked.connect(self.new)
         self.preview.btnOpen.clicked.connect(self.openEstaca)
+        self.preview.tableEstacas.doubleClicked.connect(self.openEstaca)
         self.preview.btnOpenCSV.clicked.connect(self.openEstacaCSV)
         self.preview.btnApagar.clicked.connect(self.deleteEstaca)
         self.preview.btnGerarTracado.clicked.connect(self.geraTracado)
@@ -149,7 +147,6 @@ class Estacas(object):
 
 
 
-
     def new(self, bool=False, layer=None):
         self.view.clear()
         dados = self.preview.new()
@@ -168,10 +165,8 @@ class Estacas(object):
 
     def perfilView(self):
         tipo, class_project = self.model.tipo()
-        self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename))
-
+        self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename), iface=self)
         self.perfil.save.connect(self.saveGreide)
-       
         self.perfil.showMaximized()
         self.perfil.exec_()
 
@@ -230,6 +225,8 @@ class Estacas(object):
 
     def deleteEstaca(self):
         if self.click == False: return
+        if not yesNoDialog(self.preview, title="Atenção", message="Tem certeza que deseja remover o arquivo?"):
+            return
         self.model.deleteEstaca(self.model.id_filename)
         self.update()
         self.model.id_filename = -1
@@ -575,16 +572,7 @@ class Estacas(object):
 
     def geraTracado(self,parte=0,pontos=None):
         crs = self.model.getCRS()
-        if parte == 0:
-            # pega as coordenadas norte e este dos pontos inicial e final
-            self.preview.gera_tracado_pontos(callback_inst=self,callback_method='geraTracado',crs=crs)
-        if parte == 1:
-            if pontos is None:
-                self.preview.error(u"Pelo fato dos dados estarem incorretos não foi possivel criar o traçado!!!")
-                return
-            ponto_inicial, ponto_final = pontos
-            self.name_tracado = self.gera_tracado_vertices(ponto_inicial, ponto_final, crs)
-
+        self.preview.drawShapeFileAndLoad(crs)
 
     def get_click(self, point, mouse):
 
@@ -633,7 +621,7 @@ class Estacas(object):
         --------------------------------------------------
     '''
 
-    def openEstaca(self):
+    def openEstaca(self, i=0):
       
         if self.model.id_filename == -1: return
         self.view.clear()
@@ -826,7 +814,8 @@ class Estacas(object):
         lastFinalResult=True
         lastResult=False
 
-        while finalResult or result:
+        while finalResult>0 or result>0:
+            self.update()
             result = self.preview.exec_()
 
             if result:

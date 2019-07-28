@@ -11,7 +11,7 @@ from qgis._core import QgsPoint
 from ..controller.Geometria.Figure import prismoide
 from ..model.config import extractZIP, Config, compactZIP
 from ..model.curvas import Curvas
-from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation
+from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation, internet_on
 
 
 
@@ -34,8 +34,8 @@ class Estacas(object):
     def get_features(self):
         linhas = []
         for feature in self.layer.getFeatures():
-            geom = feature.geometry().asPolyline()
-            for i in geom:
+           geom = feature.geometry().asPolyline()
+           for i in geom:
                 linhas.append(i)
         return linhas
 
@@ -368,7 +368,7 @@ class Estacas(object):
         cosa = 0.0
         cosb = 0.0
         crs = int(self.getCRS())
-        sem_internet = False
+        sem_internet = internet_on()
         for elemento in self.layer.getFeatures():
             for i, (seg_start, seg_end) in enumerate(pairs(elemento, self.estaca)):
                 ponto_inicial = QgsPoint(seg_start)

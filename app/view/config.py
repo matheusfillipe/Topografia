@@ -11,13 +11,7 @@ from ..model.config import Config
 from qgis.PyQt.QtCore import QSettings
 from qgis.PyQt.QtWidgets import QAbstractItemView
 
-from qgis._core import QgsCoordinateReferenceSystem
-from qgis._core import QgsRectangle
-from qgis._core import QgsVectorFileWriter
-from qgis._core import QgsVectorLayer
-from qgis._core import QgsMapLayer
-from qgis._core import QgsMessageLog
-from qgis._core import QgsProject
+from qgis._core import *
 
 
 

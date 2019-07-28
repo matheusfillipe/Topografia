@@ -1,4 +1,7 @@
 from __future__ import print_function
+
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QWidget, QDialog, QLabel
 from future import standard_library
 standard_library.install_aliases()
 from builtins import str
@@ -16,6 +19,7 @@ from qgis._core import QgsVectorLayer
 from qgis.core import *
 from qgis.gui import *
 import sys, os, http.client, json, tempfile, urllib.request, urllib.parse, urllib.error
+from qgis.PyQt import QtWidgets
 
 
 
@@ -70,7 +74,10 @@ def dircos(point):
 
 def pairs(lista,inicio=0):
     # list pairs iteration
-    p = lista.geometry().asPolyline()
+    try:
+        p = lista.geometry().asPolyline()
+    except:
+        p = lista.geometry().asMultiPolyline()[0]
     for i in range(inicio+1, len(p)):
         yield p[i-1], p[i]
 
@@ -185,7 +192,6 @@ def getElevation(crs,point):
         if 0 < len(results):
             elevation = float(round(results[0].get('elevation'),4))
 
-
     except Exception as e:
         print(e.message)
         qDebug(e.message)
@@ -202,3 +208,81 @@ def interpolList(l:list,i):
         return l[int(length/2)][i]
     else:
         return (l[int(length/2)][i]+l[int(length/2)-1][i])/2
+
+from urllib.request import urlopen
+
+def internet_on():
+   try:
+        response = urlopen('https://www.google.com/', timeout=3)
+        return True
+   except:
+        return False
+
+##TODO allow user to configure precision
+precision=3
+longPrecision=8
+
+def roundFloat(f:float):
+    return round(f,precision)
+
+def roundFloat2str(f:float):
+    return str(round(f,precision))
+
+def longRoundFloat(f:float):
+    return round(f,longPrecision)
+
+def longRoundFloat2str(f:float):
+    return str(round(f,longPrecision))
+
+
+##TODO mudar precisão de 20m
+def roundUpFloat2str(f:float):
+    return str(round(int(f/20+1),0))
+
+def estacaInt2Str(i:int):
+    return str(int(i/20))+"+"+str(i%20)
+
+class imgDialog(QDialog):
+
+    def __init__(self,imagepath,title="Image", parent=None):
+        super(imgDialog, self).__init__(parent)
+        self.title = title
+        self.left = 10
+        self.top = 10
+        self.width = 640
+        self.height = 480
+        self.imagepath=imagepath
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
+
+        # Create widget
+        label = QLabel(self)
+        pixmap = QPixmap(self.imagepath)
+        label.setPixmap(pixmap)
+        self.resize(pixmap.width(), pixmap.height())
+
+def messageDialog(iface, title="Concluído", info="", message=""):
+    msgBox = QtWidgets.QMessageBox(iface)
+    msgBox.setIcon(QtWidgets.QMessageBox.Question)
+    msgBox.setWindowTitle(title)
+    msgBox.setText(message)
+    msgBox.setInformativeText(info)
+    msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+    msgBox.setDefaultButton(QtWidgets.QMessageBox.Ok)
+    msgBox.show()
+    return msgBox.exec_() == QtWidgets.QMessageBox.Ok
+
+
+def yesNoDialog(iface, title="Atenção", info="", message=""):
+    msgBox = QtWidgets.QMessageBox(iface)
+    msgBox.setIcon(QtWidgets.QMessageBox.Question)
+    msgBox.setWindowTitle(title)
+    msgBox.setText(message)
+    msgBox.setInformativeText(info)
+    msgBox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+    msgBox.setDefaultButton(QtWidgets.QMessageBox.No)
+    msgBox.show()
+    return msgBox.exec_() == QtWidgets.QMessageBox.Yes

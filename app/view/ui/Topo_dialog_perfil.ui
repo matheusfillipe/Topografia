@@ -13,91 +13,57 @@
   <property name="windowTitle">
    <string>Perfil do trecho</string>
   </property>
-  <widget class="QComboBox" name="comboEstaca1">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>20</y>
-     <width>181</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <item>
-    <property name="text">
-     <string>Selecione Estaca Inicial</string>
-    </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Estaca 1</string>
+     </property>
+    </widget>
    </item>
-  </widget>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>26</y>
-     <width>68</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Estaca 1</string>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="comboEstaca2">
-   <property name="geometry">
-    <rect>
-     <x>390</x>
-     <y>20</y>
-     <width>181</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <item>
-    <property name="text">
-     <string>Selecione Estaca Final</string>
-    </property>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="comboEstaca1">
+     <item>
+      <property name="text">
+       <string>Selecione Estaca Inicial</string>
+      </property>
+     </item>
+    </widget>
    </item>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>310</x>
-     <y>26</y>
-     <width>68</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Estaca 2</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="lblTipo">
-   <property name="geometry">
-    <rect>
-     <x>220</x>
-     <y>140</y>
-     <width>181</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Plano</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="btnCalcular">
-   <property name="geometry">
-    <rect>
-     <x>260</x>
-     <y>80</y>
-     <width>99</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Calcular</string>
-   </property>
-  </widget>
+   <item row="0" column="2">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Estaca 2</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3">
+    <widget class="QComboBox" name="comboEstaca2">
+     <item>
+      <property name="text">
+       <string>Selecione Estaca Final</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="1" column="1" colspan="2">
+    <widget class="QPushButton" name="btnCalcular">
+     <property name="text">
+      <string>Calcular</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1" colspan="3">
+    <widget class="QLabel" name="lblTipo">
+     <property name="text">
+      <string>Plano</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>

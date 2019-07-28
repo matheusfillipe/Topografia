@@ -7,8 +7,8 @@
                               -------------------
         begin                : 2017-02-07
         git sha              : $Format:%H$
-        copyright            : (C) 2017 by Lucas
-        email                : lucaophp@hotmail.com
+        copyright            : (C) 2017 by Lucas, 2018 by Matheus
+        email                : lucaophp@hotmail.com, matheusfillipeag@gmail.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -62,14 +62,16 @@ class TopoGrafia(object):
             'i18n',
             'TopoGrafia_{}.qm'.format(locale))
 
-    #    #DEBUG CLIENT
-    #    try:
-    #        import sys
-    #        sys.path.append('/home/matheus/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/181.5087.37/debug-eggs/pycharm-debug.egg')
-    #        import pydevd
-    #        pydevd.settrace('localhost', port=5553, stdoutToServer=True, stderrToServer=True)
-    #    except:
-    #        pass
+        #DEBUG CLIENT
+        try:
+            import sys
+            sys.path.append('/home/matheus/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/181.5087.37/debug-eggs/pycharm-debug.egg')
+            import pydevd
+            pydevd.settrace('localhost', port=5553, stdoutToServer=True, stderrToServer=True)
+        except:
+            pass
+
+
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -97,6 +99,8 @@ class TopoGrafia(object):
 
 
         # combo.addItems(["%d - %s" % (x[1], x[0]) for x in self.rowsCRS])
+
+
 
     def changeCRS(self):
         self.conf.changeCRS()
@@ -197,7 +201,6 @@ class TopoGrafia(object):
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        """Create the menu entries and toolbar icons inside the QGIS GUI."""
         icon_path_map = ':/plugins/TopoGrafia/app/resources/icons/iconmap.png'
         icon_path_carta = ':/plugins/TopoGrafia/app/resources/icons/iconcarta.png'
         icon_path_curva = ':/plugins/TopoGrafia/app/resources/icons/iconcurva.png'
@@ -205,6 +208,9 @@ class TopoGrafia(object):
         icon_path_open = ':/plugins/TopoGrafia/app/resources/icons/iconopen.png'
         icon_path_save = ':/plugins/TopoGrafia/app/resources/icons/iconsave.png'
         icon_path = ':/plugins/TopoGrafia/app/resources/icons/iconnew.png'
+
+        #TODO icon_draw logo not showing up
+
         self.add_action(
             icon_path,
             text=self.tr(u'Novo Arquivo Topografico'),
@@ -240,15 +246,13 @@ class TopoGrafia(object):
             icon_path_carta,
             text=self.tr(u'Abrir Cartas'),
             callback=self.conf.carregacarta,
-            parent=self.iface.mainWindow()
-        )
+            parent=self.iface.mainWindow())
 
         self.add_action(
             icon_path_curva,
             text=self.tr(u'Curvas Horizontais em tabela'),
             callback=self.run_tracado,
-            parent=self.iface.mainWindow()
-        )
+            parent=self.iface.mainWindow())
 
 
 

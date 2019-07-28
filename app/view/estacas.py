@@ -4,12 +4,6 @@ import typing
 from builtins import range
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'estacas.ui'
-#
-# Created by: PyQt4 UI code generator 4.11.4
-#
-# WARNING! All changes made in this file will be lost!
-
 import os
 import sip
 from qgis.PyQt import QtCore, QtWidgets, QtWidgets, QtGui
@@ -38,7 +32,7 @@ from qgis.core import *
 from ..model.utils import decdeg2dms
 import subprocess
 
-from qgis._core import Qgis
+import qgis
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import *
@@ -67,6 +61,10 @@ APLICAR_TRANSVERSAL_DIALOG, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/applyTransDiag.ui'))
 SETCTATI_DIALOG, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/setTransPtsIndexes.ui'))
+VERTICE_EDIT_DIALOG, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), '../view/ui/Topo_dialog-cv.ui'))
+SET_ESCALA_DIALOG, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), '../view/ui/setEscala.ui'))
 
 rb = QgsRubberBand(iface.mapCanvas(), 1)
 premuto = False
@@ -129,7 +127,6 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
                                    u"%s" % msg,
                                    QtWidgets.QMessageBox.NoButton, None)
         msgBox.addButton("OK", QtWidgets.QMessageBox.AcceptRole)
-        #msgBox.addButton("&Continue", QtWidgets.QMessageBox.RejectRole)
         msgBox.exec_()
 
     def openCSV(self):
@@ -140,7 +137,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
             return None
         return filename, fileDB
 
-    def new(self,recalcular=False,layerName=None):
+    def new(self,recalcular=False,layerName=None,filename=None):
         mapCanvas = self.iface.mapCanvas()
         itens = []
         for i in range(mapCanvas.layerCount() - 1, -1, -1):
@@ -151,12 +148,13 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
             except:
                 pass
         if len(itens) == 0: return None
-        if not recalcular:
-            filename, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:")
-            if not ok:
-                return None
-        else:
-            filename = ''
+        if not filename:
+            if not recalcular:
+                filename, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:")
+                if not ok:
+                    return None
+            else:
+                filename = ''
 
         if layerName is None:
             layerList = QgsProject .instance().mapLayersByName(layerName)
@@ -169,7 +167,8 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
                 try:
                     layer = mapCanvas.layer(i)
                     layerName = layer.name()
-                    itens.append(layerName)
+                    if type(layer) == qgis._core.QgsVectorLayer:
+                        itens.append(layerName)
                 except:
                     pass
             item, ok = QtWidgets.QInputDialog.getItem(None, "Camada com tracado", u"Selecione a camada com o traçado:",
@@ -199,7 +198,9 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         for i,f in enumerate(files):
             self.tableEstacas.insertRow(self.tableEstacas.rowCount())
             for j,f2 in enumerate(f):
-                self.tableEstacas.setItem(i,j,QtWidgets.QTableWidgetItem(u"%s" % f2))
+                tableItem=QtWidgets.QTableWidgetItem(u"%s" % f2)
+                tableItem.setFlags(tableItem.flags() ^ Qt.ItemIsEditable)
+                self.tableEstacas.setItem(i,j,tableItem)
 
     def create_line(self,p1,p2,name):
         layer = QgsVectorLayer('LineString?crs=%s'%int(self.crs), name, "memory")
@@ -231,6 +232,37 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
 
         return p1
 
+    def drawShapeFileAndLoad(self, crs):
+        #Creates a shapefile on the given path and triggers the digitizing menu QActions
+        #For editing and saving the LineString
+        #This relies on the QActions order on the menu
+
+        fields = QgsFields()
+        fields.append(QgsField("id", QVariant.Int))
+        fields.append(QgsField("value", QVariant.Double))
+        fields.append(QgsField("name", QVariant.String))
+        dialog = QtWidgets.QFileDialog()
+        dialog.setWindowTitle("Caminho para criar arquivo shapefile")
+        dialog.setDefaultSuffix("shp")
+        path = QtWidgets.QFileDialog.getSaveFileName(filter="Shapefiles (*.shp)")[0]
+
+        if not path:
+            return None
+
+        writer = QgsVectorFileWriter(path, 'UTF-8', fields, QgsWkbTypes.MultiLineString,
+                                     QgsCoordinateReferenceSystem('EPSG:' + str(crs)), 'ESRI Shapefile')
+        del writer
+        self.iface.addVectorLayer(path,"","ogr")
+
+        self.iface.digitizeToolBar().show()
+        addLineAction = self.iface.digitizeToolBar().actions()[8]
+        toggleEditAction = self.iface.digitizeToolBar().actions()[1]
+        if not addLineAction.isChecked():
+            toggleEditAction.trigger()
+        addLineAction.setChecked(True)
+        addLineAction.trigger()
+
+
     def get_click_coordenate(self,point, mouse):
         self.actual_point=QgsPoint(point)
         if self.tracado_dlg.txtNorthStart.text().strip()=='':
@@ -241,8 +273,8 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
             self.tracado_dlg.txtEsteEnd.setText("%f"%self.actual_point.x())
 
     def gera_tracado_pontos(self,inicial=False,final=False,callback_inst=None,callback_method=None,crs=None):
-        if (not(inicial) and not(final)):
-            self.callback = eval('callback_inst.%s'%callback_method)
+        if (not (inicial) and not (final)):
+            self.callback = eval('callback_inst.%s' % callback_method)
             self.crs = crs
             self.tracado_dlg_inicial = GeraTracadoUI(self.iface)
             self.tracado_dlg_inicial.lblName.setText("Ponto Inicial")
@@ -250,31 +282,33 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
             self.tracado_dlg_final = GeraTracadoUI(self.iface)
             self.tracado_dlg_final.lblName.setText("Ponto Final")
             self.tracado_dlg_final.btnCapture.clicked.connect(self.capture_point_final)
-        if (not(inicial) and not(final)) or not(final):
+        if (not (inicial) and not (final)) or not (final):
             ok = self.tracado_dlg_inicial.exec_()
-            if not(ok):
+            if not (ok):
                 return None
             else:
-                pn = float(self.tracado_dlg_inicial.txtNorth.text().strip().replace(",","."))
-                pe = float(self.tracado_dlg_inicial.txtEste.text().strip().replace(",","."))
-                self.gera_tracado_ponto_inicial(QgsPoint(pe, pn)) 
+                pn = float(self.tracado_dlg_inicial.txtNorth.text().strip().replace(",", "."))
+                pe = float(self.tracado_dlg_inicial.txtEste.text().strip().replace(",", "."))
+                self.gera_tracado_ponto_inicial(QgsPoint(pe, pn))
 
-        if (not(inicial) and not(final)) or not(inicial):
+        if (not (inicial) and not (final)) or not (inicial):
             ok = self.tracado_dlg_final.exec_()
-            if not(ok):
+            if not (ok):
                 return None
             else:
-                pn = float(self.tracado_dlg_final.txtNorth.text().strip().replace(",","."))
-                pe = float(self.tracado_dlg_final.txtEste.text().strip().replace(",","."))
+                pn = float(self.tracado_dlg_final.txtNorth.text().strip().replace(",", "."))
+                pe = float(self.tracado_dlg_final.txtEste.text().strip().replace(",", "."))
                 self.gera_tracado_ponto_final(QgsPoint(pe, pn))
 
         if inicial and final:
-            p1n = float(self.tracado_dlg_inicial.txtNorth.text().strip().replace(",","."))
-            p1e = float(self.tracado_dlg_inicial.txtEste.text().strip().replace(",","."))
+            p1n = float(self.tracado_dlg_inicial.txtNorth.text().strip().replace(",", "."))
+            p1e = float(self.tracado_dlg_inicial.txtEste.text().strip().replace(",", "."))
             p2n = float(self.tracado_dlg_final.txtNorth.text().strip().replace(",", "."))
             p2e = float(self.tracado_dlg_final.txtEste.text().strip().replace(",", "."))
             self.iface.mapCanvas().setMapTool(None)
-            self.callback(pontos=self.create_line(QgsPoint(p1e, p1n), QgsPoint(p2e, p2n), "Diretriz"),parte=1)
+            self.callback(pontos=self.create_line(QgsPoint(p1e, p1n), QgsPoint(p2e, p2n), "Diretriz"), parte=1)
+
+
 
     def gera_tracado_ponto_inicial(self,point):
         self.tracado_dlg_inicial.txtNorth.setText("%f"%point.y())
@@ -343,8 +377,6 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         self.dialog.show()
         return self.name_tracado
 
-
-
     def setupUi2(self,Form):
         Form.setObjectName(_fromUtf8(u"Traçado Horizontal"))
         self.tableEstacas.setColumnCount(3)
@@ -354,6 +386,8 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         self.tableEstacas.setColumnWidth(2, 200)
         self.tableEstacas.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableEstacas.setHorizontalHeaderLabels((u"ID",u"Arquivo",u"Data criação"))
+
+
 
 class EstacasIntersec(QtWidgets.QDialog):
 
@@ -518,9 +552,6 @@ class EstacasCv(QtWidgets.QDialog):
         self.btnClean.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
         self.btnClean.setObjectName(_fromUtf8("btnClean"))
 
-
-
-
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
@@ -563,6 +594,10 @@ class Estacas(QtWidgets.QDialog):
             self.tableWidget.setItem(k, 6, QtWidgets.QTableWidgetItem(str_az))
         else:'''
         self.tableWidget.setItem(k, 6, QtWidgets.QTableWidgetItem(u"%s" % azimute))
+
+        for j in range(0,7):
+            cell_item = self.tableWidget.item(k, j)
+            cell_item.setFlags(cell_item.flags() ^ Qt.ItemIsEditable)
 
     def get_estacas(self):
         estacas = []
@@ -610,13 +645,13 @@ class Estacas(QtWidgets.QDialog):
 
     def openTIFF(self):
         mapCanvas = self.iface.mapCanvas()
-
         itens = []
         for i in range(mapCanvas.layerCount() - 1, -1, -1):
             try:
                 layer = mapCanvas.layer(i)
                 layerName = layer.name()
-                itens.append(layerName)
+                if type(layer)==qgis._core.QgsRasterLayer:
+                    itens.append(layerName)
             except:
                 pass
         item, ok = QtWidgets.QInputDialog.getItem(None, "Camada com tracado", u"Selecione o raster com as elevações:",
@@ -990,135 +1025,125 @@ class rampaDialog(QtWidgets.QDialog):
 
 
 
-class cvEdit(object):
-    
+class ssRampaDialog(rampaDialog):
+    def __init__(self, roi, segment, pos):
+        super(ssRampaDialog, self).__init__(roi, segment, pos)
+        self.setWindowTitle("Modificar Elemento")
 
-    def removeCv(self):
+    def setupUI(self):
+        r = []
+        for handle in self.roi.getHandles():
+            r.append(handle)
+
+        self.firstHandle = r[0]
+        self.lastHandle = r[len(r) - 1]
+
+        H1layout = QtWidgets.QHBoxLayout()
+        H2layout = QtWidgets.QHBoxLayout()
+        H3layout = QtWidgets.QHBoxLayout()
+        Vlayout = QtWidgets.QVBoxLayout(self)
+
+        label = QtWidgets.QLabel("Modificar Rampa")
+
+        Incl = QtWidgets.QLineEdit()
+        compr = QtWidgets.QLineEdit()
+        cota = QtWidgets.QLineEdit()
+        abscissa = QtWidgets.QLineEdit()
+        InclLbl = QtWidgets.QLabel(u"Inclinação: ")
+        posInclLbl = QtWidgets.QLabel(u"%")
+        comprLbl = QtWidgets.QLabel(u"Comprimento: ")
+        poscomprLbl = QtWidgets.QLabel(u"m")
+        cotaLbl = QtWidgets.QLabel(u"Cota:      ")
+        poscotaLbl = QtWidgets.QLabel(u"m")
+        abscissalbl = QtWidgets.QLabel(u"Distância até o eixo")
+        posabscissaLbl = QtWidgets.QLabel(u"m")
+
+        h1 = self.segment.handles[0]['item']
+        h2 = self.segment.handles[1]['item']
+
+        self.h1 = h1
+        self.h2 = h2
+
+        self.initialPos = [h1.pos(), h2.pos()]
+
+        b1 = QtWidgets.QPushButton("ok", self)
+        b1.clicked.connect(self.finishDialog)
+        b2 = QtWidgets.QPushButton("cancelar", self)
+        b2.clicked.connect(lambda: self.cleanClose())
+
+        H1layout.addWidget(InclLbl)
+        H1layout.addWidget(Incl)
+        H1layout.addWidget(posInclLbl)
+        H1layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+
+        H1layout.addWidget(comprLbl)
+        H1layout.addWidget(compr)
+        H1layout.addWidget(poscomprLbl)
+        H1layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+
+        H2layout.addWidget(cotaLbl)
+        H2layout.addWidget(cota)
+        H2layout.addWidget(poscotaLbl)
+        H2layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+
+        H2layout.addWidget(abscissalbl)
+        H2layout.addWidget(abscissa)
+        H2layout.addWidget(posabscissaLbl)
+        H2layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+
+        Vlayout.addWidget(label)
+        Vlayout.addLayout(H1layout)
+        Vlayout.addLayout(H2layout)
+        H3layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+        H3layout.addWidget(b1)
+        H3layout.addWidget(b2)
+        Vlayout.addLayout(H3layout)
+
+        self.InclText = Incl
+        self.Incl = 100 * (h2.pos().y() - h1.pos().y()) / (h2.pos().x() - h1.pos().x())
+        self.comprText = compr
+        self.compr = np.sqrt((h2.pos().y() - h1.pos().y()) ** 2 + (h2.pos().x() - h1.pos().x()) ** 2)
+        self.cotaText = cota
+        self.cota = h2.pos().y()
+        self.abscissaText = abscissa
+        self.abscissa = h2.pos().x()
+
+        Incl.setValidator(QtGui.QDoubleValidator())
+        compr.setValidator(QtGui.QDoubleValidator())
+        cota.setValidator(QtGui.QDoubleValidator())
+        abscissa.setValidator(QtGui.QDoubleValidator())
+
+        Incl.setText(str(round(self.Incl, 2)))
+        compr.setText(str(round(self.compr, 2)))
+        cota.setText(str(round(self.cota, 2)))
+        abscissa.setText(str(round(self.abscissa, 2)))
+
+        compr.textChanged.connect(self.updateCompr)
+        cota.textChanged.connect(self.updateCota)
+        abscissa.textChanged.connect(self.updateAbscissa)
+        Incl.textChanged.connect(self.updateIncl)
+
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.isBeingModified = False
+
+
+class cvEdit(QtWidgets.QDialog, VERTICE_EDIT_DIALOG):
+    def __init__(self, iface):
+        super(cvEdit, self).__init__(None)
+        self.iface = iface
+        self.setupUi(self)
+
+
+    def removeCv(self, iface):
         self.groupBox_2.setFlat(True)
-        self.groupBox_2.setStyleSheet("border:0;")
+        self.groupBox_2.setStyleSheet("border:1;")
+
         self.pushButton.hide()
         self.widget1.hide()
         self.widget2.hide()
         self.widget3.hide()
         self.widget4.hide()
         self.groupBox_2.setTitle('')
-
-    def setupUi(self, Dialog):
-        Dialog.setObjectName("Dialog")
-        Dialog.resize(745, 559)
-        self.buttonBox = QtWidgets.QDialogButtonBox(Dialog)
-        self.buttonBox.setGeometry(QtCore.QRect(340, 510, 391, 51))
-        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
-        self.buttonBox.setObjectName("buttonBox")
-        self.groupBox = QtWidgets.QGroupBox(Dialog)
-        self.groupBox.setGeometry(QtCore.QRect(10, 10, 731, 141))
-        self.groupBox.setObjectName("groupBox")
-        self.widget = QtWidgets.QWidget(self.groupBox)
-        self.widget.setGeometry(QtCore.QRect(60, 60, 581, 39))
-        self.widget.setObjectName("widget")
-        self.horizontalLayout = QtWidgets.QHBoxLayout(self.widget)
-        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.cotaLabel = QtWidgets.QLabel(self.widget)
-        self.cotaLabel.setObjectName("cotaLabel")
-        self.horizontalLayout.addWidget(self.cotaLabel)
-        self.cota = QtWidgets.QLineEdit(self.widget)
-        self.cota.setObjectName("cota")
-        self.cota.setValidator(QtGui.QDoubleValidator())
-
-        self.horizontalLayout.addWidget(self.cota)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout.addItem(spacerItem)
-        self.horizontalLabel = QtWidgets.QLabel(self.widget)
-        self.horizontalLabel.setObjectName("horizontalLabel")
-        self.horizontalLayout.addWidget(self.horizontalLabel)
-        self.horizontal = QtWidgets.QLineEdit(self.widget)
-        self.horizontal.setObjectName("horizontal")
-        self.horizontal.setValidator(QtGui.QDoubleValidator())
-
-        self.horizontalLayout.addWidget(self.horizontal)
-        self.groupBox_2 = QtWidgets.QGroupBox(Dialog)
-        self.groupBox_2.setGeometry(QtCore.QRect(10, 170, 731, 321))
-        self.groupBox_2.setObjectName("groupBox_2")
-        self.pushButton = QtWidgets.QPushButton(self.groupBox_2)
-        self.pushButton.setGeometry(QtCore.QRect(550, 230, 105, 39))
-        self.pushButton.setObjectName("pushButton")
-        self.widget1 = QtWidgets.QWidget(self.groupBox_2)
-        self.widget1.setGeometry(QtCore.QRect(20, 240, 182, 39))
-        self.widget1.setObjectName("widget1")
-        self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.widget1)
-        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        self.cotaLabel_4 = QtWidgets.QLabel(self.widget1)
-        self.cotaLabel_4.setObjectName("cotaLabel_4")
-        self.horizontalLayout_2.addWidget(self.cotaLabel_4)
-        self.i2 = QtWidgets.QLineEdit(self.widget1)
-        self.i2.setObjectName("i2")
-        self.i2.setValidator(QtGui.QDoubleValidator())
-
-        self.horizontalLayout_2.addWidget(self.i2)
-        self.widget2 = QtWidgets.QWidget(self.groupBox_2)
-        self.widget2.setGeometry(QtCore.QRect(20, 170, 182, 39))
-        self.widget2.setObjectName("widget2")
-        self.horizontalLayout_3 = QtWidgets.QHBoxLayout(self.widget2)
-        self.horizontalLayout_3.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        self.cotaLabel_3 = QtWidgets.QLabel(self.widget2)
-        self.cotaLabel_3.setObjectName("cotaLabel_3")
-        self.horizontalLayout_3.addWidget(self.cotaLabel_3)
-        self.i1 = QtWidgets.QLineEdit(self.widget2)
-        self.i1.setObjectName("i1")
-        self.i1.setValidator(QtGui.QDoubleValidator())
-
-        self.horizontalLayout_3.addWidget(self.i1)
-        self.widget3 = QtWidgets.QWidget(self.groupBox_2)
-        self.widget3.setGeometry(QtCore.QRect(380, 120, 273, 39))
-        self.widget3.setObjectName("widget3")
-        self.horizontalLayout_4 = QtWidgets.QHBoxLayout(self.widget3)
-        self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_4.setObjectName("horizontalLayout_4")
-        self.cotaLabel_7 = QtWidgets.QLabel(self.widget3)
-        self.cotaLabel_7.setObjectName("cotaLabel_7")
-        self.horizontalLayout_4.addWidget(self.cotaLabel_7)
-        self.L = QtWidgets.QLineEdit(self.widget3)
-        self.L.setObjectName("L")
-        self.L.setValidator(QtGui.QDoubleValidator())
-
-        self.horizontalLayout_4.addWidget(self.L)
-        self.widget4 = QtWidgets.QWidget(self.groupBox_2)
-        self.widget4.setGeometry(QtCore.QRect(20, 70, 181, 39))
-        self.widget4.setObjectName("widget4")
-        self.horizontalLayout_5 = QtWidgets.QHBoxLayout(self.widget4)
-        self.horizontalLayout_5.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_5.setObjectName("horizontalLayout_5")
-        self.cotaLabel_2 = QtWidgets.QLabel(self.widget4)
-        self.cotaLabel_2.setObjectName("cotaLabel_2")
-        self.horizontalLayout_5.addWidget(self.cotaLabel_2)
-        self.G = QtWidgets.QLineEdit(self.widget4)
-        self.G.setObjectName("G")
-        self.G.setValidator(QtGui.QDoubleValidator())
-
-        self.horizontalLayout_5.addWidget(self.G)
-
-        self.retranslateUi(Dialog)
-        self.buttonBox.accepted.connect(Dialog.accept)
-        self.buttonBox.rejected.connect(Dialog.reject)
-        QtCore.QMetaObject.connectSlotsByName(Dialog)
-
-    def retranslateUi(self, Dialog):
-        _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Modificar Curva Vertical"))
-        self.groupBox.setTitle(_translate("Dialog", "Vértice"))
-        self.cotaLabel.setText(_translate("Dialog", "Cota:"))
-        self.horizontalLabel.setText(_translate("Dialog", "Horizontal: "))
-        self.groupBox_2.setTitle(_translate("Dialog", "Curva Vertical"))
-        self.pushButton.setText(_translate("Dialog", "Ver Curva"))
-        self.cotaLabel_4.setText(_translate("Dialog", "i2: "))
-        self.cotaLabel_3.setText(_translate("Dialog", "i1: "))
-        self.cotaLabel_7.setText(_translate("Dialog", "Comprimento: "))
-        self.cotaLabel_2.setText(_translate("Dialog", "G: "))
-
 
 
 class ApplyTransDialog(QtWidgets.QDialog, APLICAR_TRANSVERSAL_DIALOG):
@@ -1177,4 +1202,35 @@ class SetCtAtiDialog(QtWidgets.QDialog, SETCTATI_DIALOG):
             self.ati=int(self.secondCb.currentText())
         except:
             pass
+
+
+#TODO convert to relative scale
+class setEscalaDialog(QtWidgets.QDialog, SET_ESCALA_DIALOG):
+    def __init__(self, iface):
+        super(setEscalaDialog, self).__init__(None)
+        self.iface=iface
+        self.setupUi(self)
+        self.vb=self.iface.vb
+        self.x.setValidator(QtGui.QDoubleValidator())
+        self.y.setValidator(QtGui.QDoubleValidator())
+        self.x.setText('1.0')
+        self.y.setText('1.0')
+        self.x.returnPressed.connect(self.changed)
+        self.y.returnPressed.connect(self.changed)
+        self.zoomBtn.clicked.connect(self.zoom)
+
+    def getX(self):
+        return float(self.x.text())
+
+    def getY(self):
+        return float(self.y.text())
+
+
+    def zoom(self):
+        self.vb.autoRange()
+
+    def changed(self):
+        self.vb.scaleBy((self.getX(),self.getY()))
+
+
 

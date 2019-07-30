@@ -45,7 +45,7 @@ class Estacas(object):
     def mudancaCelula(self,item):
         if item.column() > 1:
             campo = float(self.view.tableWidget.item(item.row(), item.column()).text().replace(',','.'))
-            self.view.tableWidget.setItem(item.row(), item.column(),QtGui.QTableWidgetItem('%s'%campo))
+            self.view.tableWidget.setItem(item.row(), item.column(),QtWidgets.QTableWidgetItem('%s'%campo))
 
     def linkGoogle(self, item):
         if item.column() == 0:
@@ -70,7 +70,7 @@ class Estacas(object):
         self.preview.btnGerarTracado.clicked.connect(self.geraTracado)
         self.preview.tableEstacas.itemClicked.connect(self.itemClickTableEstacas)
         self.preview.btnOpenCv.clicked.connect(self.openCv)
-       
+        self.preview.deleted.connect(self.deleteEstaca)
 
         '''
             ------------------------------------------------
@@ -149,17 +149,22 @@ class Estacas(object):
 
     def new(self, bool=False, layer=None):
         self.view.clear()
-        dados = self.preview.new()
+        dados = self.preview.new(lastIndex=len(self.model.listTables())+1)
         if not dados is None:
             filename, lyr, dist, estaca = dados
+            self.model.iface=self.iface
             id_estaca, table = self.model.new(dist, estaca, lyr, filename)
             self.elemento = id_estaca
             self.model.id_filename = id_estaca
             self.estacasHorizontalList=[]
 
+            empty=True
             for item in table:
                 self.view.fill_table(tuple(item))
                 self.estacasHorizontalList.append(tuple(item))
+                empty=False
+
+            self.view.empty=empty
             self.model.save(id_estaca)
 
 
@@ -350,6 +355,7 @@ class Estacas(object):
 
     def drawEstacas(self, estacas):
         layer = QgsVectorLayer('LineString', 'Traçado ' + str(self.model.id_filename), "memory")
+        layer.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().layer(0).crs()))
         pr = layer.dataProvider()
         poly = QgsFeature()
 
@@ -804,6 +810,9 @@ class Estacas(object):
         self.preview.fill_table_index(files)
 
     def run(self):
+       # from ..view.estacas import SelectFeatureDialog
+       # s=SelectFeatureDialog(self.iface,self.iface.mapCanvas().layer(0).getFeatures())
+       # s.exec_()
         self.update()
         self.click = False
         self.preview.show()

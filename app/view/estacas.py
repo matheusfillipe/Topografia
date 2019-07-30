@@ -65,6 +65,10 @@ VERTICE_EDIT_DIALOG, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/Topo_dialog-cv.ui'))
 SET_ESCALA_DIALOG, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/setEscala.ui'))
+SELECT_FEATURE, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), '../view/ui/selectFeature.ui'))
+ESTACAS_DIALOG, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), '../view/ui/Topo_dialog_estacas.ui'))
 
 rb = QgsRubberBand(iface.mapCanvas(), 1)
 premuto = False
@@ -111,6 +115,8 @@ class GeraTracadoUI(QtWidgets.QDialog,FORMGERATRACADO_CLASS):
         self.setupUi(self)
 
 class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
+    deleted=QtCore.pyqtSignal()
+
     def __init__(self, iface):
         super(EstacasUI, self).__init__(None)
         self.iface = iface
@@ -122,6 +128,12 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         self.dialog = QtWidgets.QDialog(None)
         self.actual_point = None
 
+    def keyPressEvent(self, a0: QtGui.QKeyEvent):
+        if a0.key() == QtCore.Qt.Key_Delete:
+            self.deleted.emit()
+        super(EstacasUI, self).keyPressEvent(a0)
+
+
     def error(self, msg):
         msgBox = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning, "AVISO",
                                    u"%s" % msg,
@@ -132,12 +144,12 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
     def openCSV(self):
         filename = QtWidgets.QFileDialog.getOpenFileName()
         if filename in ["", None]: return None
-        fileDB, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo a ser salvo no projeto:")
+        fileDB, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo a ser salvo no projeto:", text="Traçado csv")
         if not ok:
             return None
         return filename, fileDB
 
-    def new(self,recalcular=False,layerName=None,filename=None):
+    def new(self,recalcular=False,layerName=None,filename=None, lastIndex=0):
         mapCanvas = self.iface.mapCanvas()
         itens = []
         for i in range(mapCanvas.layerCount() - 1, -1, -1):
@@ -150,7 +162,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         if len(itens) == 0: return None
         if not filename:
             if not recalcular:
-                filename, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:")
+                filename, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:", text="Traçado "+str(lastIndex))
                 if not ok:
                     return None
             else:
@@ -201,6 +213,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
                 tableItem=QtWidgets.QTableWidgetItem(u"%s" % f2)
                 tableItem.setFlags(tableItem.flags() ^ Qt.ItemIsEditable)
                 self.tableEstacas.setItem(i,j,tableItem)
+        self.tableEstacas.cellDoubleClicked.connect(self.accept)
 
     def create_line(self,p1,p2,name):
         layer = QgsVectorLayer('LineString?crs=%s'%int(self.crs), name, "memory")
@@ -466,9 +479,6 @@ class EstacasIntersec(QtWidgets.QDialog):
         self.btnClean.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
         self.btnClean.setObjectName(_fromUtf8("btnClean"))
 
-
-
-
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
@@ -562,7 +572,7 @@ class EstacasCv(QtWidgets.QDialog):
 
 
 
-class Estacas(QtWidgets.QDialog):
+class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
 
     def __init__(self,iface):
         super(Estacas, self).__init__(None)
@@ -675,78 +685,15 @@ class Estacas(QtWidgets.QDialog):
         return filename
         
     def setupUi(self, Form):
+        super(Estacas, self).setupUi(Form)
         Form.setObjectName(_fromUtf8(u"Traçado Horizontal"))
-        Form.resize(919, 510)
-        self.tableWidget = QtWidgets.QTableWidget(Form)
-        self.tableWidget.setGeometry(QtCore.QRect(0, 0, 761, 511))
-        self.tableWidget.setObjectName(_fromUtf8("tableWidget"))
         self.modelSource = self.tableWidget.model()
         self.tableWidget.setColumnCount(7)
         self.tableWidget.setRowCount(0)
         self.tableWidget.setHorizontalHeaderLabels((u"Estaca",u"Descrição",u"Progressiva",u"Norte",u"Este",u"Cota",u"Azimute"))
 
-        self.btnRead = QtWidgets.QPushButton(Form)
-        self.btnRead.setText("Abrir Arquivo")
-        self.btnRead.setGeometry(QtCore.QRect(769, 16, 143, 30))
-        self.btnRead.setObjectName(_fromUtf8("btnRead"))
-        #self.btnRead.clicked.connect(self.carrega)
-
-        self.btnEstacas = QtWidgets.QPushButton(Form)
-        self.btnEstacas.setText("Recalcular Estacas")
-        self.btnEstacas.setGeometry(QtCore.QRect(769, 50, 143, 30))
-        self.btnEstacas.setObjectName(_fromUtf8("btnEstacas"))
-        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
-
-        self.btnLayer = QtWidgets.QPushButton(Form)
-        self.btnLayer.setText("Plotar")
-        self.btnLayer.setGeometry(QtCore.QRect(769, 84, 143, 30))
-        self.btnLayer.setObjectName(_fromUtf8("btnLayer"))
-        #self.btnLayer.clicked.connect(self.plot)
-
-        self.btnPerfil = QtWidgets.QPushButton(Form)
-        self.btnPerfil.setText("Perfil do trecho")
-        self.btnPerfil.setGeometry(QtCore.QRect(769, 118, 143, 30))
-        self.btnPerfil.setObjectName(_fromUtf8("btnPerfil"))
-        #self.btnPerfil.clicked.connect(self.perfil)
-
-        self.btnSaveCSV = QtWidgets.QPushButton(Form)
-        self.btnSaveCSV.setText("Salvar em CSV")
-        self.btnSaveCSV.setGeometry(QtCore.QRect(769, 152, 143, 30))
-        self.btnSaveCSV.setObjectName(_fromUtf8("btnSave"))
-        #self.btnSave.clicked.connect(self.save)
-        self.btnSave = QtWidgets.QPushButton(Form)
-        self.btnSave.setText("Salvar")
-        self.btnSave.setGeometry(QtCore.QRect(769, 186, 143, 30))
-        self.btnSave.setObjectName(_fromUtf8("btnSave"))
-
-        self.btnCurva = QtWidgets.QPushButton(Form)
-        self.btnCurva.setText("Curvas")
-        self.btnCurva.setGeometry(QtCore.QRect(769, 220, 143, 30))
-        self.btnCurva.setObjectName(_fromUtf8("btnCurva"))
-        #self.btnCurva.clicked.connect(self.perfil)
-
-     
-        self.btnCotaTIFF = QtWidgets.QPushButton(Form)
-        self.btnCotaTIFF.setText("Obter Cotas\nvia GeoTIFF")
-        self.btnCotaTIFF.setGeometry(QtCore.QRect(769, 300, 143, 60))
-        self.btnCotaTIFF.setObjectName(_fromUtf8("btnCotaTIFF"))
-
-        self.btnCotaPC = QtWidgets.QPushButton(Form)
-        self.btnCotaPC.setText("Obter Cotas\nvia Pontos cotados\nDXF")
-        self.btnCotaPC.setGeometry(QtCore.QRect(769, 375, 143,60))
-        self.btnCotaPC.setObjectName(_fromUtf8("btnCotaPC"))
 
 
-        self.btnCota = QtWidgets.QPushButton(Form)
-        self.btnCota.setText("Obter Cotas\nvia Google")
-        self.btnCota.setGeometry(QtCore.QRect(769, 450, 143, 60))
-        self.btnCota.setObjectName(_fromUtf8("btnCota"))
-
-        self.retranslateUi(Form)
-        QtCore.QMetaObject.connectSlotsByName(Form)
-
-    def retranslateUi(self, Form):
-        Form.setWindowTitle(_translate("Traçado Horizontal", "Traçado Horizontal", None))
 
 
 class closeDialog(QtWidgets.QDialog):
@@ -1233,4 +1180,62 @@ class setEscalaDialog(QtWidgets.QDialog, SET_ESCALA_DIALOG):
         self.vb.scaleBy((self.getX(),self.getY()))
 
 
+class SelectFeatureDialog(QtWidgets.QDialog, SELECT_FEATURE):
+    def __init__(self, iface, features):
+        super(SelectFeatureDialog, self).__init__(None)
+        self.iface=iface
+        self.setupUi(self)
+        self.Dialog: QtWidgets.QDialog
+        self.buttonBox: QtWidgets.QDialogButtonBox
+        self.checkBox: QtWidgets.QCheckBox
+        self.groupBox: QtWidgets.QGroupBox
+        self.tableWidget: QtWidgets.QTableWidget
+        self.tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableWidget.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.result=-1 #loop over all
+
+        for feat in features:
+            if self.tableWidget.columnCount()>9:
+                break
+            if feat.hasGeometry():
+                row = []
+                for f in feat.fields():
+                    row.append(str(f.name()) + ": " + str(feat[f.name()]))
+                row.append("Comprimento: "+str(feat.geometry().length()))
+                self.tableWidget.insertRow(self.tableWidget.rowCount())
+                k = self.tableWidget.rowCount() - 1
+                j=0
+                for r in row:
+                    if j>=self.tableWidget.columnCount():
+                        self.tableWidget.insertColumn(self.tableWidget.columnCount())
+                    item=QtWidgets.QTableWidgetItem(u"%s" % r)
+                    item.setFlags(item.flags() ^ Qt.ItemIsEditable)
+                    self.tableWidget.setItem(k, j, item)
+                    j+=1
+
+        self.tableWidget.horizontalHeader().setStretchLastSection(True)
+        self.tableWidget.cellDoubleClicked.connect(self.accept)
+
+        if self.tableWidget.rowCount()==0:
+            self.checkBox.setChecked(True)
+            self.checkBox.setDisabled(True)
+            self.accept()
+
+        else:
+            self.result=0 #feature index
+            self.tableWidget.selectRow(0)
+            self.tableWidget.itemSelectionChanged.connect(self.updateResult)
+            self.checkBox.stateChanged.connect(self.check)
+
+
+    def updateResult(self):
+        self.result=self.tableWidget.currentRow()
+
+    def check(self, i):
+        if i==0:
+            self.tableWidget.setDisabled(False)
+            self.updateResult()
+        else:
+            self.result=-1
+            self.tableWidget.setDisabled(True)
 

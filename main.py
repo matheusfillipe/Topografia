@@ -72,7 +72,6 @@ class TopoGrafia(object):
             pass
 
 
-
         if os.path.exists(locale_path):
             self.translator = QTranslator()
             self.translator.load(locale_path)

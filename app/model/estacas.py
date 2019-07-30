@@ -12,6 +12,7 @@ from ..controller.Geometria.Figure import prismoide
 from ..model.config import extractZIP, Config, compactZIP
 from ..model.curvas import Curvas
 from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation, internet_on
+from ..view.estacas import SelectFeatureDialog
 
 
 
@@ -20,7 +21,8 @@ from qgis.PyQt import QtGui
 #TODO change path tmp/dbatase to variable configurable
 
 class Estacas(object):
-    def __init__(self, distancia=20, estaca=0, layer=None, filename='', table=list(), cvData=list(),ultimo=-1, id_filename=-1):
+    def __init__(self, distancia=20, estaca=0, layer=None, filename='', table=list(), cvData=list(),ultimo=-1, id_filename=-1, iface=None):
+        self.iface=iface
         self.distancia = distancia
 
         self.filename = filename
@@ -42,8 +44,8 @@ class Estacas(object):
 
 
 
-    def new(self, distancia, estaca, layer, filename):
-        self.__init__(distancia, estaca, layer, filename, list(), self.ultimo, self.id_filename)
+    def new(self, distancia, estaca, layer, filename, iface=None):
+        self.__init__(distancia, estaca, layer, filename, list(), self.ultimo, self.id_filename, iface=iface)
 
         extractZIP(Config.fileName)
         con = sqlite3.connect("tmp/data/data.db")
@@ -369,38 +371,58 @@ class Estacas(object):
         cosb = 0.0
         crs = int(self.getCRS())
         sem_internet = internet_on()
-        for elemento in self.layer.getFeatures():
-            for i, (seg_start, seg_end) in enumerate(pairs(elemento, self.estaca)):
-                ponto_inicial = QgsPoint(seg_start)
-                ponto_final = QgsPoint(seg_end)
-                tamanho_da_linha = length(ponto_final, ponto_inicial)
-                ponto = diff(ponto_final, ponto_inicial)
 
-                if tamanho_da_linha == 0:
+        if hasattr(self, "iface") and sum(1 for f in self.layer.getFeatures())>1:
+            selectFeatureDialog=SelectFeatureDialog(self.iface, self.layer.getFeatures())
+            ok = selectFeatureDialog.exec_()
+            result=selectFeatureDialog.result
+        else:
+            result=-1
+            ok=True
+
+        if ok:
+            f=0
+            for elemento in self.layer.getFeatures():
+                if f!=result and result>-1:
+                    f+=1
                     continue
-                cosa, cosb = dircos(ponto)
-                az = azimuth(ponto_inicial, QgsPoint(ponto_inicial.x() + ((self.distancia) * cosa),
-                                                     ponto_inicial.y() + ((self.distancia) * cosb)))
-                estacas_inteiras = int(math.floor((tamanho_da_linha - sobra) / self.distancia))
-                estacas_inteiras_sobra = estacas_inteiras + 1 if sobra > 0 else estacas_inteiras
-                if not sem_internet:
-                    cota = getElevation(crs, QgsPoint(float(ponto_inicial.x()), float(ponto_inicial.y())))
-                    if cota == 0:
-                        sem_internet = True
-                else:
-                    cota = 0.0
+                f+=1
 
-                yield ['%d+%f' % (estaca, resto) if resto != 0 else '%d' % (estaca), 'v%d' % i, prog, ponto_inicial.y(),
-                       ponto_inicial.x(), cota,
-                       az], ponto_inicial, estacas_inteiras, prog, az, sobra, tamanho_da_linha, cosa, cosb
+                for i, (seg_start, seg_end) in enumerate(pairs(elemento, self.estaca)):
+                    ponto_inicial = QgsPoint(seg_start)
+                    ponto_final = QgsPoint(seg_end)
+                    tamanho_da_linha = length(ponto_final, ponto_inicial)
+                    ponto = diff(ponto_final, ponto_inicial)
 
-                prog += tamanho_da_linha
-                resto = (tamanho_da_linha - sobra) - (self.distancia * estacas_inteiras)
-                sobra = self.distancia - resto
-                estaca += estacas_inteiras_sobra
-            cota = getElevation(crs, QgsPoint(float(ponto_final.x()), float(ponto_final.y())))
-            yield ['%d+%f' % (estaca, resto), 'v%d' % i, prog, ponto_final.y(), ponto_final.x(), cota,
-                   az], ponto_final, 0, tamanho_da_linha, az, sobra, tamanho_da_linha, cosa, cosb
+                    if tamanho_da_linha == 0:
+                        continue
+                    cosa, cosb = dircos(ponto)
+                    az = azimuth(ponto_inicial, QgsPoint(ponto_inicial.x() + ((self.distancia) * cosa),
+                                                         ponto_inicial.y() + ((self.distancia) * cosb)))
+                    estacas_inteiras = int(math.floor((tamanho_da_linha - sobra) / self.distancia))
+                    estacas_inteiras_sobra = estacas_inteiras + 1 if sobra > 0 else estacas_inteiras
+                    if not sem_internet:
+                        cota = getElevation(crs, QgsPoint(float(ponto_inicial.x()), float(ponto_inicial.y())))
+                        if cota == 0:
+                            sem_internet = True
+                    else:
+                        cota = 0.0
+
+                    yield ['%d+%f' % (estaca, resto) if resto != 0 else '%d' % (estaca), 'v%d' % i, prog, ponto_inicial.y(),
+                           ponto_inicial.x(), cota,
+                           az], ponto_inicial, estacas_inteiras, prog, az, sobra, tamanho_da_linha, cosa, cosb
+
+                    prog += tamanho_da_linha
+                    resto = (tamanho_da_linha - sobra) - (self.distancia * estacas_inteiras)
+                    sobra = self.distancia - resto
+                    estaca += estacas_inteiras_sobra
+                cota = getElevation(crs, QgsPoint(float(ponto_final.x()), float(ponto_final.y())))
+                yield ['%d+%f' % (estaca, resto), 'v%d' % i, prog, ponto_final.y(), ponto_final.x(), cota,
+                       az], ponto_final, 0, tamanho_da_linha, az, sobra, tamanho_da_linha, cosa, cosb
+
+                if result!=-1:
+                    break
+
 
     def gera_estaca_intermediaria(self, estaca, anterior, prog, az, cosa, cosb, sobra=0.0):
         dist = sobra if sobra > 0 else self.distancia

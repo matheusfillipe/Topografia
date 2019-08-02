@@ -10,11 +10,9 @@ import qgis
 from ..model.config import Config
 from qgis.PyQt.QtCore import QSettings
 from qgis.PyQt.QtWidgets import QAbstractItemView
+from ..model.utils import addGoogleXYZTiles
 
 from qgis._core import *
-
-
-
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -100,37 +98,25 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.comboUnits.setCurrentIndex(model.ordem_units.index(model.UNITS))
 
     def carregamapa(self, tmap=3):
-        #openLyrs = qgis.utils.plugins['openlayers_plugin']
-        # g = geosearchdialog.GeoSearchDialog(self.iface)
-        '''g.SearchRoute([])
-        d = GoogleMapsApi.directions.Directions()
-        origin = "Boston, MA"
-        dest = "2517 Main Rd, Dedham, ME 04429"
-        route = d.GetDirections(origin, dest, mode="driving", waypoints=None, avoid=None, units="imperial")'''
+        from ..model.utils import msgLog
 
-       # my_crs = QgsCoordinateReferenceSystem(3857)
-       # QgsProject.instance().setCrs(my_crs)
-
-        #layerType = openLyrs._olLayerTypeRegistry.getById(tmap)
-        #openLyrs.addLayer(layerType)
-
-        # QgsCoordinateReferenceSystem.createFromProj4('+proj=tmerc', u'lat_0=0', u'lon_0=126', u'k=1', u'x_0=42500000', u'y_0=0', u'ellps=krass', u'towgs84=24.47,-130.89,-81.56,-0,-0,0.13,-0.22', u'units=m', u'no_defs')
-        # mycrs = QgsCoordinateReferenceSystem(31983)
-        # self.iface.mapCanvas().mapRenderer().setCrs( QgsCoordinateReferenceSystem(31983, QgsCoordinateReferenceSystem.EpsgCrsId) )
-
-        # self.iface.mapCanvas().mapRenderer().setDestinationCrs(mycrs)# set CRS to canvas
-        # self.iface.mapCanvas().setMapUnits(0)
-        # self.iface.mapCanvas().refresh()
-        # g.CreateVectorLayerGeoSearch_Route(route)
-        '''filename = QtGui.QFileDialog.getOpenFileName()
-        fileInfo = QFileInfo(filename)
-        path = fileInfo.filePath()
-        baseName = fileInfo.baseName()
-
-        layer = QgsRasterLayer(path, baseName)
-        QgsMapLayerRegistry.instance().addMapLayer(layer)'''
+        root = QgsProject.instance().layerTreeRoot()
+        urlWithParams = 'type=xyz&url=http://mt1.google.com/vt/lyrs%3Ds%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&zmax=19&zmin=0'
+        rlayer = QgsRasterLayer(urlWithParams, 'Google Satellite', 'wms')
+        if rlayer.isValid():
+            QgsProject.instance().addMapLayer(rlayer, False)
+            root.addLayer(rlayer)
+        else:
+            msgLog('Failed to load Satellite layer')
 
 
+        urlWithParams = 'type=xyz&url=http://mt1.google.com/vt/lyrs%3Dt%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&zmax=19&zmin=0'
+        rlayer = QgsRasterLayer(urlWithParams, 'Google Terrain', 'wms')
+        if rlayer.isValid():
+            QgsProject.instance().addMapLayer(rlayer, False)
+            root.addLayer(rlayer)
+        else:
+            msgLog('Failed to load Terrain layer')
 
 
 
@@ -170,10 +156,6 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                 # extent.combineExtentWith(vlayer.extent())
                 # canvas_layers.append(QgsMapCanvasLayer(vlayer))
 
-                writer = QgsVectorFileWriter.writeAsVectorFormat(vlayer, r"%s/tmp/%s.shp" % (source_dir, files),
-                                                                 "utf-8",
-                                                                 None, "ESRI Shapefile")
-
                 vlayer = QgsVectorLayer(r"%s/tmp/%s.shp" % (source_dir, files), files, "ogr")
 
                 attr = {}
@@ -200,7 +182,9 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                 extent.combineExtentWith(vlayer.extent())
                 canvas_layers.append(QgsMapLayer(vlayer))
 
-                print(writer)
+                self.format = QgsVectorFileWriter.writeAsVectorFormat(vlayer, r"%s/tmp/%s.shp" % (source_dir, files),
+                                                                      "utf-8", None, "ESRI Shapefile")
+                print(self.format)
                 # set extent to the extent of our layer
                 # canvas.setExtent(vlayer.extent())
 

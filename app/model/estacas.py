@@ -6,7 +6,7 @@ import csv
 import math
 import sqlite3
 
-from qgis._core import QgsPoint
+from qgis._core import QgsPoint, QgsProject, QgsVectorFileWriter
 
 from ..controller.Geometria.Figure import prismoide
 from ..model.config import extractZIP, Config, compactZIP
@@ -24,7 +24,6 @@ class Estacas(object):
     def __init__(self, distancia=20, estaca=0, layer=None, filename='', table=list(), cvData=list(),ultimo=-1, id_filename=-1, iface=None):
         self.iface=iface
         self.distancia = distancia
-
         self.filename = filename
         self.estaca = estaca
         self.layer = layer
@@ -41,12 +40,8 @@ class Estacas(object):
                 linhas.append(i)
         return linhas
 
-
-
-
     def new(self, distancia, estaca, layer, filename, iface=None):
         self.__init__(distancia, estaca, layer, filename, list(), self.ultimo, self.id_filename, iface=iface)
-
         extractZIP(Config.fileName)
         con = sqlite3.connect("tmp/data/data.db")
         con.execute("INSERT INTO TABLEESTACA (name) values ('" + filename + "')")
@@ -56,8 +51,22 @@ class Estacas(object):
         compactZIP(Config.fileName)
         self.ultimo = id_estaca[0]
         self.table = self.create_estacas()
-
         return self.ultimo, self.table
+
+    def saveEstacas(self,filename,estacas):
+        extractZIP(Config.fileName)
+        con = sqlite3.connect("tmp/data/data.db")
+        con.execute("INSERT INTO TABLEESTACA (name) values ('" + filename + "')")
+        con.commit()
+        id_estaca = con.execute("SELECT last_insert_rowid()").fetchone()
+        con.close()
+        compactZIP(Config.fileName)
+        model=Estacas(filename=filename, id_filename=id_estaca[0])
+        model.ultimo = id_estaca[0]
+        model.table = estacas
+        model.save(id_estaca[0])
+
+        return model
 
     def getCurvas(self, id_filename):
         # instancia da model de curvas.
@@ -116,6 +125,14 @@ class Estacas(object):
         compactZIP(Config.fileName)
         return est
 
+    def getNameFromId(self,id):
+        extractZIP(Config.fileName)
+        con = sqlite3.connect("tmp/data/data.db")
+        name = con.execute("SELECT name FROM TABLEESTACA WHERE id="+str(id)).fetchall()
+        con.close()
+        compactZIP(Config.fileName)
+        return name[0][0]
+
     def deleteEstaca(self, idEstacaTable):
         extractZIP(Config.fileName)
         con = sqlite3.connect("tmp/data/data.db")
@@ -132,7 +149,6 @@ class Estacas(object):
         con.commit()
         for linha in self.table:
             linha.append(int(idEstacaTable))
-
             lt = tuple(linha)
             con.execute(
                 "INSERT INTO ESTACA (estaca,descricao,progressiva,norte,este,cota,azimute,TABLEESTACA_id)values(?,?,REPLACE(?,',','.'),REPLACE(?,',','.'),REPLACE(?,',','.'),REPLACE(?,',','.'),REPLACE(?,',','.'),?)",
@@ -345,19 +361,18 @@ class Estacas(object):
         self.ultimo = id_estaca[0]
         estacas = []
         delimiter = str(Config.CSV_DELIMITER.strip()[0])
-        with open(filename, 'rb') as fi:
+        with open(filename, 'r') as fi:
             for r in csv.reader(fi, delimiter=delimiter, dialect='excel'):
                 estaca = []
                 for field in r:
                     estaca.append(u"%s" % field)
                 estacas.append(estaca)
         self.table = estacas
-
         return estacas
 
     def saveCSV(self, filename):
         delimiter = str(Config.CSV_DELIMITER.strip()[0])
-        with open(filename, "wb") as fo:
+        with open(filename[0], "w") as fo:
             writer = csv.writer(fo, delimiter=delimiter, dialect='excel')
             for r in self.table:
                 writer.writerow(r)
@@ -394,11 +409,13 @@ class Estacas(object):
                     tamanho_da_linha = length(ponto_final, ponto_inicial)
                     ponto = diff(ponto_final, ponto_inicial)
 
-                    if tamanho_da_linha == 0:
-                        continue
                     cosa, cosb = dircos(ponto)
                     az = azimuth(ponto_inicial, QgsPoint(ponto_inicial.x() + ((self.distancia) * cosa),
                                                          ponto_inicial.y() + ((self.distancia) * cosb)))
+
+                    if tamanho_da_linha == 0:
+                        continue
+
                     estacas_inteiras = int(math.floor((tamanho_da_linha - sobra) / self.distancia))
                     estacas_inteiras_sobra = estacas_inteiras + 1 if sobra > 0 else estacas_inteiras
                     if not sem_internet:
@@ -409,13 +426,16 @@ class Estacas(object):
                         cota = 0.0
 
                     yield ['%d+%f' % (estaca, resto) if resto != 0 else '%d' % (estaca), 'v%d' % i, prog, ponto_inicial.y(),
-                           ponto_inicial.x(), cota,
-                           az], ponto_inicial, estacas_inteiras, prog, az, sobra, tamanho_da_linha, cosa, cosb
+                       ponto_inicial.x(), cota,
+                       az], ponto_inicial, estacas_inteiras, prog, az, sobra, tamanho_da_linha, cosa, cosb
 
                     prog += tamanho_da_linha
                     resto = (tamanho_da_linha - sobra) - (self.distancia * estacas_inteiras)
                     sobra = self.distancia - resto
                     estaca += estacas_inteiras_sobra
+
+
+                i=int(int(i)+1)
                 cota = getElevation(crs, QgsPoint(float(ponto_final.x()), float(ponto_final.y())))
                 yield ['%d+%f' % (estaca, resto), 'v%d' % i, prog, ponto_final.y(), ponto_final.x(), cota,
                        az], ponto_final, 0, tamanho_da_linha, az, sobra, tamanho_da_linha, cosa, cosb
@@ -435,6 +455,7 @@ class Estacas(object):
         estacas = []
         estaca = 0
         progressiva = 0
+
         for vertice, ponto_anterior, qtd_estacas, progressiva, az, sobra, tamanho_da_linha, cosa, cosb in self.gera_vertice():
             estacas.append(vertice)
             if sobra > 0 and sobra < self.distancia and qtd_estacas > 0:
@@ -451,73 +472,24 @@ class Estacas(object):
             estaca += qtd_estacas
         return estacas
 
-    def create_estacas_old(self):
-        estacas = []
-        k = 0
-        prog = 0.0
-        dist = 0.0
-        p = self.get_features()[self.estaca]
-        az = 0.0
-        lab = 0
-        for elem in self.layer.getFeatures():
-            for i, (seg_start, seg_end) in enumerate(pairs(elem, self.estaca)):
-                estaca = []
-                line_start = QgsPoint(seg_start)
-                line_end = QgsPoint(seg_end)
-                if k != 0:
-                    # lab = 1
-                    pass
-                else:
 
-                    lab = 0
+    def saveGeoPackage(self,name:str, poly, fields, type, driver):
+        import tempfile, shutil
+        from pathlib import Path
+        name=name.replace(" ","_")
+        extractZIP(Config.fileName)
+        tmp=tempfile.gettempdir()+"/"+name+".gpkg"
+        path=str(Path("tmp/data/"+name+".gpkg"))
+        writer = QgsVectorFileWriter(path, 'UTF-8', fields, type, QgsProject.instance().crs(), driver)
+        for p in poly:
+            writer.addFeature(p)
+        del writer
+        shutil.copyfile(path, tmp)
+        compactZIP(Config.fileName)
+        return tmp
 
-                # mid point = vector coordinates [x2-x1,y2-y1]
-                pointm = diff(line_end, line_start)
-                # direction cosines of the segment
-                cosa, cosb = dircos(pointm)
-                # length of the segment
-                lg = length(line_end, line_start)
-                az = azimuth(line_start, QgsPoint(line_start.x() + ((prog + self.distancia) * cosa),
-                                                  line_start.y() + ((prog + self.distancia) * cosb)))
-
-                geo = line_start
-                prop = self.distancia - ((prog + self.distancia) - dist) if prog > 0 else prog
-                txtId = "%d+%f" % (lab, prop) if prog > 0 or prop > 0 else "%d" % lab
-                estaca.extend([txtId, 'v%d' % i, dist, geo.y(), geo.x(), 0.0, az])
-                estacas.append(estaca)
-                '''
-                    ------------------------------------------------
-                    Definição das estacas intermediarias.
-                    ------------------------------------------------
-                '''
-                prog = 0.0 if (prog == 0) else prog
-                dist = dist + lg
-                p = line_start
-                nprog = 0.0
-                while nprog + self.distancia < lg:
-                    estaca = []
-                    lab += 1
-                    k += 1
-                    pa = p
-                    p = QgsPoint(p.x() + ((self.distancia - prop) * cosa), p.y() + ((self.distancia - prop) * cosb))
-
-                    az = azimuth(seg_start, p)
-                    prog += self.distancia
-                    nprog += self.distancia
-                    prop = 0
-                    estaca.extend([str(lab), '', prog, p.y(), p.x(), 0.0, az])
-                    estacas.append(estaca)
-
-        estaca = []
-        ultimo = self.get_features()[-1]
-        lg = prog + length(p, ultimo)
-        prop = self.distancia - (prog - lg) if prog > 0 else prog
-        txtId = "%d+%f" % (lab, prop) if prog > 0 or prop > 0 else "%d" % lab
-
-        # az = self.azimuth(p,QgsPoint(ultimo.x(), ultimo.y()))
-
-        estaca.extend([txtId, 'vf', lg, ultimo.y(), ultimo.x(), ultimo.x(), az])
-        estacas.append(estaca)
-        return estacas
+    def getSavedLayers(self):
+        return [self.iface.addVectorLayer(path,"","ogr") for path in extractZIP(Config.fileName)]
+        
 
 

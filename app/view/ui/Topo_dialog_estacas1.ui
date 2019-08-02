@@ -77,6 +77,16 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="btnDuplicar">
+            <property name="text">
+             <string>Duplicar</string>
+            </property>
+            <property name="autoDefault">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="btnGerarTracado">
             <property name="text">
              <string>Gerar Traçado</string>
@@ -87,6 +97,16 @@
             <attribute name="buttonGroup">
              <string notr="true">buttonGroup_2</string>
             </attribute>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnGerarCurvas">
+            <property name="text">
+             <string>Gerar Curvas</string>
+            </property>
+            <property name="autoDefault">
+             <bool>false</bool>
+            </property>
            </widget>
           </item>
           <item>
@@ -144,7 +164,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>877</x>
-     <y>355</y>
+     <y>445</y>
     </hint>
     <hint type="destinationlabel">
      <x>336</x>
@@ -208,7 +228,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>877</x>
-     <y>265</y>
+     <y>310</y>
     </hint>
     <hint type="destinationlabel">
      <x>336</x>
@@ -229,6 +249,22 @@
     <hint type="destinationlabel">
      <x>897</x>
      <y>169</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnGerarCurvas</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjetoEstradas</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>772</x>
+     <y>332</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>684</x>
+     <y>505</y>
     </hint>
    </hints>
   </connection>

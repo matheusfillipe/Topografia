@@ -6,17 +6,19 @@ import os
 import shutil
 import sqlite3
 import zipfile
-
+from pathlib import Path
 from qgis._core import QgsApplication
-
+import tempfile
+RANDOM="__ix35-_-xxx901381asdioADJ398(__"
 
 def extractZIP(filename):
     z = zipfile.ZipFile(filename, "r")
     os.chdir(os.path.dirname(filename))
     if not os.path.exists('tmp'):
         os.makedirs('tmp')
-    z.extract('data/data.db', 'tmp')
-    z.extract('data/config.json', 'tmp')
+    z.extractall("tmp")
+    z.close()
+    return Path('tmp/data/').rglob("*.gpkg")
 
 
 def compactZIP(filename):
@@ -24,6 +26,10 @@ def compactZIP(filename):
     os.chdir(os.path.dirname(filename))
     z.write('tmp/data/data.db','data/data.db',zipfile.ZIP_DEFLATED)
     z.write('tmp/data/config.json','data/config.json',zipfile.ZIP_DEFLATED)
+    tracs=Path('tmp/data/').rglob("*.gpkg")
+    for trac in tracs:
+        z.write(str(trac),'data/'+trac.name,zipfile.ZIP_DEFLATED)
+    z.close()
     shutil.rmtree('tmp')
 
 
@@ -31,6 +37,7 @@ class Config(object):
     fileName = ''
     UNITS = 'm'
     CSV_DELIMITER = ';'
+    DIST=20
     
 
     def __init__(self):
@@ -56,6 +63,7 @@ class Config(object):
         self.CSV_DELIMITER = ';'
         Config.UNITS = self.UNITS
         Config.CSV_DELIMITER = self.CSV_DELIMITER
+        Config.DIST=20
 
     def create_datatable(self,dbPath='data/data.db'):
         con = sqlite3.connect(dbPath)

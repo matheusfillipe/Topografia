@@ -6,6 +6,8 @@ from builtins import range
 
 import os
 import sip
+
+from qgis.PyQt.QtGui import QKeySequence
 from qgis.PyQt import QtCore, QtWidgets, QtWidgets, QtGui
 from qgis.PyQt import uic
 import numpy as np
@@ -128,6 +130,14 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         self.dialog = QtWidgets.QDialog(None)
         self.actual_point = None
 
+    def curvasDialog(self, estacas, layer):
+        import copy
+        coordenadas=[[float(x),float(y)] for y,x in zip([e[3] for e in estacas],[e[4] for e in estacas])].copy()
+
+
+        #return estaca,descricao,progressiva,norte,este,cota,azimute
+
+
     def keyPressEvent(self, a0: QtGui.QKeyEvent):
         if a0.key() == QtCore.Qt.Key_Delete:
             self.deleted.emit()
@@ -142,7 +152,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         msgBox.exec_()
 
     def openCSV(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName()
+        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo CSV (*.csv)")
         if filename in ["", None]: return None
         fileDB, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo a ser salvo no projeto:", text="Traçado csv")
         if not ok:
@@ -205,6 +215,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         return filename, layer, dist, estaca
 
     def fill_table_index(self, files):
+        self.tableEstacas : QtWidgets.QTableWidget
         self.tableEstacas.setRowCount(0)
         self.tableEstacas.clearContents()
         for i,f in enumerate(files):
@@ -214,6 +225,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
                 tableItem.setFlags(tableItem.flags() ^ Qt.ItemIsEditable)
                 self.tableEstacas.setItem(i,j,tableItem)
         self.tableEstacas.cellDoubleClicked.connect(self.accept)
+
 
     def create_line(self,p1,p2,name):
         layer = QgsVectorLayer('LineString?crs=%s'%int(self.crs), name, "memory")
@@ -392,15 +404,41 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
 
     def setupUi2(self,Form):
         Form.setObjectName(_fromUtf8(u"Traçado Horizontal"))
+        self.tableEstacas : QtWidgets.QTableWidget
         self.tableEstacas.setColumnCount(3)
         self.tableEstacas.setRowCount(0)
-        self.tableEstacas.setColumnWidth(0, 54)
-        self.tableEstacas.setColumnWidth(1, 360)
-        self.tableEstacas.setColumnWidth(2, 200)
         self.tableEstacas.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableEstacas.setHorizontalHeaderLabels((u"ID",u"Arquivo",u"Data criação"))
 
 
+
+        self.table=self.tableEstacas
+        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
+        self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.stretchTable(self.table)
+
+    def resizeEvent(self, event):
+        self.stretchTable(self.table)
+        super(EstacasUI, self).resizeEvent(event)  # Restores the original behaviour of the resize event
+
+    def stretchTable(self, table):
+        tableSize = table.width()
+        sideHeaderWidth = table.verticalHeader().width()
+        tableSize -= sideHeaderWidth
+        numberOfColumns = table.columnCount()
+
+        remainingWidth = tableSize % numberOfColumns
+        for columnNum in range(table.columnCount()):
+            if remainingWidth > 0:
+                table.setColumnWidth(columnNum, int(tableSize / numberOfColumns) + 1)
+                remainingWidth -= 1
+            else:
+                table.setColumnWidth(columnNum, int(tableSize / numberOfColumns))
+
+    def exec_(self):
+        self.stretchTable(self.table)
+        return super(EstacasUI, self).exec_()
 
 class EstacasIntersec(QtWidgets.QDialog):
 
@@ -441,6 +479,7 @@ class EstacasIntersec(QtWidgets.QDialog):
             estacas.append(estaca)
         return estacas
 
+
     def setupUi(self, Form):
         Form.setObjectName(_fromUtf8(u"Traçado Horizontal"))
         Form.resize(919, 510)
@@ -453,7 +492,6 @@ class EstacasIntersec(QtWidgets.QDialog):
         self.tableWidget.setColumnCount(8)
         self.tableWidget.setRowCount(0)
         self.tableWidget.setHorizontalHeaderLabels((u"Estaca",u"Descrição",u"Progressiva",u"Cota", u"Relevo", u"Norte",u"Este",u"Azimute"))
-
 
 
         self.btnGen = QtWidgets.QPushButton(Form)
@@ -571,6 +609,34 @@ class EstacasCv(QtWidgets.QDialog):
         Form.setWindowTitle(_translate("Traçado Horizontal", "Traçado Vertial", None))
 
 
+class CopySelectedCellsAction(QtWidgets.QAction):
+    def __init__(self, iface, table_widget):
+        if not isinstance(table_widget, QtWidgets.QTableWidget):
+            raise ValueError(str('CopySelectedCellsAction must be initialised with a QTableWidget. A %s was given.' % type(table_widget)))
+        super(CopySelectedCellsAction, self).__init__("Copy", table_widget)
+        self.setShortcut('Ctrl+C')
+        s=QShortcut(QKeySequence("Ctrl+C"), iface)
+        s.activated.connect(self.copy_cells_to_clipboard)
+        self.triggered.connect(self.copy_cells_to_clipboard)
+        self.table_widget = table_widget
+
+    def copy_cells_to_clipboard(self):
+        if len(self.table_widget.selectionModel().selectedIndexes()) > 0:
+            # sort select indexes into rows and columns
+            previous = self.table_widget.selectionModel().selectedIndexes()[0]
+            clipboard = previous.data()
+            for index in self.table_widget.selectionModel().selectedIndexes()[1:]:
+                if previous.row() != index.row():
+                    clipboard += '\n'
+                else:
+                    clipboard += '\t'
+                previous=index
+                clipboard += index.data()
+
+            # copy to the system clipboard
+            sys_clip = QtWidgets.QApplication.clipboard()
+            sys_clip.setText(clipboard)
+
 
 class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
 
@@ -580,34 +646,25 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.type="horizontal"
         self.setupUi(self)
 
+
     def clear(self):
         self.tableWidget.setRowCount(0)
         self.tableWidget.clearContents()
 
     def saveEstacasCSV(self):
-        filename = QtWidgets.QFileDialog.getSaveFileName()
+        filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save Worksheet",filter="Arquivo CSV (*.csv)")
         return filename
 
+
     def fill_table(self, xxx_todo_changeme,f=False):
-        (estaca,descricao,progressiva,norte,este,cota,azimute) = xxx_todo_changeme
         self.tableWidget.insertRow(self.tableWidget.rowCount())
         k = self.tableWidget.rowCount() - 1
-        self.tableWidget.setItem(k, 0, QtWidgets.QTableWidgetItem(u"%s" % estaca))
-        self.tableWidget.setItem(k, 1, QtWidgets.QTableWidgetItem(u"%s" % descricao))
-        self.tableWidget.setItem(k, 2, QtWidgets.QTableWidgetItem(u"%s" % progressiva))
-        self.tableWidget.setItem(k, 3, QtWidgets.QTableWidgetItem(u"%s" % norte))
-        self.tableWidget.setItem(k, 4, QtWidgets.QTableWidgetItem(u"%s" % este))
-        self.tableWidget.setItem(k, 5, QtWidgets.QTableWidgetItem(u"%s" % cota))
-        '''if not f:
-            naz = decdeg2dms(azimute)
-            str_az = "%s* %s\' %s\'\'" % (int(naz[0]), int(naz[1]), naz[2])
-            self.tableWidget.setItem(k, 6, QtWidgets.QTableWidgetItem(str_az))
-        else:'''
-        self.tableWidget.setItem(k, 6, QtWidgets.QTableWidgetItem(u"%s" % azimute))
-
-        for j in range(0,7):
-            cell_item = self.tableWidget.item(k, j)
+        j=0
+        for value in list(xxx_todo_changeme):
+            cell_item = QtWidgets.QTableWidgetItem(u"%s" % value)
             cell_item.setFlags(cell_item.flags() ^ Qt.ItemIsEditable)
+            self.tableWidget.setItem(k,j,cell_item)
+            j+=1
 
     def get_estacas(self):
         estacas = []
@@ -660,7 +717,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
             try:
                 layer = mapCanvas.layer(i)
                 layerName = layer.name()
-                if type(layer)==qgis._core.QgsRasterLayer:
+                if type(layer)==qgis._core.QgsRasterLayer and not layer.name() in ['Google Terrain','Google Satellite']:
                     itens.append(layerName)
             except:
                 pass
@@ -691,7 +748,78 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.tableWidget.setColumnCount(7)
         self.tableWidget.setRowCount(0)
         self.tableWidget.setHorizontalHeaderLabels((u"Estaca",u"Descrição",u"Progressiva",u"Norte",u"Este",u"Cota",u"Azimute"))
+        self.tableWidget.cellClicked.connect(self.zoom)
 
+        self.table=self.tableWidget
+        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
+        self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.stretchTable()
+
+    def resizeEvent(self, event):
+        self.stretchTable()
+        super().resizeEvent(event)  # Restores the original behaviour of the resize event
+
+    def stretchTable(self):
+        table=self.table
+        tableSize = table.width()
+        sideHeaderWidth = table.verticalHeader().width()
+        tableSize -= sideHeaderWidth
+        numberOfColumns = table.columnCount()
+
+        remainingWidth = tableSize % numberOfColumns
+        for columnNum in range(table.columnCount()):
+            if remainingWidth > 0:
+                table.setColumnWidth(columnNum, int(tableSize / numberOfColumns) + 1)
+                remainingWidth -= 1
+            else:
+                table.setColumnWidth(columnNum, int(tableSize / numberOfColumns))
+
+    def exec_(self):
+        self.point=False
+        self.setCopy()
+        self.stretchTable()
+        return super().exec_()
+
+    def setCopy(self):
+        if not hasattr(self, "copyAction"):
+            self.copyAction=CopySelectedCellsAction(self, self.table)
+
+
+    def clearLayers(self):
+        try:
+            if hasattr(self,"point") and self.point:
+                QgsProject.instance().removeMapLayer(self.point)
+                self.iface.mapCanvas().refresh()
+
+        except:
+            pass
+
+    def zoom(self, row, column):
+        root = QgsProject.instance()
+        if self.point:
+            root.removeMapLayer(self.point)
+
+        #ZOOM
+        scale = 100
+        table=self.tableWidget
+        e, x, y = table.item(row,0).text(), float(table.item(row,4).text()), float(table.item(row,3).text())
+        point = QgsPointXY(x,y)
+        rect = QgsRectangle(x - scale, y - scale, x + scale, y + scale)
+        self.iface.mapCanvas().setExtent(rect)
+        self.iface.mapCanvas().refresh()
+
+
+        #ADD Point Layer
+        layer = QgsVectorLayer("Point?crs=%s"%(root.crs().authid()), "Estaca: "+str(e),"memory")
+        layer.setCrs(root.crs())
+        prov = layer.dataProvider()
+        feat = QgsFeature()
+        feat.setGeometry(QgsGeometry.fromPointXY(point))
+        prov.addFeatures([feat])
+        root.addMapLayer(layer, False)
+        QgsProject.instance().layerTreeRoot().insertLayer(0, layer)
+        self.point=layer
 
 
 

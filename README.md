@@ -4,11 +4,11 @@
 Plugin para qgis 3.x que possibilita o desenvolvimento do projeto geométrico de estradas. Permite a realização do traçado a partir de diretrizes sore o mapa com imagens de satélite e realiza cálculos de curvas horizontais, verticais e volumes.
 
 
-## Estado de desenvolvimento
+## Features
 
 ### Concluído
 
-* GUI basica e funcionalidades básicas
+* GUI basica e funcionalidades básicas para desenho
 * Geração da tabela Horizontal
 * Cálculo de curvas horizontais
 * Interface para traçado greide (perfil vertical)
@@ -16,12 +16,14 @@ Plugin para qgis 3.x que possibilita o desenvolvimento do projeto geométrico de
 * Geração da tabela Vertical
 * Geração dos perfis transversais a partir de uma seção tipo
 * Cálculo de Volumes
+* Diagrama de Bruckner
+* Extração dos dados em CSV e DXF
+
 
 ### A Fazer
+* Suporte a layers com fonte Angular (ex: WGS 64)
 * Superlargura e Superelevação
-* Tabela unificada de todas as estacas
-* Geração e Exportação dos desenhos
-
+* ???
 
 ### Como Instalar
 
@@ -38,44 +40,25 @@ Plugin para qgis 3.x que possibilita o desenvolvimento do projeto geométrico de
 Coloque a estes arquivos dentro da pasta Topograph, no caminho .qgis/plugins/python/Topograph
 
 
-## Bugs Conhecidos
-
-* OpenLayers Plugin
-
-```
-QgsCsException: transformação à frente de (0.000000, 1.570796) PROJ.4:  +proj=utm +zone=23 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +para  +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs Erro: tolerance condition error 
-Traceback (most recent call last):
-
-....
-
-penlayers_plugin.py", line 227, in setMapCrs
-    extMap = coordTrans.transform(extMap, QgsCoordinateTransform.ForwardTransform)
-QgsCsException: transformação à frente de
-(0.000000, 1.570796)
-PROJ.4:  +proj=utm +zone=23 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +para  +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs
-Erro: tolerance condition error
-
-```
 ### TODO:
 
-* Corrigir bugs: reposicionamento dos handles quando outro é arrastado, 
-* Limpar curva vertical quando outra é criada por cima (handle.curve) ou quando handle é exluído
-* Reposicionar curvas verticais e replotar quando segmentos ou handles são movidos
-* Checar se as curvas são possíveis quando criadas
-* Aprimorar cálculo de volume
-* Aprimorar micro cad kenerl (Figure)
-* Restaurar objeto prismoide para evitar recálculo
+* Usar API Google para Elevações ?
+* Implementar Superlargura e Superelevação
 
 
-### Funções a Adicionar
+### Known Bugs
 
-* Zoom button no menu de curva vertical
-* Cálculo de aterro imbutido 
-* Função desfazer para interface pyqtgraph(ctrl+Z )
-* Cálculo de distância de visibilidade embutido na janela de edição de curvas verticais
-* Plotagem das curvas horizontais
+#### GUI
 
-## Dependências
+* Seleção de arquivos com setas ou tab não funciona
+* Tabela de estacas é editável 
+
+#### Lógica
+
+* ?
+
+
+## Qgis
 
 [Download](qgis.org/downloads/QGIS-OSGeo4W-3.0.3-1-Setup-x86_64.exe) - Qgis 3 for Windows 64 bits
 
@@ -85,9 +68,11 @@ Erro: tolerance condition error
 
 
 
-
-
 ## Links
 [Qgis](https://www.qgis.org) - A Free and Open Source Geographic Information System 
 
+
+## Licença
+### GPL 2
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.                                   
 

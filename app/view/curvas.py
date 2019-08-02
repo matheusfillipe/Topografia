@@ -26,11 +26,15 @@ from qgis.utils import *
 from qgis.PyQt.QtCore import *
 from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt import  QtWidgets
 
 from ..model.helper.calculos import *
 from ..model.curvas import Curvas as CurvasModel
 
 FORMCURVA_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), '../view/ui/Topo_dialog_curva.ui'))
+COMPOSI, _= uic.loadUiType(os.path.join(os.path.dirname(__file__), '../view/ui/compor_curvas.ui'))
+CWIDGET, _= uic.loadUiType(os.path.join(os.path.dirname(__file__), '../view/ui/curvaWidget.ui'))
+
 ID_ESTACA = 0
 ESTACA = 1
 DESCRICAO = 2
@@ -40,10 +44,91 @@ ESTE = 5
 COTA = 6
 AZIMUTE = 7
 
+class CurvasWidget(QtWidgets.QWidget, CWIDGET):
+    edited=pyqtSignal()
+
+    def __init__(self, parent):
+        super(CurvasWidget,self).__init__(parent)
+        self.iface=parent
+        self.setupUi(self)
+
+        self.Form: QtWidgets.QWidget
+        self.k: QtWidgets.QLineEdit
+        self.label: QtWidgets.QLabel
+        self.label_2: QtWidgets.QLabel
+        self.label_3: QtWidgets.QLabel
+        self.label_4: QtWidgets.QLabel
+        self.lineEdit_2: QtWidgets.QLineEdit
+        self.pushButton: QtWidgets.QPushButton
+        self.raio: QtWidgets.QLineEdit
+        self.vmax: QtWidgets.QLineEdit
+        self.nome: QtWidgets.QLabel
+
+        self.onlyFloat= QDoubleValidator()
+        self.raio.setValidator(self.onlyFloat)
+        self.comprimento.setValidator(self.onlyFloat)
+        self.raio.editingFinished.connect(self.edited.emit)
+        self.comprimento.editingFinished.connect(self.edited.emit)
+
+    def fill(self,k,vmax):
+        self.k.setText(str(k))
+        self.vmax.setText(str(vmax))
+
+    def read(self):
+        return float(self.raio.text()), float(self.comprimento.text())
+
+class CurvasCompositorDialog(QtWidgets.QDialog, COMPOSI):
+    edited=pyqtSignal()
+    def __init__(self, parent):
+        super(CurvasCompositorDialog, self).__init__(parent)
+        self.iface=parent
+        self.setupUi(self)
+
+        self.Dialog: QtWidgets.QDialog
+        self.btnAdd: QtWidgets.QPushButton
+        self.buttonBox: QtWidgets.QDialogButtonBox
+        self.comboBox: QtWidgets.QComboBox
+        self.listWidget: QtWidgets.QListWidget
+        self.lastWidget=False
+        self.btnAdd.clicked.connect(self.addCurva)
+
+    def addCurva(self):
+        self.listWidget: QtWidgets.QListWidget
+        self.comboBox: QtWidgets.QComboBox
+        itemN = QtWidgets.QListWidgetItem()
+        widget = CurvasWidget(self)
+        widget.nome.setText(self.comboBox.currentText().upper())
+        widget.horizontalLayout.addStretch()
+        widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        self.listWidget.addItem(itemN)
+        self.listWidget.setItemWidget(itemN, widget)
+
+
+        widget.pushButton.clicked.connect(self.deleteCurva)
+        widget.pushButton.clicked.connect(lambda: self.listWidget.takeItem(self.listWidget.row(itemN)))
+        widget.edited.connect(self.edited.emit)
+        try:
+            if self.lastWidget:
+                self.lastWidget.pushButton : QtWidgets.QPushButton
+                self.lastWidget.setDisabled(True)
+                lastWidget=self.lastWidget
+                widget.pushButton.clicked.connect(lambda: lastWidget.setDisabled(False))
+        except:
+            pass
+
+        self.lastWidget=widget
+        itemN.setSizeHint(widget.sizeHint())
+
+    def deleteCurva(self):
+        self.listWidget: QtWidgets.QListWidget
+        if self.listWidget.count()==0:
+            self.lastWidget=False
+
+
 
 class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
-    def __init__(self, iface, id_filename, curvas, tipoClasseProjeto):
-        super(Curvas, self).__init__(None)
+    def __init__(self,parent, iface, id_filename, curvas, tipoClasseProjeto):
+        super(Curvas, self).__init__(parent)
         self.iface = iface
         self.model = CurvasModel(id_filename)
         self.estacas = self.model.list_estacas()
@@ -55,9 +140,79 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.classe = tipoClasseProjeto[1]
         self.id_filename = id_filename
         self.tipo_curva = 0
-        self.estacaInicial = self.estacas[0]
-        self.estacaFinal = self.estacas[0]
+        self.estacaInicial = self.estacas[0] if self.estacas else 0
+        self.estacaFinal = self.estacas[0] if self.estacas else 0
         self.setupUi(self)
+
+
+        self.Dialog: QtWidgets.QDialog
+        self.btnAjuda: QtWidgets.QPushButton
+        self.btnApagar: QtWidgets.QPushButton
+        self.btnCalcular: QtWidgets.QPushButton
+        self.btnCancela: QtWidgets.QPushButton
+        self.btnClose: QtWidgets.QPushButton
+        self.btnEditar: QtWidgets.QPushButton
+        self.btnInsere: QtWidgets.QPushButton
+        self.btnNew: QtWidgets.QPushButton
+        self.btnRelatorio: QtWidgets.QPushButton
+        self.comboCurva: QtWidgets.QComboBox
+        self.comboElemento: QtWidgets.QComboBox
+        self.comboEstacaFinal: QtWidgets.QComboBox
+        self.comboEstacaInicial: QtWidgets.QComboBox
+        self.gDadosCurva: QtWidgets.QGroupBox
+        self.groupBox: QtWidgets.QGroupBox
+        self.groupBox_2: QtWidgets.QGroupBox
+        self.label: QtWidgets.QLabel
+        self.label_10: QtWidgets.QLabel
+        self.label_11: QtWidgets.QLabel
+        self.label_12: QtWidgets.QLabel
+        self.label_13: QtWidgets.QLabel
+        self.label_14: QtWidgets.QLabel
+        self.label_15: QtWidgets.QLabel
+        self.label_16: QtWidgets.QLabel
+        self.label_17: QtWidgets.QLabel
+        self.label_18: QtWidgets.QLabel
+        self.label_19: QtWidgets.QLabel
+        self.label_2: QtWidgets.QLabel
+        self.label_20: QtWidgets.QLabel
+        self.label_21: QtWidgets.QLabel
+        self.label_22: QtWidgets.QLabel
+        self.label_23: QtWidgets.QLabel
+        self.label_24: QtWidgets.QLabel
+        self.label_3: QtWidgets.QLabel
+        self.label_4: QtWidgets.QLabel
+        self.label_5: QtWidgets.QLabel
+        self.label_6: QtWidgets.QLabel
+        self.label_7: QtWidgets.QLabel
+        self.label_8: QtWidgets.QLabel
+        self.label_9: QtWidgets.QLabel
+        self.layoutWidget: QtWidgets.QWidget
+        self.layoutWidget: QtWidgets.QWidget
+        self.layoutWidget: QtWidgets.QWidget
+        self.layoutWidget: QtWidgets.QWidget
+        self.layoutWidget: QtWidgets.QWidget
+        self.layoutWidget: QtWidgets.QWidget
+        self.txtD: QtWidgets.QLineEdit
+        self.txtDelta: QtWidgets.QLineEdit
+        self.txtDist: QtWidgets.QLineEdit
+        self.txtEMAX: QtWidgets.QLineEdit
+        self.txtEPC: QtWidgets.QLineEdit
+        self.txtEPI: QtWidgets.QLineEdit
+        self.txtEPT: QtWidgets.QLineEdit
+        self.txtEsteFinal: QtWidgets.QLineEdit
+        self.txtEsteInicial: QtWidgets.QLineEdit
+        self.txtFMAX: QtWidgets.QLineEdit
+        self.txtG20: QtWidgets.QLineEdit
+        self.txtI: QtWidgets.QLineEdit
+        self.txtNomeFinal: QtWidgets.QLineEdit
+        self.txtNomeInicial: QtWidgets.QLineEdit
+        self.txtNorthFinal: QtWidgets.QLineEdit
+        self.txtNorthInicial: QtWidgets.QLineEdit
+        self.txtRMIN: QtWidgets.QLineEdit
+        self.txtRUtilizado: QtWidgets.QLineEdit
+        self.txtT: QtWidgets.QLineEdit
+        self.txtVelocidade: QtWidgets.QLineEdit
+
         curvas = [self.tr(str(curva[0])) for curva in self.curvas]
         self.comboCurva.addItems([self.tr(str(curva[0])) for curva in self.curvas])
         self.editando = False
@@ -210,6 +365,14 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         pass
 
     def new(self):
+        c=CurvasCompositorDialog(self)
+        c.accepted.connect(self.show)
+        c.rejected.connect(self.show)
+        c.edited.connect() #--> ? make it happen!
+        self.hide()
+        c.show()
+        return
+
         self.habilitarControles(True)
         if (len(self.curvas) > 0):
             ultima = self.curvas[-1][0]
@@ -223,7 +386,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.editando = True
 
     def calcular(self):
-        filename = QtGui.QFileDialog.getSaveFileName()
+        filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo CSV (*.csv)")[0]
         dist = int(self.txtDist.text())
         estacas = self.model.gera_estacas(dist)
         self.model.save_CSV(filename, estacas)

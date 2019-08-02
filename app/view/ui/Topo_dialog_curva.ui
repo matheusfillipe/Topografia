@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>775</width>
-    <height>751</height>
+    <height>742</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -229,7 +229,7 @@ estacas:</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="2" column="1">
         <widget class="QLineEdit" name="txtNomeInicial">
          <property name="enabled">
           <bool>false</bool>
@@ -239,38 +239,35 @@ estacas:</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="label_6">
          <property name="text">
           <string>North:</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
+       <item row="4" column="0">
         <widget class="QLabel" name="label_7">
          <property name="text">
           <string>Este:</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="4" column="1">
         <widget class="QLineEdit" name="txtEsteInicial">
          <property name="enabled">
           <bool>false</bool>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_5"/>
-       </item>
-       <item row="4" column="1">
+       <item row="3" column="1">
         <widget class="QLineEdit" name="txtNorthInicial">
          <property name="enabled">
           <bool>false</bool>
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="label_4">
          <property name="text">
           <string>Nome:</string>
@@ -293,7 +290,12 @@ estacas:</string>
      </item>
      <item>
       <property name="text">
-       <string>Circular de Entrada</string>
+       <string>Transitória de Entrada</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Transitória de Saída</string>
       </property>
      </item>
     </widget>

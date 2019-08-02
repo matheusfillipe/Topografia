@@ -1,6 +1,8 @@
 from __future__ import print_function
 # -*- coding: utf-8 -*-
 import webbrowser
+
+from PyQt5.QtCore import QVariant
 from qgis.PyQt import QtGui, QtWidgets
 
 from qgis._gui import QgsMapToolEmitPoint
@@ -50,18 +52,18 @@ class Estacas(object):
     def linkGoogle(self, item):
         if item.column() == 0:
             este = float(self.view.tableWidget.item(item.row(), 4).text())
-
             north = float(self.view.tableWidget.item(item.row(), 3).text())
             crs = int(self.model.getCRS())
-            point = QgsPoint(este, north)
+            point = QgsPointXY(este, north)
             epsg4326 = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId)
             mycrs = QgsCoordinateReferenceSystem(int(crs), 0)
-            reprojectgeographic = QgsCoordinateTransform(mycrs, epsg4326)
+            reprojectgeographic = QgsCoordinateTransform(mycrs, epsg4326, QgsProject.instance())
             pt = reprojectgeographic.transform(point)
 
             webbrowser.open('https://www.google.com.br/maps/@%f,%f,15z?hl=pt-BR' % (pt.y(), pt.x()))
 
     def events(self):
+        self.preview.tableEstacas:QtWidgets.QTableWidget
         self.preview.btnNovo.clicked.connect(self.new)
         self.preview.btnOpen.clicked.connect(self.openEstaca)
         self.preview.tableEstacas.doubleClicked.connect(self.openEstaca)
@@ -69,8 +71,11 @@ class Estacas(object):
         self.preview.btnApagar.clicked.connect(self.deleteEstaca)
         self.preview.btnGerarTracado.clicked.connect(self.geraTracado)
         self.preview.tableEstacas.itemClicked.connect(self.itemClickTableEstacas)
+        self.preview.tableEstacas.itemActivated.connect(self.itemClickTableEstacas)
         self.preview.btnOpenCv.clicked.connect(self.openCv)
         self.preview.deleted.connect(self.deleteEstaca)
+        self.preview.btnDuplicar.clicked.connect(self.duplicarEstaca)
+        self.preview.btnGerarCurvas.clicked.connect(self.geraCurvas)
 
         '''
             ------------------------------------------------
@@ -80,18 +85,70 @@ class Estacas(object):
         self.view.btnSaveCSV.clicked.connect(self.saveEstacasCSV)
         self.view.btnLayer.clicked.connect(self.plotar)
         self.view.btnEstacas.clicked.connect(self.recalcular)
-        self.view.btnRead.clicked.connect(self.run)
         self.view.btnPerfil.clicked.connect(self.perfilView)
         self.view.btnCurva.clicked.connect(self.curva)
         self.view.btnCotaTIFF.clicked.connect(self.obterCotasTIFF)
         self.view.btnCotaPC.clicked.connect(self.obterCotasPC)
         self.view.btnCota.clicked.connect(self.obterCotas)
+        self.view.btnCota.hide() #TODO Add google Elevation API ?
         self.view.tableWidget.itemDoubleClicked.connect(self.linkGoogle)
-        self.view.tableWidget.itemClicked.connect(self.mudancaCelula)
+        self.view.tableWidget.itemDoubleClicked.connect(self.mudancaCelula)
+        self.view.btnDuplicar.clicked.connect(self.duplicarEstaca)
 
         self.viewCv.btnGen.clicked.connect(self.generateIntersec)
         self.viewCv.btnTrans.clicked.connect(self.generateTrans)
         self.viewCv.btnClean.clicked.connect(self.cleanTrans)
+
+    def geraCurvas(self):
+        table=self.preview.tableEstacas
+        table : QtWidgets.QTableWidget
+        l=len(table.selectionModel().selectedRows())
+        if l>1:
+            self.preview.error(u"Selecione um único arquivo!")
+        elif l<1:
+            filename="Traçado "+str(len(self.model.listTables())+1)
+            name, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:", text=filename)
+            if not ok: return
+            self.new(dados=(name, self.newEstacasLayer(name=name), 20, []))
+        else:
+            layer=self.saveEstacasLayer(self.model.loadFilename(), name=str(self.model.getNameFromId(self.model.id_filename))+"_Curvas")
+            estacas = self.preview.curvasDialog(self.model.loadFilename(),layer)
+
+
+            """
+            self.model.table=estacas
+            self.model.save(self.model.id_filename)
+            self.view.clear()
+            estacas = self.model.loadFilename()
+            self.estacasHorizontalList=[]
+            for e in estacas:
+                self.view.fill_table(tuple(e), True)
+                self.estacasHorizontalList.append(tuple(e))
+            self.nextView=self.view
+            self.view.setCopy()
+            self.updateTables()
+"""
+
+
+    def duplicarEstaca(self):
+        filename=self.model.getNameFromId(self.model.id_filename)
+        if self.model.id_filename == -1: return
+        filename, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:", text=filename+" cópia")
+        if not ok: return
+
+        estacas = self.view.get_estacas()
+        self.model=self.model.saveEstacas(filename, estacas)
+        self.update()
+
+        self.view.clear()
+        estacas = self.model.loadFilename()
+        self.estacasHorizontalList=[]
+        for e in estacas:
+            self.view.fill_table(tuple(e), True)
+            self.estacasHorizontalList.append(tuple(e))
+        self.nextView=self.view
+        self.view.setCopy()
+        self.updateTables()
 
 
     def cleanTrans(self):
@@ -100,7 +157,6 @@ class Estacas(object):
     def generateIntersec(self):
 
         viewIntersec=EstacasIntersec
-
 
         self.openEstaca()
         self.openCv()
@@ -147,9 +203,9 @@ class Estacas(object):
 
 
 
-    def new(self, bool=False, layer=None):
+    def new(self, layer=None, dados=None):
         self.view.clear()
-        dados = self.preview.new(lastIndex=len(self.model.listTables())+1)
+        dados = dados if dados else self.preview.new(lastIndex=len(self.model.listTables())+1)
         if not dados is None:
             filename, lyr, dist, estaca = dados
             self.model.iface=self.iface
@@ -166,6 +222,7 @@ class Estacas(object):
 
             self.view.empty=empty
             self.model.save(id_estaca)
+            self.updateTables()
 
 
     def perfilView(self):
@@ -206,6 +263,7 @@ class Estacas(object):
 
 
     def recalcular(self):
+        id=self.model.id_filename
         self.view.clear()
         dados = self.preview.new(True)
         if dados is None: return
@@ -213,6 +271,7 @@ class Estacas(object):
         table = self.model.recalcular(dist, estaca, layer)
         for item in table:
             self.view.fill_table(tuple(item))
+        self.model.id_filename=id
 
     def saveEstacas(self):
         if self.model.id_filename == -1: return
@@ -222,7 +281,7 @@ class Estacas(object):
 
     def saveEstacasCSV(self):
         filename = self.view.saveEstacasCSV()
-        if filename in ["", None]: return
+        if filename[0] in ["", None]: return
         self.saveEstacas()
         estacas = self.view.get_estacas()
         self.model.table = estacas
@@ -232,19 +291,30 @@ class Estacas(object):
         if self.click == False: return
         if not yesNoDialog(self.preview, title="Atenção", message="Tem certeza que deseja remover o arquivo?"):
             return
-        self.model.deleteEstaca(self.model.id_filename)
+        table=self.preview.tableEstacas
+        table : QtWidgets.QTableWidget
+
+        indexes=[i.row() for i in table.selectionModel().selectedRows(0)]
+        if len(indexes)>1:
+            for i in indexes:
+                id=table.item(i,0).text()
+                self.model.deleteEstaca(id)
+        else:
+            self.model.deleteEstaca(self.model.id_filename)
         self.update()
         self.model.id_filename = -1
         self.click = False
 
     def curva(self):
         curvas = self.model.getCurvas(self.model.id_filename)
-        curvaView = CurvasView(self.iface,self.model.id_filename,curvas,self.model.tipo())
-        curvaView.exec_()
+        curvaView = CurvasView(self.view, self.iface, self.model.id_filename,curvas,self.model.tipo())
+        curvaView.setModal(False)
+        curvaView.setWindowModality(QtCore.Qt.NonModal)
+        curvaView.show()
+
 
     def plotTransLayer(self, index):
         self.obterTerrenoTIFF(True, index)
-
 
 
     def obterTerrenoTIFF(self, plotTrans=False, index=-1):
@@ -352,9 +422,63 @@ class Estacas(object):
         layer.setCrs(QgsProject.instance().crs())
         QgsProject.instance().addMapLayers([layer])
 
+    def newEstacasLayer(self, name):
+        fields = QgsFields()
+        fields.append(QgsField("id", QVariant.Int))
+        fields.append(QgsField("Descricao", QVariant.String))
+        fields.append(QgsField("type", QVariant.Int)) # 0 -> sem curva, 1 -> espiral, 2-> circular
+
+        poly = QgsFeature()
+        path=self.model.saveGeoPackage(name, [poly], fields, QgsWkbTypes.MultiCurveZ, 'GPKG')
+
+        layer=self.iface.addVectorLayer(path,"","ogr")
+        layer.setName(name+"_Curvas")
+        self.iface.digitizeToolBar().show()
+        self.iface.shapeDigitizeToolBar().show()
+
+        addLineAction = self.iface.digitizeToolBar().actions()[8]
+        toggleEditAction = self.iface.digitizeToolBar().actions()[1]
+        if not addLineAction.isChecked():
+            toggleEditAction.trigger()
+        addLineAction.setChecked(True)
+        addLineAction.trigger()
+
+        return layer
+
+    def saveEstacasLayer(self, estacas, name=None):
+        name =str(self.model.getNameFromId(self.model.id_filename)) if name==None else name
+        #path = QtWidgets.QFileDialog.getSaveFileName(self.iface.mainWindow(), "Caminho para salvar o traçado com as curvas", filter="Geopackage (*.gpkg)")[0]
+        #if not path: return None
+
+        fields = QgsFields()
+        fields.append(QgsField("id", QVariant.Int))
+        fields.append(QgsField("Descricao", QVariant.String))
+        fields.append(QgsField("type", QVariant.Int)) # 0 -> sem curva, 1 -> espiral, 2-> circular
+
+        poly = QgsFeature()
+        points=[]
+        for i, _ in enumerate(estacas):
+            point = QgsPointXY(float(estacas[i][4]), float(estacas[i][3]))
+            points.append(point)
+        poly.setGeometry(QgsGeometry.fromPolylineXY(points))
+        path=self.model.saveGeoPackage(name, [poly], fields, QgsWkbTypes.MultiCurveZ, 'GPKG')
+
+        layer=self.iface.addVectorLayer(path,name,"ogr")
+        self.iface.digitizeToolBar().show()
+        self.iface.shapeDigitizeToolBar().show()
+
+        addLineAction = self.iface.digitizeToolBar().actions()[8]
+        toggleEditAction = self.iface.digitizeToolBar().actions()[1]
+        if not addLineAction.isChecked():
+            toggleEditAction.trigger()
+        addLineAction.setChecked(True)
+        addLineAction.trigger()
+
+        return layer
+
 
     def drawEstacas(self, estacas):
-        layer = QgsVectorLayer('LineString', 'Traçado ' + str(self.model.id_filename), "memory")
+        layer = QgsVectorLayer('LineString?crs=%s'%(QgsProject.instance().crs().authid()), str(self.model.getNameFromId(self.model.id_filename)), "memory")
         layer.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().layer(0).crs()))
         pr = layer.dataProvider()
         poly = QgsFeature()
@@ -368,51 +492,71 @@ class Estacas(object):
         poly.setGeometry(QgsGeometry.fromPolylineXY(points))
         pr.addFeatures([poly])
         layer.updateExtents()
-        QgsProject.instance().addMapLayers([layer])
+        QgsProject.instance().addMapLayers([layer], False)
+        QgsProject.instance().layerTreeRoot().insertLayer(0, layer)
+        return layer
+
 
 
     def obterCotasTIFF(self):
 
         filename = self.view.openTIFF()
         if filename in ['', None]:  return
+
         try:
-            img = Image.open(filename)
-            img.size = tuple(img.tile[-1][1][2:])
-            self.img_origem = img.tag.get(33922)[3:5]
-            self.tamanho_pixel = img.tag.get(33550)[:2]
-            self.estacas = self.view.get_estacas()
-            estacas = self.estacas
-
-            # fazer multithreading
-            for i, _ in enumerate(estacas):
-                try:
-                    pixel = (int(abs(float(estacas[i][4]) - self.img_origem[0]) / self.tamanho_pixel[0]),
-                             int(abs(float(estacas[i][3]) - self.img_origem[1]) / self.tamanho_pixel[1]))
-                    estacas[i][5] = "%f" % img.getpixel(pixel)
-                except:
-                    #self.drawEstacas(estacas)
-                    self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
-                    return
-
-        except:
-            from osgeo import gdal
-            dataset = gdal.Open(filename, gdal.GA_ReadOnly)
-            for x in range(1, dataset.RasterCount + 1):
-                band = dataset.GetRasterBand(x)
-                img = band.ReadAsArray()
-            self.img_origem = dataset.GetGeoTransform()[0],dataset.GetGeoTransform()[3]
-            self.tamanho_pixel = abs(dataset.GetGeoTransform()[1]),abs(dataset.GetGeoTransform()[5])
+            l=False
+            for l in self.iface.mapCanvas().layers():
+                if l.source() == filename:
+                    layer=l
+                    break
+            if not l:
+                self.preview.error(u"Salve a layer antes de usa-lá!")
+                return
+            from ..model.utils import cotaFromTiff
             self.estacas = self.view.get_estacas()
             estacas = self.estacas
             for i, _ in enumerate(estacas):
-                try:
-                    pixel = (int(abs(float(estacas[i][4]) - self.img_origem[0]) / self.tamanho_pixel[0]),
-                             int(abs(float(estacas[i][3]) - self.img_origem[1]) / self.tamanho_pixel[1]))
-                    estacas[i][5] = "%f" % img[pixel]
-                except:
-                   # self.drawEstacas(estacas)
-                    self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
-                    return
+                cota = cotaFromTiff(layer,QgsPointXY(float(estacas[i][4]),float(estacas[i][3])))
+                if cota:
+                    estacas[i][5] = "%f" % cota
+                else:
+                    self.preview.error(u"Pontos do traçado estão fora do raster selecionado!!!")
+                    break
+        except Exception as e:
+
+            try:
+                img = Image.open(filename)
+                img.size = tuple(img.tile[-1][1][2:])
+                self.img_origem = img.tag.get(33922)[3:5]
+                self.tamanho_pixel = img.tag.get(33550)[:2]
+                self.estacas = self.view.get_estacas()
+                estacas = self.estacas
+
+                # fazer multithreading
+                for i, _ in enumerate(estacas):
+                        pixel = (int(abs(float(estacas[i][4]) - self.img_origem[0]) / self.tamanho_pixel[0]),
+                                 int(abs(float(estacas[i][3]) - self.img_origem[1]) / self.tamanho_pixel[1]))
+                        estacas[i][5] = "%f" % img.getpixel(pixel)
+
+            except Exception as e:
+                from osgeo import gdal
+                dataset = gdal.Open(filename, gdal.GA_ReadOnly)
+                for x in range(1, dataset.RasterCount + 1):
+                    band = dataset.GetRasterBand(x)
+                    img = band.ReadAsArray()
+                self.img_origem = dataset.GetGeoTransform()[0],dataset.GetGeoTransform()[3]
+                self.tamanho_pixel = abs(dataset.GetGeoTransform()[1]),abs(dataset.GetGeoTransform()[5])
+                self.estacas = self.view.get_estacas()
+                estacas = self.estacas
+                for i, _ in enumerate(estacas):
+                    try:
+                        pixel = (int(abs(float(estacas[i][4]) - self.img_origem[0]) / self.tamanho_pixel[0]),
+                                 int(abs(float(estacas[i][3]) - self.img_origem[1]) / self.tamanho_pixel[1]))
+                        estacas[i][5] = "%f" % img[pixel]
+                    except Exception as e:
+                        #self.drawEstacas(estacas)
+                        self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
+                        return
 
         self.model.table = estacas
         self.model.save(self.model.id_filename)
@@ -509,7 +653,7 @@ class Estacas(object):
                 self.preview.error(
                     u"Para usar este recurso você deve instalar os pacotes abaixo:\nSKLearn e dxfgrabber: (Linux) 'sudo pip install scikit-learn&&pip install dxfgrabber' (Windows) Deve seguir o tutorial https://github.com/lennepkade/dzetsaka#installation-of-scikit-learn")
             return
-        filename = self.view.openDXF()
+        filename,_ = self.view.openDXF()
         if filename in ['', None] or not (filename.endswith('dxf') or filename.endswith('DXF')):  return
         estacas = self.view.get_estacas()
         dwg = dxfgrabber.readfile(filename, options={"assure_3d_coords": True})
@@ -533,7 +677,7 @@ class Estacas(object):
         #clf = KNeighborsRegressor(n_neighbors=3)
         itens = [u'KNN Regressão (Classico)',u'KNN Regressão (K Inteligente)',u'SVM',u'Regressão Linear']
         itens_func = [KNeighborsRegressor,KNN,SVR,linear_model.ARDRegression] 
-        item, ok = QtGui.QInputDialog.getItem(None, "Selecione:", u"Selecione o método de predição:",
+        item, ok = QtWidgets.QInputDialog.getItem(None, "Selecione:", u"Selecione o método de predição:",
                                                   itens,
                                                   0, False)
         if not(ok) or not(item):
@@ -541,7 +685,7 @@ class Estacas(object):
 
         clf = itens_func[item.index(item)](5)
         if itens.index(item) < 2:
-            k, ok = QtGui.QInputDialog.getInteger(None, "Escolha o valor de K", u"Valor de K:", 3, 2, 10000, 2)
+            k, ok = QtWidgets.QInputDialog.getInteger(None, "Escolha o valor de K", u"Valor de K:", 3, 2, 10000, 2)
             if k<1 or not(ok):
                 return None
             clf = itens_func[itens.index(item)](k)
@@ -637,6 +781,8 @@ class Estacas(object):
             self.view.fill_table(tuple(e), True)
             self.estacasHorizontalList.append(tuple(e))
         self.nextView=self.view 
+        self.view.setCopy()
+        self.updateTables()
 
     def openCv(self):
         self.openEstaca()
@@ -792,13 +938,15 @@ class Estacas(object):
     def openEstacaCSV(self):
         self.view.clear()
         res = self.preview.openCSV()
-        if res in ['', None] or res[1] in ['', None] or not (res[0].endswith('csv')): return
-        filename, fileDB = res
+        file=res[0]
+        if file[0] in ['', None] or res[1] in ['', None] or not (file[0].endswith('csv')): return
+        filename, fileDB = file[0], res[1]
         estacas = self.model.openCSV(filename, fileDB)
         self.model.table = estacas
         self.elemento = self.model.ultimo
         for estaca in estacas:
             self.view.fill_table(tuple(estaca), True)
+        self.view.setCopy()
         self.model.save(self.elemento)
 
     def plotar(self):
@@ -808,6 +956,14 @@ class Estacas(object):
     def update(self):
         files = self.model.listTables()
         self.preview.fill_table_index(files)
+        self.view.clear()
+        self.view.clearLayers()
+
+    def updateTables(self):
+        try:
+            self.view.setWindowTitle(self.model.getNameFromId(self.model.id_filename))
+        except:
+            pass
 
     def run(self):
        # from ..view.estacas import SelectFeatureDialog

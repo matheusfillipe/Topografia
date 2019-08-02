@@ -75,11 +75,19 @@ def dircos(point):
 def pairs(lista,inicio=0):
     # list pairs iteration
     try:
-        p = lista.geometry().asPolyline()
+        line = lista.geometry().asPolyline()
     except:
-        p = lista.geometry().asMultiPolyline()[0]
-    for i in range(inicio+1, len(p)):
-        yield p[i-1], p[i]
+        line = lista.geometry().asMultiPolyline()[0]
+
+    from math import isclose
+    start=line[inicio]
+    for i in range(inicio+1, len(line)-1):
+        if not isclose(line[i-1].azimuth(line[i]),line[i].azimuth(line[i+1]),rel_tol=.00001):
+            yield start, line[i]
+            start=line[i]
+    yield start, line[-1]
+
+
 
 
 def decdeg2dms(dd):
@@ -171,6 +179,26 @@ def pointFromWGS84(point):
     return pt
 
 
+def addGoogleXYZTiles(iface, QSettings):
+    sources = []
+    sources.append(["connections-xyz", "Google Satellite", "", "", "",
+                    "https://mt1.google.com/vt/lyrs=s&x=%7Bx%7D&y=%7By%7D&z=%7Bz%7D", "", "19", "0"])
+    sources.append(["connections-xyz", "Google Terrain", "", "", "",
+                    "https://mt1.google.com/vt/lyrs=t&x=%7Bx%7D&y=%7By%7D&z=%7Bz%7D", "", "19", "0"])
+
+    for source in sources:
+        connectionType = source[0]
+        connectionName = source[1]
+        QSettings().setValue("qgis/%s/%s/authcfg" % (connectionType, connectionName), source[2])
+        QSettings().setValue("qgis/%s/%s/password" % (connectionType, connectionName), source[3])
+        QSettings().setValue("qgis/%s/%s/referer" % (connectionType, connectionName), source[4])
+        QSettings().setValue("qgis/%s/%s/url" % (connectionType, connectionName), source[5])
+        QSettings().setValue("qgis/%s/%s/username" % (connectionType, connectionName), source[6])
+        QSettings().setValue("qgis/%s/%s/zmax" % (connectionType, connectionName), source[7])
+        QSettings().setValue("qgis/%s/%s/zmin" % (connectionType, connectionName), source[8])
+    iface.reloadConnections()
+
+
 def getElevation(crs,point):
     epsg4326 = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId)
     mycrs = QgsCoordinateReferenceSystem(int(crs), 0)
@@ -192,8 +220,9 @@ def getElevation(crs,point):
         if 0 < len(results):
             elevation = float(round(results[0].get('elevation'),4))
 
+
     except Exception as e:
-        print(e.message)
+        msgLog(e.message)
         qDebug(e.message)
         elevation=0.0
 
@@ -286,3 +315,11 @@ def yesNoDialog(iface, title="Atenção", info="", message=""):
     msgBox.setDefaultButton(QtWidgets.QMessageBox.No)
     msgBox.show()
     return msgBox.exec_() == QtWidgets.QMessageBox.Yes
+
+def cotaFromTiff(layer,p):
+    v = layer.dataProvider().identify(p, QgsRaster.IdentifyFormatValue)
+    if layer.extent().contains(p):
+        return v.results()[1]
+    else:
+        return False
+

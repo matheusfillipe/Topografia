@@ -29,15 +29,18 @@ from qgis.utils import *
 
 from qgis.PyQt.QtCore import *
 from qgis.PyQt.QtGui import *
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtWidgets import QAction, QShortcut
 
 from .app.controller.config import Config
 from .app.controller.estacas import Estacas
+from qgis.PyQt.QtCore import QSettings
+from .app.model.utils import addGoogleXYZTiles
 
 from . import resources
 
 
-
+DEBUG=True
+SHORTCUT="Ctrl+Alt+"
 
 class TopoGrafia(object):
     """QGIS Plugin Implementation."""
@@ -63,14 +66,21 @@ class TopoGrafia(object):
             'TopoGrafia_{}.qm'.format(locale))
 
         #DEBUG CLIENT
+        global DEBUG
+        if DEBUG:
+            try:
+                import sys
+                sys.path.append('/home/matheus/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/181.5087.37/debug-eggs/pycharm-debug.egg')
+                import pydevd
+                pydevd.settrace('localhost', port=5553, stdoutToServer=True, stderrToServer=True)
+            except:
+                pass
+
+        #Wonderful Code here
         try:
-            import sys
-            sys.path.append('/home/matheus/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/181.5087.37/debug-eggs/pycharm-debug.egg')
-            import pydevd
-            pydevd.settrace('localhost', port=5553, stdoutToServer=True, stderrToServer=True)
+            addGoogleXYZTiles(iface, QSettings)
         except:
             pass
-
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -80,6 +90,7 @@ class TopoGrafia(object):
                 QCoreApplication.installTranslator(self.translator)
 
         # Declare instance attributes
+        self.actionCounter=0
         self.actions = []
         self.menu = self.tr(u'&Topografia')
         # TODO: We are going to let the user set this up in a future iteration
@@ -88,6 +99,7 @@ class TopoGrafia(object):
         # -----------------------------------------------
         #instancia do controller de config
         self.conf = Config(iface)
+        self.conf.iface=iface
         '''
             Elemento dialogo.
         '''
@@ -178,6 +190,8 @@ class TopoGrafia(object):
         action = QAction(icon, text, parent)
         action.triggered.connect(callback)
         action.setEnabled(enabled_flag)
+        self.actionCounter+=1
+        action.setShortcut(QKeySequence(SHORTCUT+str(self.actionCounter)))
 
         if status_tip is not None:
             action.setStatusTip(status_tip)
@@ -208,7 +222,7 @@ class TopoGrafia(object):
         icon_path_save = ':/plugins/TopoGrafia/app/resources/icons/iconsave.png'
         icon_path = ':/plugins/TopoGrafia/app/resources/icons/iconnew.png'
 
-        #TODO icon_draw logo not showing up
+
 
         self.add_action(
             icon_path,
@@ -237,7 +251,7 @@ class TopoGrafia(object):
         )
         self.add_action(
             icon_path_map,
-            text=self.tr(u'Abrir Mapa'),
+            text=self.tr(u'Google Rasters'),
             callback=self.conf.carregamapa,
             parent=self.iface.mainWindow())
 
@@ -273,6 +287,5 @@ class TopoGrafia(object):
             self.estacas.run()
 
     def run(self):
-
         pass
 

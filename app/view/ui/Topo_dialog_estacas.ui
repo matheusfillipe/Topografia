@@ -7,36 +7,15 @@
     <x>0</x>
     <y>0</y>
     <width>965</width>
-    <height>568</height>
+    <height>575</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Traçado Horizontal</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="1">
-    <widget class="QPushButton" name="btnCota">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="text">
-      <string>Obter Cotas
-via Google</string>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="1">
     <layout class="QVBoxLayout" name="verticalLayout">
-     <item>
-      <widget class="QPushButton" name="btnRead">
-       <property name="text">
-        <string>Abrir Arquivo</string>
-       </property>
-       <attribute name="buttonGroup">
-        <string notr="true">buttonGroup</string>
-       </attribute>
-      </widget>
-     </item>
      <item>
       <widget class="QPushButton" name="btnEstacas">
        <property name="text">
@@ -48,6 +27,13 @@ via Google</string>
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="btnDuplicar">
+       <property name="text">
+        <string>Duplicar</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="btnLayer">
        <property name="text">
         <string>Plotar</string>
@@ -55,6 +41,13 @@ via Google</string>
        <attribute name="buttonGroup">
         <string notr="true">buttonGroup</string>
        </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnCurva">
+       <property name="text">
+        <string>Curvas</string>
+       </property>
       </widget>
      </item>
      <item>
@@ -91,13 +84,6 @@ via Google</string>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="btnCurva">
-       <property name="text">
-        <string>Curvas</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <spacer name="verticalSpacer">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
@@ -112,7 +98,7 @@ via Google</string>
      </item>
     </layout>
    </item>
-   <item row="0" column="0" rowspan="4">
+   <item row="0" column="0" rowspan="5">
     <widget class="QTableWidget" name="tableWidget"/>
    </item>
    <item row="1" column="1">
@@ -128,6 +114,14 @@ via GeoTIFF</string>
      <property name="text">
       <string>Obter Cotas
 via DXF</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QPushButton" name="btnCota">
+     <property name="text">
+      <string>Obter Cotas 
+via Google</string>
      </property>
     </widget>
    </item>

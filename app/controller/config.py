@@ -79,9 +79,7 @@ class Config(object):
             return
         self.model.openfile(filename)
         self.update()
-        self.carregamapa()
 
-        
 
     def savefile(self):
         self.model.filename = u"{0}".format(self.model.filename)
@@ -98,7 +96,9 @@ class Config(object):
 
     def carregamapa(self):
         self.changeCRS()
-
+        from ..model.utils import addGoogleXYZTiles
+        from qgis.PyQt.QtCore import QSettings
+        addGoogleXYZTiles(self.iface, QSettings)
         try:
             self.conf.carregamapa(self.model.tipo_mapa)
         except Exception as e:

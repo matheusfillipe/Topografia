@@ -6,6 +6,7 @@ from builtins import range
 
 import os
 import sip
+from copy import copy
 
 from qgis.PyQt.QtGui import QKeySequence
 from qgis.PyQt import QtCore, QtWidgets, QtWidgets, QtGui
@@ -31,7 +32,7 @@ from qgis.PyQt.QtWidgets import *
 from qgis.core import *
 
 
-from ..model.utils import decdeg2dms
+from ..model.utils import decdeg2dms, formatValue
 import subprocess
 
 import qgis
@@ -172,9 +173,19 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         if len(itens) == 0: return None
         if not filename:
             if not recalcular:
-                filename, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:", text="Traçado "+str(lastIndex))
-                if not ok:
-                    return None
+                filename=""
+                names=[self.tableEstacas.item(i,1).text() for i in range(self.tableEstacas.rowCount())]
+                first=True
+                while filename=="" or filename in names:
+                    if not first:
+                        from ..model.utils import messageDialog
+                        messageDialog(self,title="Erro",message="Já existe um arquivo com esse nome")
+
+                    filename, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:", text="Traçado "+str(lastIndex))
+                    if not ok:
+                        return None
+
+                    first=False
             else:
                 filename = ''
 
@@ -194,7 +205,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
                 except:
                     pass
             item, ok = QtWidgets.QInputDialog.getItem(None, "Camada com tracado", u"Selecione a camada com o traçado:",
-                                                  itens,
+                                                  reversed(itens),
                                                   0, False)
             if not(ok) or not(item):
                 return None
@@ -622,16 +633,36 @@ class CopySelectedCellsAction(QtWidgets.QAction):
 
     def copy_cells_to_clipboard(self):
         if len(self.table_widget.selectionModel().selectedIndexes()) > 0:
-            # sort select indexes into rows and columns
-            previous = self.table_widget.selectionModel().selectedIndexes()[0]
-            clipboard = previous.data()
-            for index in self.table_widget.selectionModel().selectedIndexes()[1:]:
-                if previous.row() != index.row():
-                    clipboard += '\n'
-                else:
-                    clipboard += '\t'
-                previous=index
-                clipboard += index.data()
+            columnIndex=list(set(index.column() for index in self.table_widget.selectionModel().selectedIndexes()))
+            rowIndex=list(set(index.row() for index in self.table_widget.selectionModel().selectedIndexes()))
+            columnIndex.sort()
+            rowIndex.sort()
+            nSelectedColumns=len(columnIndex)
+            nSelectedRows=len(rowIndex)
+            matx=[[None for a in range(max(columnIndex[-1]-columnIndex[0]+1,nSelectedColumns))] for a in range(max(1+rowIndex[-1]-rowIndex[0],nSelectedRows))]
+            start=[rowIndex[0],columnIndex[0]]
+
+            for index in self.table_widget.selectionModel().selectedIndexes():
+                i=index.row()-start[0]
+                j=index.column()-start[1]
+                matx[i][j]=index.data()
+
+
+            import numpy as np
+            final=np.array(matx).transpose()
+            matx=[]
+            for col in final:
+                if any(x is not None for x in col):
+                    matx.append(col)
+            final=np.array(matx).transpose()
+            clipboard=""
+            for row in final:
+                if not any(x is not None for x in row):
+                    continue
+                for column in row:
+                        clipboard += str(column if column else "")+'\t'
+                clipboard += '\n'
+
 
             # copy to the system clipboard
             sys_clip = QtWidgets.QApplication.clipboard()
@@ -640,12 +671,15 @@ class CopySelectedCellsAction(QtWidgets.QAction):
 
 class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
 
-    def __init__(self,iface):
-        super(Estacas, self).__init__(None)
+    layerUpdated=pyqtSignal()
+
+    def __init__(self,iface, parent):
+        super().__init__(None)
+        self.parent=parent
         self.iface = iface
         self.type="horizontal"
         self.setupUi(self)
-
+        self.curvaLayers=[]
 
     def clear(self):
         self.tableWidget.setRowCount(0)
@@ -661,7 +695,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         k = self.tableWidget.rowCount() - 1
         j=0
         for value in list(xxx_todo_changeme):
-            cell_item = QtWidgets.QTableWidgetItem(u"%s" % value)
+            cell_item = QtWidgets.QTableWidgetItem(u"%s" % formatValue(value))
             cell_item.setFlags(cell_item.flags() ^ Qt.ItemIsEditable)
             self.tableWidget.setItem(k,j,cell_item)
             j+=1
@@ -779,7 +813,60 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.point=False
         self.setCopy()
         self.stretchTable()
+        self.openLayers()
         return super().exec_()
+
+    def accept(self):
+        self.closeLayers()
+        self.setWindowTitle("")
+        return super().accept()
+
+    def reject(self):
+        self.closeLayers()
+        self.setWindowTitle("")
+        return super().reject()
+
+    def openLayers(self):
+        self.closeLayers()
+        self.parent.model.iface=self.iface
+        for l in self.parent.model.getSavedLayers():
+            if l and l.name()==self.windowTitle():
+                l.setName("Curvas: "+l.name())
+                l.startEditing()
+                self.curvaLayers.append(l)
+                l.layerModified.connect(lambda: self.add_row(l))
+                self.parent.iface.setActiveLayer(l)
+
+                l.renderer().symbol().setWidth(.5)
+                l.renderer().symbol().setColor(QtGui.QColor("#be0c21"))
+                l.triggerRepaint()
+
+                if len([a for a in l.getFeatures()]):
+                  self.parent.iface.mapCanvas().setExtent(l.extent())
+            else:
+                QgsProject.instance().removeMapLayers([l.id()])
+
+    def add_row(self,l):
+        self.layer=l
+        self.layerUpdated.emit()
+
+
+    def closeLayers(self):
+        for l in self.curvaLayers:
+            lyr=l
+            try:
+                l.commitChanges()
+                l.endEditCommand()
+                path=l.dataProvider().dataSourceUri()
+                QgsProject.instance().removeMapLayer(l.id())
+                self.parent.model.saveLayer(path)
+            except Exception as e:
+                try:
+                    from ..model.utils import msgLog
+                    msgLog("Erro: "+str(e)+"  ao remover layer "+lyr.name())
+                except:
+                    pass
+        self.curvaLayers=[]
 
     def setCopy(self):
         if not hasattr(self, "copyAction"):
@@ -797,8 +884,11 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
 
     def zoom(self, row, column):
         root = QgsProject.instance()
-        if self.point:
-            root.removeMapLayer(self.point)
+        try:
+            if self.point:
+                root.removeMapLayer(self.point)
+        except RuntimeError as e:
+                pass#Duplicado
 
         #ZOOM
         scale = 100
@@ -1343,6 +1433,7 @@ class SelectFeatureDialog(QtWidgets.QDialog, SELECT_FEATURE):
 
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
         self.tableWidget.cellDoubleClicked.connect(self.accept)
+        self.tableWidget.selectRow(self.tableWidget.rowCount()-1)
 
         if self.tableWidget.rowCount()==0:
             self.checkBox.setChecked(True)
@@ -1355,6 +1446,7 @@ class SelectFeatureDialog(QtWidgets.QDialog, SELECT_FEATURE):
             self.tableWidget.itemSelectionChanged.connect(self.updateResult)
             self.checkBox.stateChanged.connect(self.check)
 
+        self.checkBox.setChecked(True)
 
     def updateResult(self):
         self.result=self.tableWidget.currentRow()

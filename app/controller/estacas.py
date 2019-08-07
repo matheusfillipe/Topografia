@@ -6,6 +6,9 @@ from PyQt5.QtCore import QVariant
 from qgis.PyQt import QtGui, QtWidgets
 
 from qgis._gui import QgsMapToolEmitPoint
+
+
+
 try:
     from PIL import Image
 except:
@@ -16,6 +19,7 @@ except:
         from ...PILWin import Image
 
 from ..controller.perfil import Ui_Perfil, cv as CV, Ui_sessaoTipo
+from ..model.config import Config
 from ..model.estacas import Estacas as EstacasModel
 from ..model.knn import KNN
 from ..model.utils import *
@@ -32,8 +36,9 @@ class Estacas(object):
         self.estacasHorizontalList=[]
 
         self.model = EstacasModel()
+        self.model.iface=iface
         self.preview = EstacasUI(iface)
-        self.view = EstacasView(iface)
+        self.view = EstacasView(iface, self)
         self.viewCv = EstacasCv(iface)
 
         self.events()
@@ -80,6 +85,10 @@ class Estacas(object):
         '''
             ------------------------------------------------
         '''
+        self.view.btns=[self.view.btnSave, self.view.btnSaveCSV, self.view.btnLayer, self.view.btnEstacas,
+        self.view.btnPerfil, self.view.btnCurva,self.view.btnCotaTIFF, self.view.btnCotaPC, self.view.btnCota]
+        for btn in self.view.btns:
+            btn.clicked.connect(self.view.clearLayers)
 
         self.view.btnSave.clicked.connect(self.saveEstacas)
         self.view.btnSaveCSV.clicked.connect(self.saveEstacasCSV)
@@ -94,6 +103,7 @@ class Estacas(object):
         self.view.tableWidget.itemDoubleClicked.connect(self.linkGoogle)
         self.view.tableWidget.itemDoubleClicked.connect(self.mudancaCelula)
         self.view.btnDuplicar.clicked.connect(self.duplicarEstaca)
+        self.view.layerUpdated.connect(self.joinFeatures)
 
         self.viewCv.btnGen.clicked.connect(self.generateIntersec)
         self.viewCv.btnTrans.clicked.connect(self.generateTrans)
@@ -105,37 +115,61 @@ class Estacas(object):
         l=len(table.selectionModel().selectedRows())
         if l>1:
             self.preview.error(u"Selecione um único arquivo!")
-        elif l<1:
-            filename="Traçado "+str(len(self.model.listTables())+1)
-            name, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:", text=filename)
-            if not ok: return
-            self.new(dados=(name, self.newEstacasLayer(name=name), 20, []))
+        elif l<1: #criar traçado, iniciar edição
+            name=self.fileName("Traçado "+str(len(self.model.listTables())+1))
+            if not name: return
+            self.new(dados=(name, self.newEstacasLayer(name=name), Config.DIST, []))
         else:
             layer=self.saveEstacasLayer(self.model.loadFilename(), name=str(self.model.getNameFromId(self.model.id_filename))+"_Curvas")
             estacas = self.preview.curvasDialog(self.model.loadFilename(),layer)
 
+    def joinFeatures(self):
+        layer=self.view.curvaLayers[0]
+        layer.layerModified.disconnect()
+        layer.commitChanges()
+        id=[f for f in layer.getFeatures()][-1].id()
+        if id>1:
+            moveLine(layer,id,getLastPoint(layer, id))
+        self.iface.mapCanvas().refresh()
+        layer.startEditing()
+        layer.layerModified.connect(lambda: self.view.add_row(layer))
 
-            """
-            self.model.table=estacas
-            self.model.save(self.model.id_filename)
-            self.view.clear()
-            estacas = self.model.loadFilename()
-            self.estacasHorizontalList=[]
-            for e in estacas:
-                self.view.fill_table(tuple(e), True)
-                self.estacasHorizontalList.append(tuple(e))
-            self.nextView=self.view
-            self.view.setCopy()
-            self.updateTables()
-"""
+#        self.updateTables()
+
+    def fillView(self, table):
+        self.estacasHorizontalList=[]
+        empty=True
+        self.view.clear()
+        for item in table:
+            self.view.fill_table(tuple(item))
+            self.estacasHorizontalList.append(tuple(item))
+            empty=False
+        self.view.empty=empty
+        self.model.save(self.model.id_filename)
+
+    def fileName(self, suggestion=False):
+        filename = ""
+        names = [self.preview.tableEstacas.item(i, 1).text() for i in range(self.preview.tableEstacas.rowCount())]
+        first = True
+        while filename == "" or filename in names:
+            if not first:
+                from ..model.utils import messageDialog
+                messageDialog(None, title="Erro", message="Já existe um arquivo com esse nome")
+
+            filename, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:",
+                                                          text=suggestion if suggestion else  "Traçado " + str(len(self.model.listTables()+1)))
+            if not ok:
+                return False
+            first = False
+        return filename
 
 
     def duplicarEstaca(self):
-        filename=self.model.getNameFromId(self.model.id_filename)
         if self.model.id_filename == -1: return
-        filename, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:", text=filename+" cópia")
-        if not ok: return
-
+        filename=self.fileName(suggestion="Cópia de " + self.model.getNameFromId(self.model.id_filename))
+        if not filename:
+            return None
+        self.openEstaca()
         estacas = self.view.get_estacas()
         self.model=self.model.saveEstacas(filename, estacas)
         self.update()
@@ -205,11 +239,13 @@ class Estacas(object):
 
     def new(self, layer=None, dados=None):
         self.view.clear()
+
+        isGeopckg=True if dados else False
         dados = dados if dados else self.preview.new(lastIndex=len(self.model.listTables())+1)
+        self.model.iface=self.iface
         if not dados is None:
             filename, lyr, dist, estaca = dados
-            self.model.iface=self.iface
-            id_estaca, table = self.model.new(dist, estaca, lyr, filename)
+            id_estaca, table = self.model.new(dist, estaca, lyr, filename) if not isGeopckg else self.model.newEmpty(Config.DIST,filename)
             self.elemento = id_estaca
             self.model.id_filename = id_estaca
             self.estacasHorizontalList=[]
@@ -224,6 +260,9 @@ class Estacas(object):
             self.model.save(id_estaca)
             self.updateTables()
 
+            return self.model.getNewId()
+
+        return False
 
     def perfilView(self):
         tipo, class_project = self.model.tipo()
@@ -272,6 +311,7 @@ class Estacas(object):
         for item in table:
             self.view.fill_table(tuple(item))
         self.model.id_filename=id
+        self.model.save(id)
 
     def saveEstacas(self):
         if self.model.id_filename == -1: return
@@ -288,12 +328,11 @@ class Estacas(object):
         self.model.saveCSV(filename)
 
     def deleteEstaca(self):
-        if self.click == False: return
-        if not yesNoDialog(self.preview, title="Atenção", message="Tem certeza que deseja remover o arquivo?"):
-            return
         table=self.preview.tableEstacas
         table : QtWidgets.QTableWidget
-
+        if len(table.selectionModel().selectedRows(0))==0: return
+        if not yesNoDialog(self.preview, title="Atenção", message="Tem certeza que deseja remover o arquivo?"):
+            return
         indexes=[i.row() for i in table.selectionModel().selectedRows(0)]
         if len(indexes)>1:
             for i in indexes:
@@ -422,28 +461,16 @@ class Estacas(object):
         layer.setCrs(QgsProject.instance().crs())
         QgsProject.instance().addMapLayers([layer])
 
+
+
     def newEstacasLayer(self, name):
         fields = QgsFields()
-        fields.append(QgsField("id", QVariant.Int))
+        fields.append(QgsField("Tipo", QVariant.String)) # C, T, E (Circular, tangente, Espiral ... startswith)
         fields.append(QgsField("Descricao", QVariant.String))
-        fields.append(QgsField("type", QVariant.Int)) # 0 -> sem curva, 1 -> espiral, 2-> circular
 
-        poly = QgsFeature()
-        path=self.model.saveGeoPackage(name, [poly], fields, QgsWkbTypes.MultiCurveZ, 'GPKG')
+        #TODO add argument if existing project and change path declaration
 
-        layer=self.iface.addVectorLayer(path,"","ogr")
-        layer.setName(name+"_Curvas")
-        self.iface.digitizeToolBar().show()
-        self.iface.shapeDigitizeToolBar().show()
-
-        addLineAction = self.iface.digitizeToolBar().actions()[8]
-        toggleEditAction = self.iface.digitizeToolBar().actions()[1]
-        if not addLineAction.isChecked():
-            toggleEditAction.trigger()
-        addLineAction.setChecked(True)
-        addLineAction.trigger()
-
-        return layer
+        self.model.saveGeoPackage(name, [], fields, QgsWkbTypes.MultiCurveZ, 'GPKG')
 
     def saveEstacasLayer(self, estacas, name=None):
         name =str(self.model.getNameFromId(self.model.id_filename)) if name==None else name

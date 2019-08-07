@@ -41,7 +41,7 @@ class Create_vlayer(object):
     @property
     def display_layer(self):
         #end of layer and display layer
-        QgsMapLayerRegistry.instance().addMapLayers([self.layer])
+        QgsProject.instance().addMapLayers([self.layer])
 
 
 def mag(point):
@@ -61,7 +61,6 @@ def length(point1,point2):
 
 def dircos(point):
     Mag=mag(point)
-
     cosa = 0
     cosb = 0
 
@@ -72,8 +71,32 @@ def dircos(point):
     return cosa,cosb
 
 
+def getTipo(feat):
+    '''
+    :param feat: layer feature
+    :return: str: Tipo do seguimento de geometria (T para tangente, C para curva cirvular, E para curva Espiral
+    Os valores são computados a partir dos fields da layer
+    '''
+
+    try:
+        s = str(feat["Tipo"])
+        if s.startswith("T") or s.startswith("t"):
+            r = "T"
+        elif s.startswith("C") or s.startswith("c"):
+            r = "C"
+        elif s.startswith("E") or s.startswith("e") or s.startswith("S") or s.startswith("s"):
+            r = "E"
+        else:
+            r = "T"
+    except:
+        r = "T"
+
+    return r
+
+
 def pairs(lista,inicio=0):
     # list pairs iteration
+    tipo=getTipo(lista)
     try:
         line = lista.geometry().asPolyline()
     except:
@@ -82,11 +105,32 @@ def pairs(lista,inicio=0):
     from math import isclose
     start=line[inicio]
     for i in range(inicio+1, len(line)-1):
-        if not isclose(line[i-1].azimuth(line[i]),line[i].azimuth(line[i+1]),rel_tol=.00001):
-            yield start, line[i]
-            start=line[i]
-    yield start, line[-1]
+       if not isclose(line[i-1].azimuth(line[i]),line[i].azimuth(line[i+1]),rel_tol=.00001):
+           yield start, line[i], tipo
+           start=line[i]
+    yield start, line[-1], tipo
 
+
+
+def moveLine(layer, id, dest, src=None):
+    try:
+        geometry=layer.getFeature(id).geometry().asPolyline()
+    except:
+        geometry=layer.getFeature(id).geometry().asMultiPolyline()[0]
+
+    if not src:
+        src=geometry[0]
+    dx=dest.x()-src.x()
+    dy=dest.y()-src.y()
+    g = layer.getFeature(id).geometry()
+    g.translate(dx,dy)
+    layer.dataProvider().changeGeometryValues({id: g})
+
+def getLastPoint(layer, id):
+    try:
+        return layer.getFeature(id-1).geometry().asPolyline()[-1]
+    except:
+        return layer.getFeature(id-1).geometry().asMultiPolyline()[0][-1]
 
 
 
@@ -150,17 +194,17 @@ class ClickTool(QgsMapTool):
         self.callback(point)
         return None
 
-
 def pointToWGS84(point):
-    p = QgsProject.instance()
-    (proj4string,ok) = p.readEntry("SpatialRefSys","ProjectCRSProj4String")
-    if not ok:
-        return point
-    t=QgsCoordinateReferenceSystem()
-    t.createFromEpsg(4326)
-    f=QgsCoordinateReferenceSystem()
-    f.createFromProj4(proj4string)
-    transformer = QgsCoordinateTransform(f,t)
+    t=QgsCoordinateReferenceSystem("EPSG:4326")
+    f=QgsProject.instance().crs()
+    transformer = QgsCoordinateTransform(f,t, QgsProject.instance())
+    pt = transformer.transform(point)
+    return pt
+
+def pointTo(crs,point):
+    t=QgsCoordinateReferenceSystem(crs)
+    f=QgsProject.instance().crs()
+    transformer = QgsCoordinateTransform(f,t, QgsProject.instance())
     pt = transformer.transform(point)
     return pt
 
@@ -248,11 +292,17 @@ def internet_on():
         return False
 
 ##TODO allow user to configure precision
-precision=3
+precision=4
 longPrecision=8
 
 def roundFloat(f:float):
     return round(f,precision)
+
+def formatValue(value):
+    try:
+        return str(roundFloat(float(value)))
+    except:
+        return str(value)
 
 def roundFloat2str(f:float):
     return str(round(f,precision))
@@ -316,10 +366,87 @@ def yesNoDialog(iface, title="Atenção", info="", message=""):
     msgBox.show()
     return msgBox.exec_() == QtWidgets.QMessageBox.Yes
 
-def cotaFromTiff(layer,p):
-    v = layer.dataProvider().identify(p, QgsRaster.IdentifyFormatValue)
+
+
+
+def getBlockRecAndItemFromPointInRaster(layer, p):
+    pt = p  # QgsCoordinateTransform(QgsProject.instance().crs(),layer.crs(),QgsProject.instance()).transform(p)
+    dp = layer.dataProvider()
+    finalExtent = dp.extent()
+
+    # Calculate the row / column where the point falls
+    xres = layer.rasterUnitsPerPixelX()
+    yres = layer.rasterUnitsPerPixelY()
+
+    from math import floor
+    col = abs(floor((pt.x() - finalExtent.xMinimum()) / xres))
+    row = abs(floor((finalExtent.yMaximum() - pt.y()) / yres))
+
+    xMin = finalExtent.xMinimum() + col * xres
+    xMax = xMin + xres
+    yMax = finalExtent.yMaximum() - row * yres
+    yMin = yMax - yres
+    pixelExtent = QgsRectangle(xMin, yMin, xMax, yMax)
+    # 1 is referring to band 1
+    block = dp.block(1, finalExtent, layer.width(), layer.height())
+
+    if pixelExtent.contains(pt):
+        return block, pixelExtent, row, col
+    else:
+        return False, False, False, False
+
+
+def rect(layer, row, col):
+    dp = layer.dataProvider()
+    finalExtent = dp.extent()
+
+    # Calculate the row / column where the point falls
+    xres = layer.rasterUnitsPerPixelX()
+    yres = layer.rasterUnitsPerPixelY()
+
+    xMin = finalExtent.xMinimum() + col * xres
+    xMax = xMin + xres
+    yMax = finalExtent.yMaximum() - row * yres
+    yMin = yMax - yres
+    return QgsRectangle(xMin, yMin, xMax, yMax)
+
+
+def cotaFromTiff(layer, p, interpolate=True):
+    p = QgsCoordinateTransform(QgsProject.instance().crs(), layer.crs(), QgsProject.instance()).transform(p)
+    if interpolate:
+
+        b, rec, row, col = getBlockRecAndItemFromPointInRaster(layer, p)
+        if not b:
+            return 0
+
+        matx = [[[None, None, None], [None, None, None], [None, None, None]],
+                [[None, None, None], [None, None, None], [None, None, None]]]
+
+        from itertools import product
+        for i, j in product([-1, 0, 1], [-1, 0, 1]):
+            matx[0][i + 1][j + 1] = b.value(row + i, col + j)  # elevações
+            matx[1][i + 1][j + 1] = rect(layer, row + i, col + j).center().distance(p)  # distancias
+            if row < 0 or col < 0 or row >= layer.height() or col >= layer.width():
+                return 0
+        m = matx
+
+        temp = m[1][0] + m[1][1] + m[1][2]
+        temp.sort()
+        L = []
+        V = []
+        for i, j in [[int((m[1][0] + m[1][1] + m[1][2]).index(n) / 3), (m[1][0] + m[1][1] + m[1][2]).index(n) % 3] for n
+                     in temp[:4]]:
+            v, l = matx[0][i][j], matx[1][i][j]
+            L.append(l)
+            V.append(v)
+        I = [1 / l if 1 / l > .01 else .01 for l in L]
+        res = sum(v * i for v, i in zip(V, I)) / sum(I)
+        return res
+
+    v = layer.dataProvider().sample(p, 1)
     if layer.extent().contains(p):
         return v.results()[1]
     else:
-        return False
+        return 0
+
 

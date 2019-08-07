@@ -9,7 +9,7 @@ import zipfile
 from pathlib import Path
 from qgis._core import QgsApplication
 import tempfile
-RANDOM="__ix35-_-xxx901381asdioADJ398(__"
+
 
 def extractZIP(filename):
     z = zipfile.ZipFile(filename, "r")
@@ -18,7 +18,7 @@ def extractZIP(filename):
         os.makedirs('tmp')
     z.extractall("tmp")
     z.close()
-    return Path('tmp/data/').rglob("*.gpkg")
+    return Path('tmp/data/').rglob("*.gpkg*")
 
 
 def compactZIP(filename):
@@ -26,7 +26,7 @@ def compactZIP(filename):
     os.chdir(os.path.dirname(filename))
     z.write('tmp/data/data.db','data/data.db',zipfile.ZIP_DEFLATED)
     z.write('tmp/data/config.json','data/config.json',zipfile.ZIP_DEFLATED)
-    tracs=Path('tmp/data/').rglob("*.gpkg")
+    tracs=Path('tmp/data/').rglob("*.gpkg*")
     for trac in tracs:
         z.write(str(trac),'data/'+trac.name,zipfile.ZIP_DEFLATED)
     z.close()
@@ -38,7 +38,8 @@ class Config(object):
     UNITS = 'm'
     CSV_DELIMITER = ';'
     DIST=20
-    
+    RANDOM="__ix35-_-xxx901381asdioADJ398(__"
+    TMP_FOLDER="TopoRoad/"
 
     def __init__(self):
         self.crs = 2676

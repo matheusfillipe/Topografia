@@ -31,10 +31,12 @@ from qgis.PyQt.QtCore import *
 from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import QAction, QShortcut
 
+from .app.model.config import Config as cfg
 from .app.controller.config import Config
 from .app.controller.estacas import Estacas
 from qgis.PyQt.QtCore import QSettings
 from .app.model.utils import addGoogleXYZTiles
+import tempfile, pathlib
 
 from . import resources
 
@@ -65,6 +67,7 @@ class TopoGrafia(object):
             'i18n',
             'TopoGrafia_{}.qm'.format(locale))
 
+
         #DEBUG CLIENT
         global DEBUG
         if DEBUG:
@@ -88,6 +91,8 @@ class TopoGrafia(object):
 
             if qVersion() > '4.3.3':
                 QCoreApplication.installTranslator(self.translator)
+
+        pathlib.Path(tempfile.gettempdir()+"/"+cfg.TMP_FOLDER).mkdir(parents=True, exist_ok=True)
 
         # Declare instance attributes
         self.actionCounter=0

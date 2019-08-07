@@ -5,13 +5,14 @@ from builtins import object
 import csv
 import math
 import sqlite3
+from copy import copy, deepcopy
 
-from qgis._core import QgsPoint, QgsProject, QgsVectorFileWriter
+from qgis._core import QgsPoint, QgsProject, QgsVectorFileWriter, QgsPointXY
 
 from ..controller.Geometria.Figure import prismoide
 from ..model.config import extractZIP, Config, compactZIP
 from ..model.curvas import Curvas
-from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation, internet_on
+from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation, internet_on, pointToWGS84, roundFloat2str
 from ..view.estacas import SelectFeatureDialog
 
 
@@ -52,6 +53,30 @@ class Estacas(object):
         self.ultimo = id_estaca[0]
         self.table = self.create_estacas()
         return self.ultimo, self.table
+
+    def calcular(self, task=None, layer=None):
+        self.layer=layer
+        self.table = self.create_estacas(isCalc=True, task=task)
+        return self.table
+
+    def newEmpty(self, distancia, filename):
+        self.__init__(distancia=distancia, filename=filename, ultimo=self.ultimo)
+        extractZIP(Config.fileName)
+        con = sqlite3.connect("tmp/data/data.db")
+        con.execute("INSERT INTO TABLEESTACA (name) values ('" + filename + "')")
+        con.commit()
+        id_estaca = con.execute("SELECT last_insert_rowid()").fetchone()[0]
+        con.close()
+        compactZIP(Config.fileName)
+        return id_estaca, []
+
+    def getNewId(self):
+         extractZIP(Config.fileName)
+         con = sqlite3.connect("tmp/data/data.db")
+         id_estaca = con.execute("SELECT last_insert_rowid()").fetchone()
+         con.close()
+         compactZIP(Config.fileName)
+         return id_estaca[0]
 
     def saveEstacas(self,filename,estacas):
         extractZIP(Config.fileName)
@@ -134,6 +159,7 @@ class Estacas(object):
         return name[0][0]
 
     def deleteEstaca(self, idEstacaTable):
+        self.removeGeoPackage(self.getNameFromId(idEstacaTable))
         extractZIP(Config.fileName)
         con = sqlite3.connect("tmp/data/data.db")
         con.execute("DELETE FROM ESTACA WHERE TABLEESTACA_id=?", (idEstacaTable,))
@@ -141,6 +167,7 @@ class Estacas(object):
         con.commit()
         con.close()
         compactZIP(Config.fileName)
+
 
     def save(self, idEstacaTable):
         extractZIP(Config.fileName)
@@ -372,12 +399,26 @@ class Estacas(object):
 
     def saveCSV(self, filename):
         delimiter = str(Config.CSV_DELIMITER.strip()[0])
+        table=deepcopy(self.table)
         with open(filename[0], "w") as fo:
             writer = csv.writer(fo, delimiter=delimiter, dialect='excel')
-            for r in self.table:
+            for r in table:
+                for i,c in enumerate(r[1:]):
+                   r[i+1]=c.replace(".",",")
                 writer.writerow(r)
 
-    def gera_vertice(self):
+        table=deepcopy(self.table)
+        with open(filename[0].split(".")[0]+"_WGS84.csv", "w") as fo:
+            writer = csv.writer(fo, delimiter=delimiter, dialect='excel')
+            for r in table:
+                pt=pointToWGS84(QgsPointXY(float(str(r[4]).replace(",",'.')),float(str(r[3]).replace(",","."))))
+                r[4],r[3]=roundFloat2str(pt.x()),roundFloat2str(pt.y())
+                for i,c in enumerate(r[1:]):
+                    r[i+1]=c.replace(".",",")
+                writer.writerow(r)
+
+
+    def gera_vertice(self, isCalc):
         prog = 0.0
         sobra = 0.0
         resto = 0.0
@@ -387,7 +428,7 @@ class Estacas(object):
         crs = int(self.getCRS())
         sem_internet = internet_on()
 
-        if hasattr(self, "iface") and sum(1 for f in self.layer.getFeatures())>1:
+        if hasattr(self, "iface") and sum(1 for f in self.layer.getFeatures())>1 and not isCalc:
             selectFeatureDialog=SelectFeatureDialog(self.iface, self.layer.getFeatures())
             ok = selectFeatureDialog.exec_()
             result=selectFeatureDialog.result
@@ -397,13 +438,13 @@ class Estacas(object):
 
         if ok:
             f=0
+            i=0
             for elemento in self.layer.getFeatures():
                 if f!=result and result>-1:
                     f+=1
                     continue
                 f+=1
-
-                for i, (seg_start, seg_end) in enumerate(pairs(elemento, self.estaca)):
+                for seg_start, seg_end, tipo in pairs(elemento, self.estaca):
                     ponto_inicial = QgsPoint(seg_start)
                     ponto_final = QgsPoint(seg_end)
                     tamanho_da_linha = length(ponto_final, ponto_inicial)
@@ -424,7 +465,6 @@ class Estacas(object):
                             sem_internet = True
                     else:
                         cota = 0.0
-
                     yield ['%d+%f' % (estaca, resto) if resto != 0 else '%d' % (estaca), 'v%d' % i, prog, ponto_inicial.y(),
                        ponto_inicial.x(), cota,
                        az], ponto_inicial, estacas_inteiras, prog, az, sobra, tamanho_da_linha, cosa, cosb
@@ -433,30 +473,32 @@ class Estacas(object):
                     resto = (tamanho_da_linha - sobra) - (self.distancia * estacas_inteiras)
                     sobra = self.distancia - resto
                     estaca += estacas_inteiras_sobra
-
-
-                i=int(int(i)+1)
-                cota = getElevation(crs, QgsPoint(float(ponto_final.x()), float(ponto_final.y())))
-                yield ['%d+%f' % (estaca, resto), 'v%d' % i, prog, ponto_final.y(), ponto_final.x(), cota,
-                       az], ponto_final, 0, tamanho_da_linha, az, sobra, tamanho_da_linha, cosa, cosb
+                    i+=1
 
                 if result!=-1:
                     break
 
+            i=int(int(i)+1)
+            cota = getElevation(crs, QgsPoint(float(ponto_final.x()), float(ponto_final.y())))
+            yield ['%d+%f' % (estaca, resto), 'v%d' % i, prog, ponto_final.y(), ponto_final.x(), cota,
+                   az], ponto_final, 0, tamanho_da_linha, az, sobra, tamanho_da_linha, cosa, cosb
+
+
 
     def gera_estaca_intermediaria(self, estaca, anterior, prog, az, cosa, cosb, sobra=0.0):
         dist = sobra if sobra > 0 else self.distancia
-
         p = QgsPoint(anterior.x() + (dist * cosa), anterior.y() + (dist * cosb))
         prog += dist
         return [estaca, '', prog, p.y(), p.x(), 0.0, az], prog, p
 
-    def create_estacas(self):
+    def create_estacas(self, isCalc=False, task=None):
         estacas = []
         estaca = 0
         progressiva = 0
 
-        for vertice, ponto_anterior, qtd_estacas, progressiva, az, sobra, tamanho_da_linha, cosa, cosb in self.gera_vertice():
+        for vertice, ponto_anterior, qtd_estacas, progressiva, az, sobra, tamanho_da_linha, cosa, cosb in self.gera_vertice(isCalc):
+            if task and task.isCanceled():
+                return estacas
             estacas.append(vertice)
             if sobra > 0 and sobra < self.distancia and qtd_estacas > 0:
                 tmp_line, progressiva, ponto_anterior = self.gera_estaca_intermediaria(estaca + 1, ponto_anterior,
@@ -472,13 +514,17 @@ class Estacas(object):
             estaca += qtd_estacas
         return estacas
 
+    def tmpFolder(self):
+        import tempfile
+        from pathlib import Path
+        return str(Path(tempfile.gettempdir()+"/"+Config.TMP_FOLDER))
 
     def saveGeoPackage(self,name:str, poly, fields, type, driver):
-        import tempfile, shutil
+        import shutil
         from pathlib import Path
-        name=name.replace(" ","_")
+
         extractZIP(Config.fileName)
-        tmp=tempfile.gettempdir()+"/"+name+".gpkg"
+        tmp=str(Path(self.tmpFolder()+name+".gpkg"))
         path=str(Path("tmp/data/"+name+".gpkg"))
         writer = QgsVectorFileWriter(path, 'UTF-8', fields, type, QgsProject.instance().crs(), driver)
         for p in poly:
@@ -488,8 +534,34 @@ class Estacas(object):
         compactZIP(Config.fileName)
         return tmp
 
+    def saveLayerToPath(self, path):
+        import shutil
+        return shutil.copy(path, self.tmpFolder())
+
+    def removeGeoPackage(self, name):
+        extractZIP(Config.fileName)
+        from pathlib import Path
+        for path in Path("tmp/data/").rglob("*"+Config.RANDOM+name+".gpkg*"):
+            path.unlink()
+        for path in Path("tmp/data/").rglob(name+".gpkg*"):
+            path.unlink()
+        compactZIP(Config.fileName)
+
     def getSavedLayers(self):
-        return [self.iface.addVectorLayer(path,"","ogr") for path in extractZIP(Config.fileName)]
-        
+        #TODO extract only necessary layers (.gpkg)
+        res = [self.iface.addVectorLayer(self.saveLayerToPath(str(path.absolute())),"","ogr")  for path in extractZIP(Config.fileName) if str(path).endswith(".gpkg")]
+        compactZIP(Config.fileName)
+        return res
 
+    def saveLayer(self, path):
+        from pathlib import Path
+        import shutil
+        path=Path(path.split('|layername=')[0])
+        from qgis.core import QgsWkbTypes
+       # QgsVectorFileWriter(str(path), 'UTF-8', l.fields(), QgsWkbTypes.displayString(int(l.wkbType())), l.crs(), "GPKG")
 
+        extractZIP(Config.fileName)
+        for p in Path(path.parent).rglob("*"):
+            shutil.copy(str(p), "tmp/data/")
+            p.unlink()
+        compactZIP(Config.fileName)

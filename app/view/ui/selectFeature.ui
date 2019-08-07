@@ -41,6 +41,9 @@
      <property name="text">
       <string>Conectar todas as linhas</string>
      </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
     </widget>
    </item>
   </layout>

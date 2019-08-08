@@ -419,7 +419,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         self.tableEstacas.setColumnCount(3)
         self.tableEstacas.setRowCount(0)
         self.tableEstacas.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableEstacas.setHorizontalHeaderLabels((u"ID",u"Arquivo",u"Data criação"))
+        self.tableEstacas.setHorizontalHeaderLabels((u"ID",u"Arquivo",u"Data de criação"))
 
 
 
@@ -817,20 +817,26 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         return super().exec_()
 
     def accept(self):
-        self.closeLayers()
-        self.setWindowTitle("")
+        try:
+            self.closeLayers()
+            self.setWindowTitle(": Horizontal")
+        except:
+            pass
         return super().accept()
 
     def reject(self):
-        self.closeLayers()
-        self.setWindowTitle("")
+        try:
+            self.closeLayers()
+            self.setWindowTitle(": Horizontal")
+        except:
+            pass
         return super().reject()
 
     def openLayers(self):
         self.closeLayers()
         self.parent.model.iface=self.iface
         for l in self.parent.model.getSavedLayers():
-            if l and l.name()==self.windowTitle():
+            if l and l.name()==self.windowTitle().split(":")[0]:
                 l.setName("Curvas: "+l.name())
                 l.startEditing()
                 self.curvaLayers.append(l)
@@ -1399,9 +1405,10 @@ class setEscalaDialog(QtWidgets.QDialog, SET_ESCALA_DIALOG):
 
 
 class SelectFeatureDialog(QtWidgets.QDialog, SELECT_FEATURE):
-    def __init__(self, iface, features):
-        super(SelectFeatureDialog, self).__init__(None)
+    def __init__(self, iface, layer):
+        super().__init__(None)
         self.iface=iface
+        self.layer=layer
         self.setupUi(self)
         self.Dialog: QtWidgets.QDialog
         self.buttonBox: QtWidgets.QDialogButtonBox
@@ -1412,7 +1419,7 @@ class SelectFeatureDialog(QtWidgets.QDialog, SELECT_FEATURE):
         self.tableWidget.setSelectionMode(QAbstractItemView.SingleSelection)
         self.result=-1 #loop over all
 
-        for feat in features:
+        for feat in layer.getFeatures():
             if self.tableWidget.columnCount()>9:
                 break
             if feat.hasGeometry():
@@ -1434,22 +1441,26 @@ class SelectFeatureDialog(QtWidgets.QDialog, SELECT_FEATURE):
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
         self.tableWidget.cellDoubleClicked.connect(self.accept)
         self.tableWidget.selectRow(self.tableWidget.rowCount()-1)
+        self.tableWidget.setCurrentIndex(self.tableWidget.model().index(self.tableWidget.rowCount()-1,self.tableWidget.columnCount()-1))
 
         if self.tableWidget.rowCount()==0:
             self.checkBox.setChecked(True)
             self.checkBox.setDisabled(True)
             self.accept()
-
         else:
-            self.result=0 #feature index
-            self.tableWidget.selectRow(0)
+            self.result=self.tableWidget.rowCount()-1 #feature index
             self.tableWidget.itemSelectionChanged.connect(self.updateResult)
             self.checkBox.stateChanged.connect(self.check)
 
         self.checkBox.setChecked(True)
+        self.checkBox.setFocus()
 
     def updateResult(self):
         self.result=self.tableWidget.currentRow()
+        g : QgsRectangle
+        g = self.layer.getFeature(self.result).geometry().boundingBox()
+        iface.mapCanvas().setExtent(QgsRectangle(g.xMinimum()-50,g.yMinimum()-50,g.xMaximum()+50,g.yMaximum()+50))
+        iface.mapCanvas().refresh()
 
     def check(self, i):
         if i==0:

@@ -85,7 +85,7 @@ def getTipo(feat):
         elif s.startswith("C") or s.startswith("c"):
             r = "C"
         elif s.startswith("E") or s.startswith("e") or s.startswith("S") or s.startswith("s"):
-            r = "E"
+            r = "S"
         else:
             r = "T"
     except:
@@ -93,14 +93,26 @@ def getTipo(feat):
 
     return r
 
+def featureToPolyline(f):
+    g=f.geometry()
+    try:
+        lista=g.asPolyline()
+    except:
+        lista=g.asMultiPolyline()[0]
+    return lista
+
+def qgsGeometryToPolyline(g):
+    try:
+        lista=g.asPolyline()
+    except:
+        lista=g.asMultiPolyline()[0]
+    return lista
+
 
 def pairs(lista,inicio=0):
     # list pairs iteration
     tipo=getTipo(lista)
-    try:
-        line = lista.geometry().asPolyline()
-    except:
-        line = lista.geometry().asMultiPolyline()[0]
+    line=featureToPolyline(lista)
 
     from math import isclose
     start=line[inicio]
@@ -396,7 +408,7 @@ def getBlockRecAndItemFromPointInRaster(layer, p):
         return False, False, False, False
 
 
-def rect(layer, row, col):
+def rectCell(layer, row, col):
     dp = layer.dataProvider()
     finalExtent = dp.extent()
 
@@ -419,29 +431,27 @@ def cotaFromTiff(layer, p, interpolate=True):
         if not b:
             return 0
 
+        #matrix dos 9 pixels
         matx = [[[None, None, None], [None, None, None], [None, None, None]],
                 [[None, None, None], [None, None, None], [None, None, None]]]
 
         from itertools import product
         for i, j in product([-1, 0, 1], [-1, 0, 1]):
             matx[0][i + 1][j + 1] = b.value(row + i, col + j)  # elevações
-            matx[1][i + 1][j + 1] = rect(layer, row + i, col + j).center().distance(p)  # distancias
+            matx[1][i + 1][j + 1] = rectCell(layer, row + i, col + j).center().distance(p)  # distancias
             if row < 0 or col < 0 or row >= layer.height() or col >= layer.width():
                 return 0
-        m = matx
 
-        temp = m[1][0] + m[1][1] + m[1][2]
-        temp.sort()
-        L = []
-        V = []
-        for i, j in [[int((m[1][0] + m[1][1] + m[1][2]).index(n) / 3), (m[1][0] + m[1][1] + m[1][2]).index(n) % 3] for n
-                     in temp[:4]]:
-            v, l = matx[0][i][j], matx[1][i][j]
-            L.append(l)
-            V.append(v)
-        I = [1 / l if 1 / l > .01 else .01 for l in L]
-        res = sum(v * i for v, i in zip(V, I)) / sum(I)
-        return res
+        V = [matx[0][i][j] for i, j in product([0, 1, 2], [0, 1, 2])] #elevações
+        L = [matx[1][i][j] for i, j in product([0, 1, 2], [0, 1, 2])] #Distancias
+
+        #tolerância de 1 diagonal inteira
+        max_dist = (layer.rasterUnitsPerPixelX() ** 2 + layer.rasterUnitsPerPixelY() ** 2) ** (1 / 2)
+        # pesos
+        I = [(max_dist - l) / max_dist if l < max_dist else 0 for l in L]
+        # média
+        return sum(v * i for v, i in zip(V, I)) / sum(I)
+
 
     v = layer.dataProvider().sample(p, 1)
     if layer.extent().contains(p):

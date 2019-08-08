@@ -303,11 +303,11 @@ class Estacas(object):
 
     def recalcular(self):
         id=self.model.id_filename
-        self.view.clear()
         dados = self.preview.new(True)
         if dados is None: return
         _, layer, dist, estaca = dados
         table = self.model.recalcular(dist, estaca, layer)
+        self.view.clear()
         for item in table:
             self.view.fill_table(tuple(item))
         self.model.id_filename=id
@@ -988,7 +988,7 @@ class Estacas(object):
 
     def updateTables(self):
         try:
-            self.view.setWindowTitle(self.model.getNameFromId(self.model.id_filename))
+            self.view.setWindowTitle(self.model.getNameFromId(self.model.id_filename)+": Horizontal")
         except:
             pass
 

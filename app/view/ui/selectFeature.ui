@@ -31,13 +31,20 @@
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="1" column="0">
-       <widget class="QTableWidget" name="tableWidget"/>
+       <widget class="QTableWidget" name="tableWidget">
+        <property name="whatsThis">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lista de &amp;quot;Features&amp;quot;/Geometrias individuais que estão presentes nessa layer.&lt;/p&gt;&lt;p&gt;Esse diálogo serve para selecionar qual delas será utilizada no cálculo das estacas horizontais.&lt;/p&gt;&lt;p&gt;As linhas estão listadas na ordem em que foram criadas na layer selecionada.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
    </item>
    <item row="4" column="0">
     <widget class="QCheckBox" name="checkBox">
+     <property name="whatsThis">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Colocar todas as linhas na ordem em que foram criadas&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="text">
       <string>Conectar todas as linhas</string>
      </property>

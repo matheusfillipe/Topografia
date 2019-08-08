@@ -61,9 +61,12 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="btnSaveCSV">
+      <widget class="QPushButton" name="btnSave">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="text">
-        <string>Salvar em CSV</string>
+        <string>Salvar</string>
        </property>
        <attribute name="buttonGroup">
         <string notr="true">buttonGroup</string>
@@ -71,12 +74,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="btnSave">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
+      <widget class="QPushButton" name="btnSaveCSV">
        <property name="text">
-        <string>Salvar</string>
+        <string>Salvar em CSV</string>
        </property>
        <attribute name="buttonGroup">
         <string notr="true">buttonGroup</string>

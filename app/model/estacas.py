@@ -12,7 +12,8 @@ from qgis._core import QgsPoint, QgsProject, QgsVectorFileWriter, QgsPointXY
 from ..controller.Geometria.Figure import prismoide
 from ..model.config import extractZIP, Config, compactZIP
 from ..model.curvas import Curvas
-from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation, internet_on, pointToWGS84, roundFloat2str
+from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation, internet_on, pointToWGS84, roundFloat2str, \
+    featureToPolyline
 from ..view.estacas import SelectFeatureDialog
 
 
@@ -426,10 +427,13 @@ class Estacas(object):
         cosa = 0.0
         cosb = 0.0
         crs = int(self.getCRS())
-        sem_internet = internet_on()
+        sem_internet = True# not internet_on()
+
+        if not self.distancia or self.distancia<=0:
+            self.distancia=Config.DIST
 
         if hasattr(self, "iface") and sum(1 for f in self.layer.getFeatures())>1 and not isCalc:
-            selectFeatureDialog=SelectFeatureDialog(self.iface, self.layer.getFeatures())
+            selectFeatureDialog=SelectFeatureDialog(self.iface, self.layer)
             ok = selectFeatureDialog.exec_()
             result=selectFeatureDialog.result
         else:
@@ -465,9 +469,10 @@ class Estacas(object):
                             sem_internet = True
                     else:
                         cota = 0.0
+                    estaca=int(estaca)
                     yield ['%d+%f' % (estaca, resto) if resto != 0 else '%d' % (estaca), 'v%d' % i, prog, ponto_inicial.y(),
                        ponto_inicial.x(), cota,
-                       az], ponto_inicial, estacas_inteiras, prog, az, sobra, tamanho_da_linha, cosa, cosb
+                       az], ponto_inicial, estacas_inteiras, prog, az, sobra, tamanho_da_linha, cosa, cosb, tipo, elemento, resto
 
                     prog += tamanho_da_linha
                     resto = (tamanho_da_linha - sobra) - (self.distancia * estacas_inteiras)
@@ -477,41 +482,97 @@ class Estacas(object):
 
                 if result!=-1:
                     break
-
+            estaca=int(estaca)
             i=int(int(i)+1)
             cota = getElevation(crs, QgsPoint(float(ponto_final.x()), float(ponto_final.y())))
             yield ['%d+%f' % (estaca, resto), 'v%d' % i, prog, ponto_final.y(), ponto_final.x(), cota,
-                   az], ponto_final, 0, tamanho_da_linha, az, sobra, tamanho_da_linha, cosa, cosb
-
+                   az], ponto_final, 0, tamanho_da_linha, az, sobra, tamanho_da_linha, cosa, cosb, tipo, elemento, resto
 
 
     def gera_estaca_intermediaria(self, estaca, anterior, prog, az, cosa, cosb, sobra=0.0):
         dist = sobra if sobra > 0 else self.distancia
         p = QgsPoint(anterior.x() + (dist * cosa), anterior.y() + (dist * cosb))
         prog += dist
-        return [estaca, '', prog, p.y(), p.x(), 0.0, az], prog, p
+        return [str(int(estaca)), '', prog, p.y(), p.x(), 0.0, az], prog, p
+
+    def gera_estaca_intermediaria_curva(self, geom, estaca, prog, sobra):
+        dist=sobra if sobra > 0 else self.distancia
+        initalProg=prog
+        pg = geom.interpolate(dist)
+        prog += dist
+        while pg:
+            p = pg.asPoint()
+            az = abs(p.azimuth(geom.interpolate(prog-initalProg + 0.001).asPoint()))
+            yield [str(int(estaca)), '', prog, p.y(), p.x(), 0.0, az], prog, p
+            prog += self.distancia
+            pg = geom.interpolate(prog-initalProg)
+            estaca += 1
+
 
     def create_estacas(self, isCalc=False, task=None):
         estacas = []
         estaca = 0
-        progressiva = 0
+        curvaComputadaCount=0
+        curvaCount=0
+        vertexCount=0
+        progressiva=0
+        lastDesc="T"
 
-        for vertice, ponto_anterior, qtd_estacas, progressiva, az, sobra, tamanho_da_linha, cosa, cosb in self.gera_vertice(isCalc):
+        for vertice, ponto_anterior, qtd_estacas, progressiva, az, sobra, tamanho_da_linha, cosa, cosb, tipo, feature, resto in self.gera_vertice(isCalc):
             if task and task.isCanceled():
                 return estacas
-            estacas.append(vertice)
-            if sobra > 0 and sobra < self.distancia and qtd_estacas > 0:
-                tmp_line, progressiva, ponto_anterior = self.gera_estaca_intermediaria(estaca + 1, ponto_anterior,
-                                                                                       progressiva, az, cosa, cosb,
-                                                                                       sobra)
-                estacas.append(tmp_line)
-                estaca += 1
 
-            for e in range(qtd_estacas):
-                tmp_line, progressiva, ponto_anterior = self.gera_estaca_intermediaria(estaca + e + 1, ponto_anterior,
-                                                                                       progressiva, az, cosa, cosb)
-                estacas.append(tmp_line)
-            estaca += qtd_estacas
+            emCurva=tipo in ["C", "S"]
+            desc=lastDesc+tipo
+            resto=roundFloat2str(resto)
+
+            if desc in ["TS","TC"]: #Entrou em curva
+                vertice[0],vertice[1]=str(estaca)+"+"+str(resto) if estaca else vertice[0],desc+str(vertexCount)
+                estacas.append(vertice)
+
+            elif desc in ["ST", "CT"]: #Saiu da curva
+                vertice[0],vertice[1]=str(estaca)+"+"+str(resto) if estaca else vertice[0],desc+str(vertexCount)
+                estacas.append(vertice)
+                vertexCount+=1
+                curvaCount+=1
+
+            elif desc in ["SC", "CS"]: #Transição
+                 vertice[0],vertice[1]=str(estaca)+"+"+str(resto) if estaca else vertice[0],desc+str(vertexCount)
+                 estacas.append(vertice)
+                 curvaComputadaCount-=1
+
+            elif not emCurva: #Vértice
+                vertice[0],vertice[1]=str(estaca)+"+"+str(resto) if estaca else vertice[0],"V"+str(vertexCount)
+                estacas.append(vertice)
+                vertexCount+=1
+
+            if emCurva and curvaComputadaCount==curvaCount:  #Estacas intermediárias internas em curvas
+                e=0
+                for tmp_line, progressiva, ponto_anterior in self.gera_estaca_intermediaria_curva(feature.geometry(), estaca + 1,
+                                                                                     progressiva, sobra):
+                    estacas.append(tmp_line)
+                    e+=1
+                estaca+=e
+                curvaComputadaCount+=1
+
+            if not emCurva: #Estacas intermediárias em tangentes
+                if sobra > 0 and sobra < self.distancia and qtd_estacas > 0:
+                    tmp_line, progressiva, ponto_anterior = self.gera_estaca_intermediaria(estaca + 1, ponto_anterior,
+                                                                                           progressiva, az, cosa, cosb, sobra)
+                    estacas.append(tmp_line)
+                    estaca += 1
+
+                for e in range(qtd_estacas):
+                    tmp_line, progressiva, ponto_anterior = self.gera_estaca_intermediaria(estaca + e + 1, ponto_anterior,
+                                                                                           progressiva, az, cosa, cosb)
+                    estacas.append(tmp_line)
+
+
+                estaca += qtd_estacas
+
+            lastDesc=tipo
+
+
         return estacas
 
     def tmpFolder(self):

@@ -154,7 +154,7 @@ class Estacas(object):
     def getNameFromId(self,id):
         extractZIP(Config.fileName)
         con = sqlite3.connect("tmp/data/data.db")
-        name = con.execute("SELECT name FROM TABLEESTACA WHERE id="+str(id)).fetchall()
+        name = con.execute("SELECT name FROM TABLEESTACA WHERE id=?", (str(id),)).fetchall()
         con.close()
         compactZIP(Config.fileName)
         return name[0][0]
@@ -413,7 +413,7 @@ class Estacas(object):
             writer = csv.writer(fo, delimiter=delimiter, dialect='excel')
             for r in table:
                 pt=pointToWGS84(QgsPointXY(float(str(r[4]).replace(",",'.')),float(str(r[3]).replace(",","."))))
-                r[4],r[3]=roundFloat2str(pt.x()),roundFloat2str(pt.y())
+                r[4],r[3]=str(pt.x()),str(pt.y())
                 for i,c in enumerate(r[1:]):
                     r[i+1]=c.replace(".",",")
                 writer.writerow(r)
@@ -502,7 +502,7 @@ class Estacas(object):
         prog += dist
         while pg:
             p = pg.asPoint()
-            az = abs(p.azimuth(geom.interpolate(prog-initalProg + 0.001).asPoint()))
+            az = azimuth(p, geom.interpolate(prog-initalProg + 0.001).asPoint())
             yield [str(int(estaca)), '', prog, p.y(), p.x(), 0.0, az], prog, p
             prog += self.distancia
             pg = geom.interpolate(prog-initalProg)
@@ -591,7 +591,7 @@ class Estacas(object):
         for p in poly:
             writer.addFeature(p)
         del writer
-        shutil.copyfile(path, tmp)
+        shutil.copy(path, tmp)
         compactZIP(Config.fileName)
         return tmp
 
@@ -608,20 +608,37 @@ class Estacas(object):
             path.unlink()
         compactZIP(Config.fileName)
 
-    def getSavedLayers(self):
-        #TODO extract only necessary layers (.gpkg)
-        res = [self.iface.addVectorLayer(self.saveLayerToPath(str(path.absolute())),"","ogr")  for path in extractZIP(Config.fileName) if str(path).endswith(".gpkg")]
+    def getSavedLayers(self, name):
+        from pathlib import Path
+        R = [Path(self.saveLayerToPath(str(path.absolute()))) for path in extractZIP(Config.fileName)
+               if (str(path).endswith(".gpkg") or str(path).endswith(".gpkg-shm") or str(path).endswith(".gpkg-wal"))
+                and Path(path).stem==name]
+
+        res=[r for r in R if str(r).endswith(".gpkg")]
+
+        if len(res)>1:
+            path=res[0]
+            for p in res:
+                if p.stat().st_mtime>path.stat().st_mtime:
+                    path=p
+            layer=self.iface.addVectorLayer((str(path.absolute())),"","ogr")
+        elif len(res)==1:
+            path=res[0]
+            layer=self.iface.addVectorLayer((str(path.absolute())),"","ogr")
+        else:
+            layer=None
+
         compactZIP(Config.fileName)
-        return res
+        return layer
 
     def saveLayer(self, path):
         from pathlib import Path
         import shutil
         path=Path(path.split('|layername=')[0])
-        from qgis.core import QgsWkbTypes
-       # QgsVectorFileWriter(str(path), 'UTF-8', l.fields(), QgsWkbTypes.displayString(int(l.wkbType())), l.crs(), "GPKG")
-
         extractZIP(Config.fileName)
+        for p in Path("tmp/data/").rglob("*"):
+            if p.stem==path.stem:
+                p.unlink()
         for p in Path(path.parent).rglob("*"):
             shutil.copy(str(p), "tmp/data/")
             p.unlink()

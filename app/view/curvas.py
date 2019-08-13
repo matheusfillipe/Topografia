@@ -2,6 +2,15 @@ from builtins import str
 # -*- coding: utf-8 -*-
 import os
 import sip
+from copy import deepcopy
+
+from qgis.core import QgsProject, QgsFields, QgsField, QgsPoint
+
+from ..view.ui.ch import CurvasCompositorDialog, EMPTY_DATA
+from ..model.utils import msgLog, PointTool
+
+from ..model.helper.qgsgeometry import wasInitialized, tangentFeaturesFromPointList, refreshCanvas, circleArc, inSpiral, \
+    outSpiral, tangent, featureCount
 
 sip.setapi('QString', 2)
 
@@ -12,9 +21,9 @@ import qgis
 import shutil
 from ..model.config import extractZIP, Config, compactZIP
 from qgis.PyQt.QtCore import QSettings
-from qgis.PyQt.QtWidgets import QAbstractItemView
+from qgis.PyQt.QtWidgets import QAbstractItemView, QDesktopWidget
 
-from qgis._core import QgsCoordinateReferenceSystem, QgsCoordinateTransform
+from qgis._core import QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsFeature
 
 from qgis._core import QgsRectangle
 from qgis._core import QgsVectorFileWriter
@@ -32,8 +41,6 @@ from ..model.helper.calculos import *
 from ..model.curvas import Curvas as CurvasModel
 
 FORMCURVA_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), '../view/ui/Topo_dialog_curva.ui'))
-COMPOSI, _= uic.loadUiType(os.path.join(os.path.dirname(__file__), '../view/ui/compor_curvas.ui'))
-CWIDGET, _= uic.loadUiType(os.path.join(os.path.dirname(__file__), '../view/ui/curvaWidget.ui'))
 
 ID_ESTACA = 0
 ESTACA = 1
@@ -44,97 +51,20 @@ ESTE = 5
 COTA = 6
 AZIMUTE = 7
 
-class CurvasWidget(QtWidgets.QWidget, CWIDGET):
-    edited=pyqtSignal()
-
-    def __init__(self, parent):
-        super(CurvasWidget,self).__init__(parent)
-        self.iface=parent
-        self.setupUi(self)
-
-        self.Form: QtWidgets.QWidget
-        self.k: QtWidgets.QLineEdit
-        self.label: QtWidgets.QLabel
-        self.label_2: QtWidgets.QLabel
-        self.label_3: QtWidgets.QLabel
-        self.label_4: QtWidgets.QLabel
-        self.lineEdit_2: QtWidgets.QLineEdit
-        self.pushButton: QtWidgets.QPushButton
-        self.raio: QtWidgets.QLineEdit
-        self.vmax: QtWidgets.QLineEdit
-        self.nome: QtWidgets.QLabel
-
-        self.onlyFloat= QDoubleValidator()
-        self.raio.setValidator(self.onlyFloat)
-        self.comprimento.setValidator(self.onlyFloat)
-        self.raio.editingFinished.connect(self.edited.emit)
-        self.comprimento.editingFinished.connect(self.edited.emit)
-
-    def fill(self,k,vmax):
-        self.k.setText(str(k))
-        self.vmax.setText(str(vmax))
-
-    def read(self):
-        return float(self.raio.text()), float(self.comprimento.text())
-
-class CurvasCompositorDialog(QtWidgets.QDialog, COMPOSI):
-    edited=pyqtSignal()
-    def __init__(self, parent):
-        super(CurvasCompositorDialog, self).__init__(parent)
-        self.iface=parent
-        self.setupUi(self)
-
-        self.Dialog: QtWidgets.QDialog
-        self.btnAdd: QtWidgets.QPushButton
-        self.buttonBox: QtWidgets.QDialogButtonBox
-        self.comboBox: QtWidgets.QComboBox
-        self.listWidget: QtWidgets.QListWidget
-        self.lastWidget=False
-        self.btnAdd.clicked.connect(self.addCurva)
-
-    def addCurva(self):
-        self.listWidget: QtWidgets.QListWidget
-        self.comboBox: QtWidgets.QComboBox
-        itemN = QtWidgets.QListWidgetItem()
-        widget = CurvasWidget(self)
-        widget.nome.setText(self.comboBox.currentText().upper())
-        widget.horizontalLayout.addStretch()
-        widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        self.listWidget.addItem(itemN)
-        self.listWidget.setItemWidget(itemN, widget)
-
-
-        widget.pushButton.clicked.connect(self.deleteCurva)
-        widget.pushButton.clicked.connect(lambda: self.listWidget.takeItem(self.listWidget.row(itemN)))
-        widget.edited.connect(self.edited.emit)
-        try:
-            if self.lastWidget:
-                self.lastWidget.pushButton : QtWidgets.QPushButton
-                self.lastWidget.setDisabled(True)
-                lastWidget=self.lastWidget
-                widget.pushButton.clicked.connect(lambda: lastWidget.setDisabled(False))
-        except:
-            pass
-
-        self.lastWidget=widget
-        itemN.setSizeHint(widget.sizeHint())
-
-    def deleteCurva(self):
-        self.listWidget: QtWidgets.QListWidget
-        if self.listWidget.count()==0:
-            self.lastWidget=False
 
 
 
 class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
-    def __init__(self,parent, iface, id_filename, curvas, tipoClasseProjeto):
-        super(Curvas, self).__init__(parent)
+    def __init__(self,view, iface, id_filename, curvas, vertices, tipoClasseProjeto):
+        super(Curvas, self).__init__(None)
+        self.view=view
         self.iface = iface
         self.model = CurvasModel(id_filename)
         self.estacas = self.model.list_estacas()
         self.estacas_id = [row[0] for row in self.estacas]
 
         self.curvas = curvas
+        self.vertices=vertices
 
         self.tipo = tipoClasseProjeto[0]
         self.classe = tipoClasseProjeto[1]
@@ -212,12 +142,44 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.txtRUtilizado: QtWidgets.QLineEdit
         self.txtT: QtWidgets.QLineEdit
         self.txtVelocidade: QtWidgets.QLineEdit
+        self.deflexao: QtWidgets.QLineEdit
+        
+        self.txtDist.setText(str(Config.DIST))
 
-        curvas = [self.tr(str(curva[0])) for curva in self.curvas]
-        self.comboCurva.addItems([self.tr(str(curva[0])) for curva in self.curvas])
+        self.buttons=[self.btnAjuda, self.btnApagar, self.btnCalcular, self.btnCancela, self.btnClose, self.btnEditar,
+                               self.btnInsere, self.btnNew, self.btnRelatorio ]
+
+
+        self.curvas = [self.tr(str(curva[0])) for curva in self.curvas]
+        self.fill_comboCurva()
+
         self.editando = False
         self.update()
         self.eventos()
+        self.location_on_the_screen()
+
+    def location_on_the_screen(self):
+        screen = QDesktopWidget().screenGeometry()
+        widget = self.geometry()
+        x = 0#widget.width()
+        y = (screen.height()-widget.height())/2
+        self.move(x, y)
+
+    def fill_comboCurva(self):
+        c=0
+        self.PIs=[]
+        self.layer=self.view.curvaLayers[0]
+        for vert in self.vertices:
+            n=int(vert[0][-1])
+            if n==c:
+                self.comboCurva.addItem("PI"+str(c))
+                self.PIs.append(vert[1])
+                c+=1
+
+        if not wasInitialized(self.layer):
+            tangentFeaturesFromPointList(self.layer,self.PIs)
+            refreshCanvas(self.iface, self.layer)
+
 
     def update(self):
         self.curvas = self.model.list_curvas()
@@ -225,7 +187,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.comboEstacaInicial.addItems([self.tr(estaca[1]) for estaca in self.estacas])
         self.comboEstacaFinal.addItems([self.tr(estaca[1]) for estaca in self.estacas])
         self.comboCurva.clear()
-        self.comboCurva.addItems([self.tr(str(curva[0])) for curva in self.curvas])
+#        self.comboCurva.addItems([self.tr(str(curva[0])) for curva in self.curvas])
+        self.fill_comboCurva()
 
     def eventos(self):
         self.comboCurva.currentIndexChanged.connect(self.mudancaCurva)
@@ -238,17 +201,181 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.btnRelatorio.clicked.connect(self.relatorio)
         self.btnEditar.clicked.connect(self.editar)
         self.btnCalcular.clicked.connect(self.calcular)
+        self.mudancaCurva(0)
+
+    def apagar(self):
+        curva = self.curva
+        self.model.delete_curva(curva[0])
+        self.update()
+        self.comboCurva.clear()
+        curvas = [self.tr(str(curva[0])) for curva in self.curvas]
+        self.comboCurva.addItems([self.tr(str(curva[0])) for curva in self.curvas])
+
+    def relatorio(self):
+        pass
+
+    def new(self):
+        self.c=CurvasCompositorDialog(self)
+        self.c.accepted.connect(self.saveCurva)
+        self.c.rejected.connect(self.resetCurva)
+        self.c.edited.connect(self.drawCurva)
+        self.hide()
+        self.c.show()
+        return
+
+#        self.habilitarControles(True)
+#        if (len(self.curvas) > 0):
+#            ultima = self.curvas[-1][0]
+#        else:
+#            ultima = -1
+#        self.curvas.append(["%d" % (ultima + 1,)])
+#        self.comboCurva.addItems([self.tr("%d" % (ultima + 1,))])
+
+
+    def exec_(self):
+        if self.view.empty and not featureCount(self.layer):
+            PT=PointTool(self.iface, self.pointLayerDefine)
+            PT.start()
+            self.setNoLayer()
+        return super(Curvas, self).exec_()
+
+    def pointLayerDefine(self, point):
+        tangentFeaturesFromPointList(self.layer,[QgsPoint(point), QgsPoint(point.x()+0.001,point.x()+0.001)])
+        refreshCanvas(self.iface, self.layer)
+        self.comboCurva.addItem("PI"+str(0))
+        self.enableInterface()
+
+    def setNoLayer(self):
+        self.oldTitle=self.windowTitle()
+        self.setWindowTitle(u"Escolha o ponto de partida no mapa!!!")
+        for btn in self.buttons:
+            btn:QtWidgets.QPushButton
+            btn.setDisabled(True)
+
+    def enableInterface(self):
+        self.setWindowTitle(self.oldTitle)
+        for btn in self.buttons:
+            btn:QtWidgets.QPushButton
+            btn.setDisabled(False)
+
+    def drawCurva(self):
+        if not hasattr(self.c, "dados"):
+            self.c.dados=[]
+            self.comboCurva: QtWidgets.QComboBox
+            layer = QgsVectorLayer('LineString?crs=%s'%(QgsProject.instance().crs().authid()), "Curva: " + str(self.comboCurva.currentText()) , "memory")
+            layer.setCrs(QgsCoordinateReferenceSystem(QgsProject.instance().crs()))
+            layer.renderer().symbol().setWidth(.5)
+            layer.renderer().symbol().setColor(QtGui.QColor("#0f16d0"))
+            layer.triggerRepaint()
+            fields = []
+            fields.append(QgsField("Tipo", QVariant.String))  # C, T, E (Circular, tangente, Espiral ... startswith)
+            fields.append(QgsField("Descricao", QVariant.String))
+            layer.dataProvider().addAttributes(fields)
+            layer.updateFields()
+            QgsProject.instance().addMapLayer(layer, False)
+            QgsProject.instance().layerTreeRoot().insertLayer(0, layer)
+            self.c.layer=layer
+
+
+        layer=self.c.layer
+        layer.dataProvider().deleteFeatures([f.id() for f in layer.getFeatures()])
+
+        vmax=0
+        k=0
+
+        i=-1
+        data=None
+        for tipo, index, state in self.c.readData():
+            i+=1
+            if tipo=="C":
+                data=circleArc(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                k=0
+                vmax="120 km/h"
+
+            elif tipo=="EE":
+                data=inSpiral(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                k=0
+                vmax="120 km/h"
+
+            elif tipo=="ES":
+                data=outSpiral(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                k=0
+                vmax="120 km/h"
+
+            elif tipo=="T":
+                data=tangent(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                k=0
+                vmax="120 km/h"
+            else:
+                continue
+
+            if len(self.c.dados)-1<i:
+                self.c.dados.append(None)
+
+            self.c.dados[i]=data
+        refreshCanvas(self.iface, layer)
+
+
+        #TODO compute vmax and k
+
+        if self.c.lastWidget and data:
+            self.c.lastWidget.fill(data, k=k, vmax=vmax)
+
+
+    def saveCurva(self):
+        self.layer: QgsVectorLayer
+
+        #Delete all features of self.layer and add layer geometry in between
+        self.layer.dataProvider().deleteFeatures([f.id() for f in self.layer.getFeatures()])
+        tangentFeaturesFromPointList(self.layer, self.PIs)
+        QgsProject.instance().removeMapLayer(self.c.layer.id())
+        refreshCanvas(self.iface, self.layer)
+        self.show()
+
+    def resetCurva(self):
+        QgsProject.instance().removeMapLayer(self.c.layer.id())
+        self.show()
+
+    def editar(self):
+        self.habilitarControles(True)
+        self.editando = True
+
+    def calcular(self):
+        filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo CSV (*.csv)")[0]
+        dist = int(self.txtDist.text())
+        estacas = self.model.gera_estacas(dist)
+        self.model.save_CSV(filename, estacas)
+
 
     def mudancaCurva(self, pos):
+        self.comboCurva : QtWidgets.QComboBox
+        try:
+            self.zoomToPoint(self.PIs[self.comboCurva.currentIndex()])
+        except:
+            pass
         self.curvas = self.model.list_curvas()
-        self.curva = list(self.curvas[pos])
-        curvas_inicial_id = self.curva[5]
-        curvas_final_id = self.curva[6]
-        self.mudancaEstacaInicial(self.estacas_id.index(curvas_inicial_id))
-        self.mudancaEstacaFinal(self.estacas_id.index(curvas_final_id))
-        self.txtVelocidade.setText(str(self.curva[2]))
-        self.txtRUtilizado.setText(str(self.curva[3]))
-        self.txtEMAX.setText(str(self.curva[4]))
+
+        if len(self.curvas)>pos+1: #curva já existe no db?
+            self.curva = list(self.curvas[pos])
+            curvas_inicial_id = self.curva[5]
+            curvas_final_id = self.curva[6]
+            self.mudancaEstacaInicial(self.estacas_id.index(curvas_inicial_id))
+            self.mudancaEstacaFinal(self.estacas_id.index(curvas_final_id))
+            self.txtVelocidade.setText(str(self.curva[2]))
+            self.txtRUtilizado.setText(str(self.curva[3]))
+            self.txtEMAX.setText(str(self.curva[4]))
+        else:  #Curva ainda não cadastrada no db
+            pass
+
+    def zoomToPoint(self, point):
+        #ZOOM
+        scale = 250
+        x,y=point.x(), point.y()
+        rect = QgsRectangle(x - scale, y - scale, x + scale, y + scale)
+        self.iface.mapCanvas().setExtent(rect)
+        self.iface.mapCanvas().refresh()
+
+
 
     def mudancaTipo(self, pos):
         self.tipo_curva = pos
@@ -352,47 +479,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             model.new(int(self.tipo_curva), estaca_inicial_id, estaca_final_id, velocidade, raio_utilizado, e_max,
                       self.param)
         self.update()
-
-    def apagar(self):
-        curva = self.curva
-        self.model.delete_curva(curva[0])
-        self.update()
-        self.comboCurva.clear()
-        curvas = [self.tr(str(curva[0])) for curva in self.curvas]
-        self.comboCurva.addItems([self.tr(str(curva[0])) for curva in self.curvas])
-
-    def relatorio(self):
-        pass
-
-    def new(self):
-        c=CurvasCompositorDialog(self)
-        c.accepted.connect(self.show)
-        c.rejected.connect(self.show)
-        c.edited.connect() #--> ? make it happen!
-        self.hide()
-        c.show()
-        return
-
-        self.habilitarControles(True)
-        if (len(self.curvas) > 0):
-            ultima = self.curvas[-1][0]
-        else:
-            ultima = -1
-        self.curvas.append(["%d" % (ultima + 1,)])
-        self.comboCurva.addItems([self.tr("%d" % (ultima + 1,))])
-
-    def editar(self):
-        self.habilitarControles(True)
-        self.editando = True
-
-    def calcular(self):
-        filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo CSV (*.csv)")[0]
-        dist = int(self.txtDist.text())
-        estacas = self.model.gera_estacas(dist)
-        self.model.save_CSV(filename, estacas)
-
-    def gera_estacas_curvas(self):
-        pass
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):

@@ -102,10 +102,14 @@ def featureToPolyline(f):
     return lista
 
 def qgsGeometryToPolyline(g):
-    try:
-        lista=g.asPolyline()
-    except:
-        lista=g.asMultiPolyline()[0]
+    if g:
+        try:
+            lista=g.asPolyline()
+        except:
+            lista=g.asMultiPolyline()[0]
+    else:
+        lista=[QgsPointXY(0,0),QgsPointXY(0,10)]
+
     return lista
 
 
@@ -117,7 +121,7 @@ def pairs(lista,inicio=0):
     from math import isclose
     start=line[inicio]
     for i in range(inicio+1, len(line)-1):
-       if not isclose(line[i-1].azimuth(line[i]),line[i].azimuth(line[i+1]),rel_tol=.00001):
+       if not (isclose(line[i-1].azimuth(line[i]),line[i].azimuth(line[i+1]),rel_tol=.00001) or start.distance(line[i])<0.01):
            yield start, line[i], tipo
            start=line[i]
     yield start, line[-1], tipo
@@ -186,6 +190,25 @@ def azimuth(point1,point2):
         return 270
 
 
+class PointTool(QgsMapTool):
+    def __init__(self, iface, callback):
+        QgsMapTool.__init__(self, iface.mapCanvas())
+        self.iface = iface
+        self.callback = callback
+        self.canvas = iface.mapCanvas()
+        self.rpoint = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
+
+    def canvasReleaseEvent(self, e):
+        point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(), e.pos().y())
+        self.point=point
+        self.canvas.unsetMapTool(self)
+        self.callback(self.point)
+        return None
+
+    def start(self):
+        self.canvas.setMapTool(self)
+
+
 class ClickTool(QgsMapTool):
     def __init__(self,iface, callback):
         QgsMapTool.__init__(self,iface.mapCanvas())
@@ -198,8 +221,6 @@ class ClickTool(QgsMapTool):
         linea=False
         point0=iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
         point1=iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
-
-
 
     def canvasReleaseEvent(self,e):
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
@@ -312,6 +333,8 @@ def roundFloat(f:float):
 
 def formatValue(value):
     try:
+        if int(float(value))==float(value): #value is a int
+            return str(int(value))
         return str(roundFloat(float(value)))
     except:
         return str(value)
@@ -377,8 +400,6 @@ def yesNoDialog(iface, title="Atenção", info="", message=""):
     msgBox.setDefaultButton(QtWidgets.QMessageBox.No)
     msgBox.show()
     return msgBox.exec_() == QtWidgets.QMessageBox.Yes
-
-
 
 
 def getBlockRecAndItemFromPointInRaster(layer, p):

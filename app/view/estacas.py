@@ -680,6 +680,15 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.type="horizontal"
         self.setupUi(self)
         self.curvaLayers=[]
+        self.empty=True
+        self.location_on_the_screen()
+        
+    def location_on_the_screen(self):
+        screen = QDesktopWidget().screenGeometry()
+        widget = self.geometry()
+        x = 0#widget.width()
+        y = (screen.height()-widget.height())/2
+        self.move(x, y)
 
     def clear(self):
         self.tableWidget.setRowCount(0)
@@ -690,11 +699,11 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         return filename
 
 
-    def fill_table(self, xxx_todo_changeme,f=False):
+    def fill_table(self, estaca,f=False):
         self.tableWidget.insertRow(self.tableWidget.rowCount())
         k = self.tableWidget.rowCount() - 1
         j=0
-        for value in list(xxx_todo_changeme):
+        for value in list(estaca):
             cell_item = QtWidgets.QTableWidgetItem(u"%s" % formatValue(value))
             cell_item.setFlags(cell_item.flags() ^ Qt.ItemIsEditable)
             self.tableWidget.setItem(k,j,cell_item)
@@ -784,11 +793,13 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.tableWidget.setHorizontalHeaderLabels((u"Estaca",u"Descrição",u"Progressiva",u"Norte",u"Este",u"Cota",u"Azimute"))
         self.tableWidget.cellClicked.connect(self.zoom)
 
+        self.table : QtWidgets.QTableWidget
         self.table=self.tableWidget
         self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.table.horizontalHeader().setStretchLastSection(True)
         self.stretchTable()
+
 
     def resizeEvent(self, event):
         self.stretchTable()
@@ -835,22 +846,21 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
     def openLayers(self):
         self.closeLayers()
         self.parent.model.iface=self.iface
-        for l in self.parent.model.getSavedLayers():
-            if l and l.name()==self.windowTitle().split(":")[0]:
-                l.setName("Curvas: "+l.name())
-                l.startEditing()
-                self.curvaLayers.append(l)
-                l.layerModified.connect(lambda: self.add_row(l))
-                self.parent.iface.setActiveLayer(l)
+        l=self.parent.model.getSavedLayers(self.windowTitle().split(":")[0])
+        if l:
+            l.setName("Curvas: "+l.name())
+            l.startEditing()
+            self.curvaLayers.append(l)
+            l.layerModified.connect(lambda: self.add_row(l))
+            self.parent.iface.setActiveLayer(l)
 
-                l.renderer().symbol().setWidth(.5)
-                l.renderer().symbol().setColor(QtGui.QColor("#be0c21"))
-                l.triggerRepaint()
+            l.renderer().symbol().setWidth(.5)
+            l.renderer().symbol().setColor(QtGui.QColor("#be0c21"))
+            l.triggerRepaint()
 
-                if len([a for a in l.getFeatures()]):
-                  self.parent.iface.mapCanvas().setExtent(l.extent())
-            else:
-                QgsProject.instance().removeMapLayers([l.id()])
+            if len([a for a in l.getFeatures()]):
+              self.parent.iface.mapCanvas().setExtent(l.extent())
+
 
     def add_row(self,l):
         self.layer=l
@@ -1458,7 +1468,12 @@ class SelectFeatureDialog(QtWidgets.QDialog, SELECT_FEATURE):
     def updateResult(self):
         self.result=self.tableWidget.currentRow()
         g : QgsRectangle
-        g = self.layer.getFeature(self.result).geometry().boundingBox()
+        f=0
+        for x in self.layer.getFeatures():
+            if f==self.result:
+                g = self.layer.getFeature(self.result).geometry().boundingBox()
+                break
+            f+=1
         iface.mapCanvas().setExtent(QgsRectangle(g.xMinimum()-50,g.yMinimum()-50,g.xMaximum()+50,g.yMaximum()+50))
         iface.mapCanvas().refresh()
 

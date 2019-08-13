@@ -103,16 +103,23 @@ class Estacas(object):
         self.view.tableWidget.itemDoubleClicked.connect(self.linkGoogle)
         self.view.tableWidget.itemDoubleClicked.connect(self.mudancaCelula)
         self.view.btnDuplicar.clicked.connect(self.duplicarEstaca)
-        self.view.layerUpdated.connect(self.joinFeatures)
+#        self.view.layerUpdated.connect(self.joinFeatures)
 
         self.viewCv.btnGen.clicked.connect(self.generateIntersec)
         self.viewCv.btnTrans.clicked.connect(self.generateTrans)
         self.viewCv.btnClean.clicked.connect(self.cleanTrans)
 
-    def geraCurvas(self):
+    def geraCurvas(self, arquivo_id=None):
         table=self.preview.tableEstacas
         table : QtWidgets.QTableWidget
-        l=len(table.selectionModel().selectedRows())
+
+        if not arquivo_id:
+            l=len(table.selectionModel().selectedRows())
+        else: #curva para traçado
+            self.newEstacasLayer(name=self.model.getNameFromId(arquivo_id))
+            self.view.openLayers()
+            return
+
         if l>1:
             self.preview.error(u"Selecione um único arquivo!")
         elif l<1: #criar traçado, iniciar edição
@@ -120,8 +127,8 @@ class Estacas(object):
             if not name: return
             self.new(dados=(name, self.newEstacasLayer(name=name), Config.DIST, []))
         else:
-            layer=self.saveEstacasLayer(self.model.loadFilename(), name=str(self.model.getNameFromId(self.model.id_filename))+"_Curvas")
-            estacas = self.preview.curvasDialog(self.model.loadFilename(),layer)
+            self.openEstaca()
+            self.view.btnCurva.click()
 
     def joinFeatures(self):
         layer=self.view.curvaLayers[0]
@@ -183,7 +190,7 @@ class Estacas(object):
         self.nextView=self.view
         self.view.setCopy()
         self.updateTables()
-
+        self.geraCurvas(self.model.id_filename)
 
     def cleanTrans(self):
         self.model.cleanTrans(idEstacaTable=self.model.id_filename)
@@ -312,6 +319,7 @@ class Estacas(object):
             self.view.fill_table(tuple(item))
         self.model.id_filename=id
         self.model.save(id)
+        self.geraCurvas(self.model.id_filename)
 
     def saveEstacas(self):
         if self.model.id_filename == -1: return
@@ -346,10 +354,18 @@ class Estacas(object):
 
     def curva(self):
         curvas = self.model.getCurvas(self.model.id_filename)
-        curvaView = CurvasView(self.view, self.iface, self.model.id_filename,curvas,self.model.tipo())
-        curvaView.setModal(False)
-        curvaView.setWindowModality(QtCore.Qt.NonModal)
-        curvaView.show()
+        vertices = [[v[1], QgsPoint(float(v[4]), float(v[3]))] for v in self.model.loadFilename() if v[1]!='']
+        if len(self.view.curvaLayers)==0:
+            self.geraCurvas(self.model.id_filename)
+        curvaView = CurvasView(self.view, self.iface, self.model.id_filename,curvas, vertices,self.model.tipo())
+        self.view.showMinimized()
+        curvaView.accepted.connect(self.raiseView)
+        curvaView.rejected.connect(self.raiseView)
+        curvaView.exec_()
+
+    def raiseView(self):
+        self.view.setWindowState(self.view.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+        self.view.activateWindow()
 
 
     def plotTransLayer(self, index):

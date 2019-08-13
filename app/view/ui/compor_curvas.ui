@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>568</width>
-    <height>522</height>
+    <width>613</width>
+    <height>626</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>580</width>
+    <height>0</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Composição das Curvas</string>
@@ -31,12 +37,17 @@
      </property>
      <item>
       <property name="text">
-       <string>Espiral</string>
+       <string>Espiral de Entrada</string>
       </property>
      </item>
      <item>
       <property name="text">
        <string>Circular</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Espiral de Saída</string>
       </property>
      </item>
      <item>

@@ -8,7 +8,8 @@
         begin                : 2017-02-07
         git sha              : $Format:%H$
         copyright            : (C) 2017 by Lucas, 2018 by Matheus
-        email                : lucaophp@hotmail.com, matheusfillipeag@gmail.com
+        email                : matheusfillipeag@gmail.com
+        github               : https://github.com/matheusfillipe/Topografia
  ***************************************************************************/
 
 /***************************************************************************

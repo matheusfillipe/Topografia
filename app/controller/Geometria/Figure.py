@@ -1021,7 +1021,7 @@ class prismoide(figure):
         self.volume=0
         for i, face in enumerate(self.faces[i1:i2]):
             #semisoma
-            nextFace=self.faces[i+1]
+            nextFace=self.faces[i]
             self.volume+=(face.getArea()+nextFace.getArea())*abs(face.position.z()-nextFace.position.z())/2
 
         return self.volume/1000

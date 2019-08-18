@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Curvas Horizontais Geradas por Vertices</string>
+   <string>Curvas Horizontais</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_4">
    <item row="5" column="4">
@@ -715,8 +715,8 @@ estacas:</string>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>497</x>
-     <y>21</y>
+     <x>767</x>
+     <y>36</y>
     </hint>
     <hint type="destinationlabel">
      <x>268</x>
@@ -731,8 +731,8 @@ estacas:</string>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>498</x>
-     <y>51</y>
+     <x>767</x>
+     <y>98</y>
     </hint>
     <hint type="destinationlabel">
      <x>268</x>

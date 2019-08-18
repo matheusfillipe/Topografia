@@ -34,7 +34,7 @@ from qgis.PyQt.QtWidgets import QAction, QShortcut
 
 from .app.model.config import Config as cfg
 from .app.controller.config import Config
-from .app.controller.estacas import Estacas, msgLog
+from .app.controller.estacas import Estacas, msgLog, messageDialog
 from qgis.PyQt.QtCore import QSettings
 from .app.model.utils import addGoogleXYZTiles
 import tempfile, pathlib
@@ -248,7 +248,7 @@ class TopoGrafia(object):
         self.add_action(
             icon_path_open,
             text=self.tr(u'Abrir Arquivo Topografico'),
-            callback=self.conf.openfile,
+            callback=lambda: self.conf.openfile(None),
             parent=self.iface.mainWindow())
 
         self.add_action(
@@ -294,15 +294,26 @@ class TopoGrafia(object):
         # remove the toolbar
         del self.toolbar
 
-    def run_tracado(self):
+    def run_tracado(self, forceOpen=True):
+
         """Removes the plugin menu item and icon from QGIS GUI."""
-        if self.conf.model.filename in [None,'']:
-            if len(cfg.instance().FILE_PATH)>0:
-                self.conf.openfile(cfg.instance().FILE_PATH)
-            else:
-                self.conf.openfile()
-        if not self.conf.model.filename in [None,'']:
+        if forceOpen:
+            self.conf.model.filename = self.conf.openfile(None)
+
+        filename = cfg.FILE_PATH
+        if filename in [None,'', False, True] or (not type(filename) == str):
+            self.conf.model.filename=self.conf.openfile()
+        elif (not self.conf.model.filename in [None,'', False, True]) and type(self.conf.model.filename) == str:
+            filename = self.conf.model.filename
+        elif type(filename) == str and len(filename) > 0:
+            self.conf.model.filename = filename
+            self.conf.openfile(filename)
+
+        if not filename in [None,'', False, True] and type(filename) == str and pathlib.Path(filename).is_file():
             self.run = self.estacas.run()
+        else:
+            messageDialog(title="Arquivo não encontrado", message="Não foi encontrado o arquivo: " + str(filename))
+            self.run_tracado(True)
 
     def run(self):
         pass

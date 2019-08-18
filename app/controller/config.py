@@ -69,6 +69,7 @@ class Config(object):
         filename = u"{0}".format(self.conf.new_file()[0])
         if filename in ["",None]:
             return
+        ModelConfig.instance().store("FILE_PATH", filename)
         self.model.newfile(filename)
 
     def openfile(self, filename=None):
@@ -82,7 +83,6 @@ class Config(object):
         self.model.openfile(filename)
         self.update()
 
-
     def savefile(self):
         self.model.filename = u"{0}".format(self.model.filename)
         try:
@@ -94,6 +94,7 @@ class Config(object):
                 self.savefile()
             else:
                 return None
+        ModelConfig.instance().store("FILE_PATH", self.model.filename)
         return self.model.filename
 
     def carregamapa(self):

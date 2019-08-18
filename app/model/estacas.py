@@ -94,6 +94,58 @@ class Estacas(object):
 
         return model
 
+    def saveVerticais(self, table):
+        try:
+            extractZIP(Config.fileName)
+            con = sqlite3.connect("tmp/data/data.db")
+            con.execute("DELETE FROM VERTICAIS_TABLE WHERE TABLEESTACA_id=?", (self.id_filename,))
+
+            for linha in table:
+                linha=list(linha)
+                linha.append(int(self.id_filename))
+                lt = tuple(linha)
+                con.execute(
+                    "INSERT INTO VERTICAIS_TABLE (estaca,descricao,progressiva,cota,TABLEESTACA_id)"
+                    "values(?,?,?,?,?)",
+                    lt)
+            con.isolation_level = None
+            con.execute("VACUUM")
+            con.isolation_level = ''
+            con.commit()
+
+            con.close()
+            compactZIP(Config.fileName)
+
+            return True
+        except sqlite3.OperationalError:
+            return False
+
+    def saveIntersect(self, table):
+        try:
+            extractZIP(Config.fileName)
+            con = sqlite3.connect("tmp/data/data.db")
+            con.execute("DELETE FROM INTERSECT_TABLE WHERE TABLEESTACA_id=?", (self.id_filename,))
+
+            for linha in table:
+                linha=list(linha)
+                linha.append(int(self.id_filename))
+                lt = tuple(linha)
+                con.execute(
+                    "INSERT INTO INTERSECT_TABLE (estaca,descricao,progressiva,norte,este,greide,cota,"
+                    "azimute,TABLEESTACA_id)values(?,?,?,?,?,?,?,?,?)",
+                    lt)
+            con.isolation_level = None
+            con.execute("VACUUM")
+            con.isolation_level = ''
+            con.commit()
+
+            con.close()
+            compactZIP(Config.fileName)
+            return True
+
+        except sqlite3.OperationalError:
+            return False
+
     def getCurvas(self, id_filename):
         # instancia da model de curvas.
         curva_model = Curvas(id_filename)
@@ -151,6 +203,28 @@ class Estacas(object):
         compactZIP(Config.fileName)
         return est
 
+    def load_verticais(self):
+        if self.id_filename == -1: return None
+        extractZIP(Config.fileName)
+        con = sqlite3.connect("tmp/data/data.db")
+        est = con.execute(
+            "SELECT estaca,descricao,progressiva,greide FROM VERTICAIS_TABLE WHERE TABLEESTACA_id = ?",
+            (int(self.id_filename),)).fetchall()
+        con.close()
+        compactZIP(Config.fileName)
+        return est
+
+    def load_intersect(self):
+        if self.id_filename == -1: return None
+        extractZIP(Config.fileName)
+        con = sqlite3.connect("tmp/data/data.db")
+        est = con.execute(
+            "SELECT estaca,descricao,progressiva,norte,este,greide,cota,azimute FROM INTERSECT_TABLE WHERE TABLEESTACA_id = ?",
+            (int(self.id_filename),)).fetchall()
+        con.close()
+        compactZIP(Config.fileName)
+        return est
+
     def getNameFromId(self,id):
         extractZIP(Config.fileName)
         con = sqlite3.connect("tmp/data/data.db")
@@ -168,6 +242,13 @@ class Estacas(object):
         con = sqlite3.connect("tmp/data/data.db")
         con.execute("DELETE FROM ESTACA WHERE TABLEESTACA_id=?", (idEstacaTable,))
         con.execute("DELETE FROM TABLEESTACA WHERE id=?", (idEstacaTable,))
+        con.execute("DELETE FROM VERTICAIS_TABLE WHERE TABLEESTACA_id=?", (idEstacaTable,))
+        con.execute("DELETE FROM INTERSECT_TABLE WHERE TABLEESTACA_id=?", (idEstacaTable,))
+        con.execute("DELETE FROM RELEVO_SESSAO WHERE TABLEESTACA_id=?", (idEstacaTable,))
+        con.execute("DELETE FROM SESSAO_TIPO WHERE TABLEESTACA_id=?", (idEstacaTable,))
+        con.execute("DELETE FROM TRANSVERSAL WHERE TABLEESTACA_id=?", (idEstacaTable,))
+        con.execute("DELETE FROM CURVA_VERTICAL_DADOS WHERE TABLEESTACA_id=?", (idEstacaTable,))
+        con.execute("DELETE FROM GREIDE WHERE TABLEESTACA_id=?", (idEstacaTable,))
         con.commit()
         con.close()
         compactZIP(Config.fileName)
@@ -335,14 +416,12 @@ class Estacas(object):
                 c+=1
 
             con.close()
-            compactZIP(Config.fileName)
             prismoid=prismoide()
-
-            if prismoid.restore("tmp/data/"+str(idEstacaTable)):
+            if prismoid.restore("tmp/data/"+str(idEstacaTable)+".prism"):
                 return xList, table, prismoid
             else:
                 return xList, table, None
-
+            compactZIP(Config.fileName)
 
          except:
             return False, False
@@ -392,6 +471,7 @@ class Estacas(object):
             for r in csv.reader(fi, delimiter=delimiter, dialect='excel'):
                 estaca = []
                 for field in r:
+                    s=str(field).replace(",", ".")
                     estaca.append(u"%s" % field)
                 estacas.append(estaca)
         self.table = estacas

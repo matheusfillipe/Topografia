@@ -38,6 +38,9 @@
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
            <widget class="QPushButton" name="btnNovo">
+            <property name="whatsThis">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Cria um novo arquivo a partir do traçado horizontal definido uma layer.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Novo arquivo de estacas</string>
             </property>
@@ -48,6 +51,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="btnOpen">
+            <property name="whatsThis">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Traçado horizontal em tabela curvas horizontais, edição do perfil vertical e curvas verticais.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Abrir</string>
             </property>
@@ -58,6 +64,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="btnOpenCv">
+            <property name="whatsThis">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Tabelas de interseção de estacas, edição do perfil transversal, cálculo de volumes de corte e aterro, diagrama de bruckner&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Abrir Verticais</string>
             </property>
@@ -68,6 +77,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="btnOpenCSV">
+            <property name="whatsThis">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Cria o traçado transversal a partir de um arquivo CSV extraído pelo plugin ou no formato do plugin.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Abrir Arquivo CSV</string>
             </property>
@@ -78,6 +90,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="btnDuplicar">
+            <property name="whatsThis">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Duplica o arquivo selecionado.&lt;/p&gt;&lt;p&gt;Dados horizontais e a configuração do perfil transversal serão copiados.&lt;br/&gt;A tabela de verticais e de interseção serão recalculadas.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Duplicar</string>
             </property>
@@ -88,6 +103,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="btnGerarTracado">
+            <property name="whatsThis">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gera um arquivo shapefile que será incluído no projeto contento as tranversais.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Gerar Traçado</string>
             </property>
@@ -101,6 +119,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="btnGerarCurvas">
+            <property name="whatsThis">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gera um geopackage do projeto que pode conter curvas e tangentes. &lt;/p&gt;&lt;p&gt;Essa opção é útil caso você queira gerar o traçado e curvas de uma só vez.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Gerar Curvas</string>
             </property>

@@ -503,10 +503,19 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         self.tableEstacas: QtWidgets.QTableWidget
         self.stretchTable(self.table)
         self.tableEstacas.selectRow(0)
+        self.checkButtons()
         return super(EstacasUI, self).exec_()
 
-class EstacasIntersec(QtWidgets.QDialog):
+    def checkButtons(self):
+        if self.tableEstacas.rowCount() == 0:
+            self.btnOpen.setEnabled(False)
+            self.btnOpenCv.setEnabled(False)
+        else:
+            self.btnOpen.setEnabled(True)
+            self.btnOpenCv.setEnabled(True)
 
+
+class EstacasIntersec(QtWidgets.QDialog):
     def __init__(self,iface):
         super(EstacasIntersec, self).__init__(None)
         self.iface = iface
@@ -667,6 +676,13 @@ class EstacasCv(QtWidgets.QDialog):
             estacas.append(estaca)
         return estacas
 
+    def getEstacas(self):
+        for i in range(self.tableWidget.rowCount()):
+            estaca = []
+            for j in range(self.tableWidget.columnCount()):
+                estaca.append(self.tableWidget.item(i,j).text())
+            yield estaca
+
 
     def setupUi(self, Form):
         Form.setObjectName(_fromUtf8(u"Traçado Horizontal"))
@@ -682,49 +698,81 @@ class EstacasCv(QtWidgets.QDialog):
         self.modelSource = self.tableWidget.model()
 
         column=1
+        row=0
+
+        self.btnRecalcular = QtWidgets.QPushButton(Form)
+        self.btnRecalcular.setText("Recalcular")
+        self.btnRecalcular.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
+        self.btnRecalcular.setWhatsThis("Recalcula a tabela em vista \n A tabela vertical deve"
+                                        " ser calculada antes da de interseção para que as mudanças se "
+                                        "apliquem corretamente")
+        self.btnRecalcular.setObjectName(_fromUtf8("btnRecalcular"))
+        self.gridLayout.addWidget(self.btnRecalcular, row, column, 1, 1)
+        row+=1
 
         self.btnGen = QtWidgets.QPushButton(Form)
         self.btnGen.setText("Tabela de interseção")
         self.btnGen.setGeometry(QtCore.QRect(755, 16, 180, 45))
         self.btnGen.setObjectName(_fromUtf8("btnGen"))
-        self.gridLayout.addWidget(self.btnGen, 0,column, 1,1)
+        self.gridLayout.addWidget(self.btnGen, row,column, 1,1)
         #self.btnGen.clicked.connect(self.generate)
+        row+=1
 
         self.btnTrans = QtWidgets.QPushButton(Form)
         self.btnTrans.setText("Definir Sessão Tipo")
         self.btnTrans.setGeometry(QtCore.QRect(760, 50+16, 160, 30))
         self.btnTrans.setObjectName(_fromUtf8("btnTrans"))
+        self.btnTrans.setWhatsThis("Inicia interface para a edição do perfil transversal")
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
-        self.gridLayout.addWidget(self.btnTrans, 1, column, 1,1)
+        self.gridLayout.addWidget(self.btnTrans, row, column, 1,1)
+        row+=1
 
         self.btnBruck = QtWidgets.QPushButton(Form)
         self.btnBruck.setText("Diagrama de Bruckner")
         self.btnBruck.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
         self.btnBruck.setObjectName(_fromUtf8("btnBruck"))
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
-        self.gridLayout.addWidget(self.btnBruck, 2, column, 1, 1)
+        self.gridLayout.addWidget(self.btnBruck, row, column, 1, 1)
+        row+=1
 
         self.btnPrint = QtWidgets.QPushButton(Form)
         self.btnPrint.setText("Exportar DXF")
         self.btnPrint.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
         self.btnPrint.setObjectName(_fromUtf8("btnPrint"))
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
-        self.gridLayout.addWidget(self.btnPrint, 3, column, 1,1)
+        self.gridLayout.addWidget(self.btnPrint, row, column, 1,1)
+        row+=1
 
         self.btnCsv = QtWidgets.QPushButton(Form)
         self.btnCsv.setText("Exportar CSV")
         self.btnCsv.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
         self.btnCsv.setObjectName(_fromUtf8("btnCsv"))
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
-        self.gridLayout.addWidget(self.btnCsv, 4, column, 1,1)
+        self.gridLayout.addWidget(self.btnCsv, row, column, 1,1)
+        row+=1
 
         self.btnClean = QtWidgets.QPushButton(Form)
         self.btnClean.setText("Apagar Dados Transversais")
         self.btnClean.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
         self.btnClean.setObjectName(_fromUtf8("btnClean"))
-        self.gridLayout.addWidget(self.btnClean, 5, column, 1, 1)
+        self.gridLayout.addWidget(self.btnClean, row, column, 1, 1)
+        row+=3
 
-        self.gridLayout.addWidget(self.tableWidget, 0, 0, 8, 1)
+        self.labelComp = QtWidgets.QLabel(Form)
+        self.labelComp.setText("Comprimento total: ")
+        self.labelComp.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
+        self.labelComp.setObjectName(_fromUtf8("labelComp"))
+        self.gridLayout.addWidget(self.labelComp, row, column, 1, 1)
+        row+=1
+
+        self.comprimento = QtWidgets.QLineEdit(Form)
+        self.comprimento.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
+        self.comprimento.setObjectName(_fromUtf8("comprimento"))
+        self.comprimento.setReadOnly(True)
+        self.comprimento.setWhatsThis(u"Comprimento total do traçado (considerando a profundidade do greide)")
+        self.gridLayout.addWidget(self.comprimento, row, column, 1, 1)
+
+        self.gridLayout.addWidget(self.tableWidget, 0, 0, row+1, 1)
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
         self.setCv()
@@ -1147,7 +1195,6 @@ class rampaDialog(QtWidgets.QDialog):
         self.setupUI()
 
 
-
     def setupUI(self):
         r=[]
         for handle in self.roi.getHandles():
@@ -1163,10 +1210,20 @@ class rampaDialog(QtWidgets.QDialog):
 
         label=QtWidgets.QLabel("Modificar Rampa")
 
-        Incl=QtWidgets.QLineEdit()
-        compr=QtWidgets.QLineEdit()
-        cota=QtWidgets.QLineEdit()
-        abscissa=QtWidgets.QLineEdit()
+        Incl=QtWidgets.QDoubleSpinBox()
+        Incl.setMaximum(100.0)
+        Incl.setMinimum(-100.0)
+        Incl.setSingleStep(.01)
+        compr=QtWidgets.QDoubleSpinBox()
+        compr.setMaximum(1000000000.0)
+        compr.setMinimum(0.0)
+        cota=QtWidgets.QDoubleSpinBox()
+        cota.setMinimum(0.0)
+        cota.setMaximum(10000.0)
+        abscissa=QtWidgets.QDoubleSpinBox()
+        abscissa.setMaximum(1000000000.0)
+        abscissa.setMinimum(0.0)
+
         InclLbl=QtWidgets.QLabel(u"Inclinação: ")
         posInclLbl=QtWidgets.QLabel(u"%")
         comprLbl=QtWidgets.QLabel(u"Comprimento: ")
@@ -1227,20 +1284,15 @@ class rampaDialog(QtWidgets.QDialog):
         self.abscissaText=abscissa
         self.abscissa=h2.pos().x()
 
-        Incl.setValidator(QtGui.QDoubleValidator())
-        compr.setValidator(QtGui.QDoubleValidator())
-        cota.setValidator(QtGui.QDoubleValidator())
-        abscissa.setValidator(QtGui.QDoubleValidator())
+        Incl.setValue(round(self.Incl,2))
+        compr.setValue(round(self.compr,2))
+        cota.setValue(round(self.cota,2))
+        abscissa.setValue(round(self.abscissa,2))
 
-        Incl.setText(str(round(self.Incl,2)))
-        compr.setText(str(round(self.compr,2)))
-        cota.setText(str(round(self.cota,2)))
-        abscissa.setText(str(round(self.abscissa,2)))
-
-        compr.textChanged.connect(self.updateCompr)
-        cota.textChanged.connect(self.updateCota)
-        abscissa.textChanged.connect(self.updateAbscissa)
-        Incl.textChanged.connect(self.updateIncl)
+        compr.valueChanged.connect(self.updateCompr)
+        cota.valueChanged.connect(self.updateCota)
+        abscissa.valueChanged.connect(self.updateAbscissa)
+        Incl.valueChanged.connect(self.updateIncl)
 
         self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.isBeingModified=False 
@@ -1250,7 +1302,7 @@ class rampaDialog(QtWidgets.QDialog):
         try:
             if not self.isBeingModified:
                 c=self.compr
-                self.compr=round(float(self.comprText.text()), 2)
+                self.compr=round(float(self.comprText.value()), 2)
                 dc=self.compr-c
                 self.cota=round(self.cota+np.sin(np.deg2rad(self.Incl))*dc, 2)
                 self.abscissa=round(self.abscissa+np.cos(np.deg2rad(self.Incl))*dc, 2)
@@ -1265,7 +1317,7 @@ class rampaDialog(QtWidgets.QDialog):
     def updateCota(self):
         try:
             if not self.isBeingModified:  
-                self.cota=round(float(self.cotaText.text()), 2)
+                self.cota=round(float(self.cotaText.value()), 2)
                 self.update()
                 self.compr=round(np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2), 2)
                 self.Incl=round(100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x()), 2)
@@ -1277,7 +1329,7 @@ class rampaDialog(QtWidgets.QDialog):
     def updateAbscissa(self):
         try:
             if not self.isBeingModified:
-                self.abscissa=round(float(self.abscissaText.text()), 2)
+                self.abscissa=round(float(self.abscissaText.value()), 2)
                 self.update()
                 self.compr=round(np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2), 2)
                 self.Incl=round(100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x()), 2)
@@ -1289,7 +1341,7 @@ class rampaDialog(QtWidgets.QDialog):
     def updateIncl(self):
         try:
             if not self.isBeingModified:
-               self.Incl=round(float(self.InclText.text()), 2)
+               self.Incl=round(float(self.InclText.value()), 2)
                self.cota=round(np.sin(np.deg2rad(self.Incl))*self.compr+self.h1.pos().y(), 2)
                self.abscissa=round(np.cos(np.deg2rad(self.Incl))*self.compr+self.h1.pos().x(), 2)
                self.update()
@@ -1309,38 +1361,38 @@ class rampaDialog(QtWidgets.QDialog):
             self.compr=round(np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)   , 2)
             self.cota=round(self.h2.pos().y(), 2)
             self.abscissa=round(self.h2.pos().x(), 2)
-            self.cotaText.setText(str(self.cota))
-            self.abscissaText.setText(str(self.abscissa))
+            self.cotaText.setValue(float(self.cota))
+            self.abscissaText.setValue(float(self.abscissa))
 
         if self.lastHandle == self.h2:
             self.lastHandle.setPos(self.initialPos[1].x(),self.cota)
-            self.Incl=round(100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())   , 2)
+            self.Incl=round(100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x()), 2)
             self.compr=round(np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)   , 2)
             self.cota=round(self.h2.pos().y(), 2)
             self.abscissa=round(self.h2.pos().x(), 2)
-            self.cotaText.setText(str(self.cota))
-            self.abscissaText.setText(str(self.abscissa))
+            self.cotaText.setValue(float(self.cota))
+            self.abscissaText.setValue(float(self.abscissa))
 
     
     def redefineUI(self, elm):
         self.isBeingModified=True
 
         if elm==1:       
-            self.cotaText.setText(str(round(self.cota,2)))
-            self.abscissaText.setText(str(round(self.abscissa,2)))
-            self.InclText.setText(str(round(self.Incl,2)))
+            self.cotaText.setValue(float(round(self.cota,2)))
+            self.abscissaText.setValue(float(round(self.abscissa,2)))
+            self.InclText.setValue(float(round(self.Incl,2)))
         elif elm==2:
-            self.comprText.setText(str(round(self.compr,2)))
-            self.abscissaText.setText(str(round(self.abscissa,2)))
-            self.InclText.setText(str(round(self.Incl,2)))
+            self.comprText.setValue(float(round(self.compr,2)))
+            self.abscissaText.setValue(float(round(self.abscissa,2)))
+            self.InclText.setValue(float(round(self.Incl,2)))
         elif elm==3:           
-            self.comprText.setText(str(round(self.compr,2)))
-            self.cotaText.setText(str(round(self.cota))   ,2  )
-            self.InclText.setText(str(round(self.Incl,2)))
+            self.comprText.setValue(float(round(self.compr,2)))
+            self.cotaText.setValue(float(round(self.cota,2)))
+            self.InclText.setValue(float(round(self.Incl,2)))
         elif elm==4:           
-            self.comprText.setText(str(round(self.compr,2)))
-            self.cotaText.setText(str(round(self.cota,2)))
-            self.abscissaText.setText(str(round(self.abscissa,2)))
+            self.comprText.setValue(float(round(self.compr,2)))
+            self.cotaText.setValue(float(round(self.cota,2)))
+            self.abscissaText.setValue(float(round(self.abscissa,2)))
            
 
         self.isBeingModified=False
@@ -1375,10 +1427,20 @@ class ssRampaDialog(rampaDialog):
 
         label = QtWidgets.QLabel("Modificar Rampa")
 
-        Incl = QtWidgets.QLineEdit()
-        compr = QtWidgets.QLineEdit()
-        cota = QtWidgets.QLineEdit()
-        abscissa = QtWidgets.QLineEdit()
+        Incl=QtWidgets.QDoubleSpinBox()
+        Incl.setMaximum(100.0)
+        Incl.setMinimum(-100.0)
+        compr=QtWidgets.QDoubleSpinBox()
+        compr.setMaximum(1000000000.0)
+        compr.setMinimum(0.0)
+        cota=QtWidgets.QDoubleSpinBox()
+        cota.setMinimum(0.0)
+        cota.setMaximum(10000.0)
+        abscissa=QtWidgets.QDoubleSpinBox()
+        abscissa.setMaximum(1000000000.0)
+        abscissa.setMinimum(0.0)
+        Incl.setSingleStep(.01)
+
         InclLbl = QtWidgets.QLabel(u"Inclinação: ")
         posInclLbl = QtWidgets.QLabel(u"%")
         comprLbl = QtWidgets.QLabel(u"Comprimento: ")
@@ -1438,20 +1500,15 @@ class ssRampaDialog(rampaDialog):
         self.abscissaText = abscissa
         self.abscissa = h2.pos().x()
 
-        Incl.setValidator(QtGui.QDoubleValidator())
-        compr.setValidator(QtGui.QDoubleValidator())
-        cota.setValidator(QtGui.QDoubleValidator())
-        abscissa.setValidator(QtGui.QDoubleValidator())
+        Incl.setValue(float(round(self.Incl, 2)))
+        compr.setValue(float(round(self.compr, 2)))
+        cota.setValue(float(round(self.cota, 2)))
+        abscissa.setValue(float(round(self.abscissa, 2)))
 
-        Incl.setText(str(round(self.Incl, 2)))
-        compr.setText(str(round(self.compr, 2)))
-        cota.setText(str(round(self.cota, 2)))
-        abscissa.setText(str(round(self.abscissa, 2)))
-
-        compr.textChanged.connect(self.updateCompr)
-        cota.textChanged.connect(self.updateCota)
-        abscissa.textChanged.connect(self.updateAbscissa)
-        Incl.textChanged.connect(self.updateIncl)
+        compr.valueChanged.connect(self.updateCompr)
+        cota.valueChanged.connect(self.updateCota)
+        abscissa.valueChanged.connect(self.updateAbscissa)
+        Incl.valueChanged.connect(self.updateIncl)
 
         self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.isBeingModified = False
@@ -1681,11 +1738,11 @@ class EstacaRangeSelect(QtWidgets.QDialog, BRUCKNER_SELECT):
         self.final_2 : QtWidgets.QComboBox
         if self.inicial.currentIndex() >= self.final_2.currentIndex():
             self.final_2.setCurrentIndex(self.inicial.currentIndex()+1)
-        self.ei=float(self.inicial.currentText())
+
 
     def change2(self):
         self.inicial : QtWidgets.QComboBox
         self.final_2 : QtWidgets.QComboBox
         if self.final_2.currentIndex() <= self.inicial.currentIndex():
             self.final_2.setCurrentIndex(self.inicial.currentIndex()+1)
-        self.ef=float(self.final_2.currentText())
+

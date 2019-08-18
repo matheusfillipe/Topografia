@@ -29,6 +29,10 @@ def compactZIP(filename):
     tracs=Path('tmp/data/').rglob("*.gpkg*")
     for trac in tracs:
         z.write(str(trac),'data/'+trac.name,zipfile.ZIP_DEFLATED)
+    tracs = Path('tmp/data/').rglob("*.prism")
+    for trac in tracs:
+        z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
+
     z.close()
     shutil.rmtree('tmp')
 
@@ -41,7 +45,7 @@ class Config(object):
     CSV_DELIMITER = ';'
     DIST=20
     RANDOM="__ix35-_-xxx901381asdioADJ398(__"
-    TMP_FOLDER="TopoRoad/"
+    TMP_FOLDER="TopografiaPluginTemporaryLayers/"
     T_SPACING=30
     CLASSE_INDEX=4
     crs = 2676
@@ -111,6 +115,7 @@ class Config(object):
         con.execute("CREATE TABLE if not exists TABLEESTACA"
                     "(id INTEGER primary key AUTOINCREMENT,name varchar(255),"
                     "data DATETIME DEFAULT CURRENT_TIMESTAMP)")
+
         con.execute("CREATE TABLE if not exists ESTACA"
                     "(id INTEGER primary key AUTOINCREMENT,estaca varchar(255),"
                     "descricao text,"
@@ -122,6 +127,7 @@ class Config(object):
                     "TABLEESTACA_id INTEGER,"
                     "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
                     ")")
+
         con.execute("CREATE TABLE if not exists TABLECURVA"
                     "(id INTEGER primary key AUTOINCREMENT,"
                     "TABLEESTACA_id INTEGER,"
@@ -163,7 +169,7 @@ class Config(object):
                     "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
 
                     ")")
-## TABELA A IMPLEMENTAR:
+
         con.execute("CREATE TABLE if not exists CURVA_VERTICAL_DADOS"
                     "(id INTEGER primary key AUTOINCREMENT,"
                     "CURVA_id INTEGER,"
@@ -199,6 +205,29 @@ class Config(object):
                     "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"                 
                     ")")
 
+        con.execute("CREATE TABLE if not exists VERTICAIS_TABLE"
+                    "(id INTEGER primary key AUTOINCREMENT,"
+                    "estaca text,"
+                    "descricao text,"
+                    "progressiva text,"
+                    "greide text,"     
+                    "TABLEESTACA_id INTEGER,"
+                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
+                    ")")
+
+        con.execute("CREATE TABLE if not exists INTERSECT_TABLE"
+                    "(id INTEGER primary key AUTOINCREMENT,"                    
+                    "estaca text,"
+                    "descricao text,"
+                    "progressiva text,"
+                    "norte text,"
+                    "este text,"
+                    "greide text,"                   
+                    "cota text,"
+                    "azimute text,"
+                    "TABLEESTACA_id INTEGER,"
+                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
+                    ")")
 
 
         con.commit()
@@ -349,6 +378,7 @@ class Config(object):
         cfg=cls()
         for d in cfg.data:
             cfg.read(d)
-        Config.fileName=cfg.FILE_PATH
+            setattr(Config, d, getattr(cfg, d))
+        Config.fileName = cfg.FILE_PATH
         return cfg
 

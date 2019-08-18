@@ -18,6 +18,9 @@
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
       <widget class="QPushButton" name="btnEstacas">
+       <property name="whatsThis">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Recalcula as estacas com base em uma layer&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Recalcular Estacas</string>
        </property>
@@ -28,6 +31,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="btnDuplicar">
+       <property name="whatsThis">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Duplica os dados horizontai com, curvas da estaca e perfil vertical com curvas.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Duplicar</string>
        </property>
@@ -35,6 +41,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="btnLayer">
+       <property name="whatsThis">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gera uma layer com o traçado. Essa layer não conterá informações de curvas.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Plotar</string>
        </property>
@@ -45,6 +54,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="btnCurva">
+       <property name="whatsThis">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Cria e gerencia as curvas do traçado horizontal.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Curvas</string>
        </property>
@@ -52,6 +64,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="btnPerfil">
+       <property name="whatsThis">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Define o greide.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Perfil de trecho</string>
        </property>
@@ -65,6 +80,9 @@
        <property name="enabled">
         <bool>true</bool>
        </property>
+       <property name="whatsThis">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Salva a tabela horizontal e as edições manuais feitas nela&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Salvar</string>
        </property>
@@ -75,6 +93,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="btnSaveCSV">
+       <property name="whatsThis">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Exporta a tabela em uma planilha.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Salvar em CSV</string>
        </property>
@@ -103,6 +124,9 @@
    </item>
    <item row="1" column="1">
     <widget class="QPushButton" name="btnCotaTIFF">
+     <property name="whatsThis">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Extrair cotas de um arquivo raster de imagem tiff&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="text">
       <string>Obter Cotas
 via GeoTIFF</string>

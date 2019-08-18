@@ -491,7 +491,6 @@ class CustomPolyLineROI(pg.PolyLineROI):
         h = pg.ROI.addHandle(self, info, index=index)
         h.sigRemoveRequested.connect(self.removeHandle)        
         self.stateChanged(finish=True)
-        QgsMessageLog.logMessage("Adicionando Vertice", "Topografia", level=0)
         self.wasInitialized=True
         self.updateHandles()
         return h
@@ -694,9 +693,7 @@ class Ui_Perfil(QtWidgets.QDialog):
         y=list(y)       
                 
         self.perfilPlot.plot(x=x, y=y, symbol='o')
-
         self.perfilPlot.setWindowTitle('Perfil Vertical')
-
         A = np.array([x,np.ones(len(x))])
         w = np.linalg.lstsq(A.T,y)[0]
         if self.greide:
@@ -709,9 +706,6 @@ class Ui_Perfil(QtWidgets.QDialog):
                 pos=(x,cota)
                 L.append(pos)
             self.roi = CustomPolyLineROI(L)
-
-
-
         else:
             self.roi = CustomPolyLineROI([(x[0],w[0]*x[0]+w[1]), (x[len(x)-1],w[0]*x[len(x)-1]+w[1])])
 
@@ -719,7 +713,6 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.roi.wasModified.connect(self.__setAsNotSaved)
         self.roi.setAcceptedMouseButtons(QtCore.Qt.RightButton)
         self.perfilPlot.addItem(self.roi)
-
 
         self.lastGreide=self.getVertices()
         self.lastCurvas=self.getCurvas()
@@ -1027,7 +1020,7 @@ class Ui_sessaoTipo(Ui_Perfil):
                 self.prismoide = Prismoide.QPrismoid(self.terreno, self.st, self.progressiva)
                 self.createPrismoid(self.current)
         else:
-            self.prismoide=Prismoide(prism=prism, cti=7)
+            self.prismoide = Prismoide.QPrismoid(prism=prism, cti=7)
 
         self.setFixedSize(1000, 600)
         self.roi.sigRegionChangeFinished.connect(self.updateData)

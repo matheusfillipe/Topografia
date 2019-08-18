@@ -31,7 +31,7 @@ from qgis.PyQt.QtCore import *
 from qgis.PyQt.QtWidgets import *
 from qgis.core import *
 
-
+from ..model.config import Config
 from ..model.utils import decdeg2dms, formatValue
 import subprocess
 
@@ -72,6 +72,10 @@ SELECT_FEATURE, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/selectFeature.ui'))
 ESTACAS_DIALOG, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/Topo_dialog_estacas.ui'))
+PROGRESS_DIALOG, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), '../view/ui/progressBarDialog.ui'))
+BRUCKNER_SELECT, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), '../view/ui/bruckner_select.ui'))
 
 rb = QgsRubberBand(iface.mapCanvas(), 1)
 premuto = False
@@ -94,6 +98,54 @@ class PointTool(QgsMapTool):
         y = event.pos().y()
         self.callback(self.canvas.getCoordinateTransform().toMapCoordinates(x, y))
 
+
+class CopySelectedCellsAction(QtWidgets.QAction):
+    def __init__(self, iface, table_widget):
+        if not isinstance(table_widget, QtWidgets.QTableWidget):
+            raise ValueError(str('CopySelectedCellsAction must be initialised with a QTableWidget. A %s was given.' % type(table_widget)))
+        super(CopySelectedCellsAction, self).__init__("Copy", table_widget)
+        self.setShortcut('Ctrl+C')
+        s=QShortcut(QKeySequence("Ctrl+C"), iface)
+        s.activated.connect(self.copy_cells_to_clipboard)
+        self.triggered.connect(self.copy_cells_to_clipboard)
+        self.table_widget = table_widget
+
+    def copy_cells_to_clipboard(self):
+        if len(self.table_widget.selectionModel().selectedIndexes()) > 0:
+            columnIndex=list(set(index.column() for index in self.table_widget.selectionModel().selectedIndexes()))
+            rowIndex=list(set(index.row() for index in self.table_widget.selectionModel().selectedIndexes()))
+            columnIndex.sort()
+            rowIndex.sort()
+            nSelectedColumns=len(columnIndex)
+            nSelectedRows=len(rowIndex)
+            matx=[[None for a in range(max(columnIndex[-1]-columnIndex[0]+1,nSelectedColumns))] for a in range(max(1+rowIndex[-1]-rowIndex[0],nSelectedRows))]
+            start=[rowIndex[0],columnIndex[0]]
+
+            for index in self.table_widget.selectionModel().selectedIndexes():
+                i=index.row()-start[0]
+                j=index.column()-start[1]
+                matx[i][j]=index.data()
+
+
+            import numpy as np
+            final=np.array(matx).transpose()
+            matx=[]
+            for col in final:
+                if any(x is not None for x in col):
+                    matx.append(col)
+            final=np.array(matx).transpose()
+            clipboard=""
+            for row in final:
+                if not any(x is not None for x in row):
+                    continue
+                for column in row:
+                        clipboard += str(column if column else "")+'\t'
+                clipboard += '\n'
+
+
+            # copy to the system clipboard
+            sys_clip = QtWidgets.QApplication.clipboard()
+            sys_clip.setText(clipboard)
 
 
 class Dialog(QtWidgets.QDialog):
@@ -130,6 +182,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         self.edit = False
         self.dialog = QtWidgets.QDialog(None)
         self.actual_point = None
+
 
     def curvasDialog(self, estacas, layer):
         import copy
@@ -215,11 +268,11 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
                 if layerList:
                     layer = layerList[0]
 
-        dist, ok = QtWidgets.QInputDialog.getDouble(None, "Distancia", u"Distancia entre estacas:", 20.0, -10000,
+        dist, ok = QtWidgets.QInputDialog.getDouble(None, "Distancia", u"Distancia entre estacas:", Config.instance().DIST, 1,
                                                 10000, 2)
         if not ok or dist<=0:
             return None
-        estaca, ok = QtWidgets.QInputDialog.getInt(None, "Estaca Inicial", u"Estaca Inicial:", 0, -10000, 10000, 2)
+        estaca, ok = QtWidgets.QInputDialog.getInt(None, "Estaca Inicial", u"Estaca Inicial:", 0, 0, 10000000, 2)
 
         if not ok:
             return None
@@ -274,9 +327,8 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         #This relies on the QActions order on the menu
 
         fields = QgsFields()
-        fields.append(QgsField("id", QVariant.Int))
-        fields.append(QgsField("value", QVariant.Double))
-        fields.append(QgsField("name", QVariant.String))
+        fields.append(QgsField("Tipo", QVariant.String))
+        fields.append(QgsField("Descricao", QVariant.String))
         dialog = QtWidgets.QFileDialog()
         dialog.setWindowTitle("Caminho para criar arquivo shapefile")
         dialog.setDefaultSuffix("shp")
@@ -448,7 +500,9 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
                 table.setColumnWidth(columnNum, int(tableSize / numberOfColumns))
 
     def exec_(self):
+        self.tableEstacas: QtWidgets.QTableWidget
         self.stretchTable(self.table)
+        self.tableEstacas.selectRow(0)
         return super(EstacasUI, self).exec_()
 
 class EstacasIntersec(QtWidgets.QDialog):
@@ -541,31 +595,68 @@ class EstacasCv(QtWidgets.QDialog):
 
     def __init__(self,iface):
         super(EstacasCv, self).__init__(None)
+        self.mode="N"
         self.iface = iface
         self.setupUi(self)
+        self.location_on_the_screen()
+
+    def location_on_the_screen(self):
+        screen = QDesktopWidget().screenGeometry()
+        widget = self.geometry()
+        x = 0#widget.width()
+        y = (screen.height()-widget.height())/2
+        self.move(x, y)
 
     def clear(self):
         self.tableWidget.setRowCount(0)
         self.tableWidget.clearContents()
 
+    def setIntersect(self):
+        if hasattr(self, "mode") and self.mode=="T":
+            return
+        self.clear()
+        self.tableWidget.setColumnCount(8)
+        self.tableWidget.setRowCount(0)
+        self.tableWidget.setHorizontalHeaderLabels((u"Estaca",u"Descrição",u"Progressiva",u"Norte",u"Este",u"Greide",u"Cota",u"Azimute"))
+        try:
+            self.btnGen.clicked.disconnect()
+        except:
+            pass
+        self.tableWidget.cellClicked.connect(self.zoom)
+        self.btnGen.setText("Tabela de verticais")
+        self.mode="T"
+        self.stretchTable()
+
+
+    def setCv(self):
+        if hasattr(self, "mode") and  self.mode=="CV":
+            return
+        self.clear()
+        self.tableWidget.setColumnCount(4)
+        self.tableWidget.setRowCount(0)
+        try:
+            self.tableWidget.cellClicked.disconnect()
+        except:
+            pass
+        self.tableWidget.setHorizontalHeaderLabels((u"Estaca",u"Descrição",u"Progressiva",u"Greide"))
+        self.btnGen.setText("Tabela de Interseção")
+        self.mode="CV"
+        self.stretchTable()
+
+
     def saveEstacasCSV(self):
         filename = QtWidgets.QFileDialog.getSaveFileName()
         return filename
 
-    def fill_table(self, xxx_todo_changeme,f=False):
-        (estaca,descricao,progressiva,cota) = xxx_todo_changeme
+    def fill_table(self, estaca, f=False):
         self.tableWidget.insertRow(self.tableWidget.rowCount())
         k = self.tableWidget.rowCount() - 1
-        self.tableWidget.setItem(k, 0, QtWidgets.QTableWidgetItem(u"%s" % estaca))
-        self.tableWidget.setItem(k, 1, QtWidgets.QTableWidgetItem(u"%s" % descricao))
-        self.tableWidget.setItem(k, 2, QtWidgets.QTableWidgetItem(u"%s" % progressiva))
-        self.tableWidget.setItem(k, 3, QtWidgets.QTableWidgetItem(u"%s" % cota))
-        '''if not f:
-            naz = decdeg2dms(azimute)
-            str_az = "%s* %s\' %s\'\'" % (int(naz[0]), int(naz[1]), naz[2])
-            self.tableWidget.setItem(k, 6, QtWidgets.QTableWidgetItem(str_az))
-        else:'''
-
+        j=0
+        for value in list(estaca):
+            cell_item = QtWidgets.QTableWidgetItem(u"%s" % formatValue(value))
+            cell_item.setFlags(cell_item.flags() ^ Qt.ItemIsEditable)
+            self.tableWidget.setItem(k,j,cell_item)
+            j+=1
 
     def get_estacas(self):
         estacas = []
@@ -581,17 +672,22 @@ class EstacasCv(QtWidgets.QDialog):
         Form.setObjectName(_fromUtf8(u"Traçado Horizontal"))
         Form.resize(919, 510)
         self.tableWidget = QtWidgets.QTableWidget(Form)
+        self.gridLayout = QtWidgets.QGridLayout(Form)
+        self.gridLayout.setObjectName("gridLayout")
+        self.gridLayout.setColumnStretch(0, 4)
+#        self.gridLayout.setRowStretch(1,3)
+
         self.tableWidget.setGeometry(QtCore.QRect(0, 0, 750, 511))
         self.tableWidget.setObjectName(_fromUtf8("tableWidget"))
         self.modelSource = self.tableWidget.model()
-        self.tableWidget.setColumnCount(4)
-        self.tableWidget.setRowCount(0)
-        self.tableWidget.setHorizontalHeaderLabels((u"Estaca",u"Descrição",u"Progressiva",u"Cota"))
+
+        column=1
 
         self.btnGen = QtWidgets.QPushButton(Form)
-        self.btnGen.setText("Tabela de intersecção")
+        self.btnGen.setText("Tabela de interseção")
         self.btnGen.setGeometry(QtCore.QRect(755, 16, 180, 45))
         self.btnGen.setObjectName(_fromUtf8("btnGen"))
+        self.gridLayout.addWidget(self.btnGen, 0,column, 1,1)
         #self.btnGen.clicked.connect(self.generate)
 
         self.btnTrans = QtWidgets.QPushButton(Form)
@@ -599,74 +695,128 @@ class EstacasCv(QtWidgets.QDialog):
         self.btnTrans.setGeometry(QtCore.QRect(760, 50+16, 160, 30))
         self.btnTrans.setObjectName(_fromUtf8("btnTrans"))
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+        self.gridLayout.addWidget(self.btnTrans, 1, column, 1,1)
+
+        self.btnBruck = QtWidgets.QPushButton(Form)
+        self.btnBruck.setText("Diagrama de Bruckner")
+        self.btnBruck.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
+        self.btnBruck.setObjectName(_fromUtf8("btnBruck"))
+        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+        self.gridLayout.addWidget(self.btnBruck, 2, column, 1, 1)
 
         self.btnPrint = QtWidgets.QPushButton(Form)
-        self.btnPrint.setText("Imprimir")
+        self.btnPrint.setText("Exportar DXF")
         self.btnPrint.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
         self.btnPrint.setObjectName(_fromUtf8("btnPrint"))
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+        self.gridLayout.addWidget(self.btnPrint, 3, column, 1,1)
+
+        self.btnCsv = QtWidgets.QPushButton(Form)
+        self.btnCsv.setText("Exportar CSV")
+        self.btnCsv.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
+        self.btnCsv.setObjectName(_fromUtf8("btnCsv"))
+        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+        self.gridLayout.addWidget(self.btnCsv, 4, column, 1,1)
 
         self.btnClean = QtWidgets.QPushButton(Form)
-        self.btnClean.setText("Apagar Dados")
+        self.btnClean.setText("Apagar Dados Transversais")
         self.btnClean.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
         self.btnClean.setObjectName(_fromUtf8("btnClean"))
+        self.gridLayout.addWidget(self.btnClean, 5, column, 1, 1)
 
+        self.gridLayout.addWidget(self.tableWidget, 0, 0, 8, 1)
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
-
+        self.setCv()
         self.Form=Form
+
+        self.table : QtWidgets.QTableWidget
+        self.table=self.tableWidget
+        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
+        self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.table.horizontalHeader().setStretchLastSection(True)
+
+        self.stretchTable()
+        self.setCopy()
+        self.point=False
+
+    def setCopy(self):
+        if not hasattr(self, "copyAction"):
+            self.copyAction=CopySelectedCellsAction(self, self.table)
+
+    def resizeEvent(self, event):
+        self.stretchTable()
+        super().resizeEvent(event)  # Restores the original behaviour of the resize event
+
+    def stretchTable(self):
+        table=self.tableWidget
+        tableSize = table.width()
+        sideHeaderWidth = table.verticalHeader().width()
+        tableSize -= sideHeaderWidth
+        numberOfColumns = table.columnCount()
+
+        remainingWidth = tableSize % numberOfColumns
+        for columnNum in range(table.columnCount()):
+            if remainingWidth > 0:
+                table.setColumnWidth(columnNum, int(tableSize / numberOfColumns) + 1)
+                remainingWidth -= 1
+            else:
+                table.setColumnWidth(columnNum, int(tableSize / numberOfColumns))
 
     def retranslateUi(self, Form):
         Form.setWindowTitle(_translate("Traçado Horizontal", "Traçado Vertial", None))
 
+    def reject(self):
+        self.removePoint()
+        return super(EstacasCv, self).reject()
 
-class CopySelectedCellsAction(QtWidgets.QAction):
-    def __init__(self, iface, table_widget):
-        if not isinstance(table_widget, QtWidgets.QTableWidget):
-            raise ValueError(str('CopySelectedCellsAction must be initialised with a QTableWidget. A %s was given.' % type(table_widget)))
-        super(CopySelectedCellsAction, self).__init__("Copy", table_widget)
-        self.setShortcut('Ctrl+C')
-        s=QShortcut(QKeySequence("Ctrl+C"), iface)
-        s.activated.connect(self.copy_cells_to_clipboard)
-        self.triggered.connect(self.copy_cells_to_clipboard)
-        self.table_widget = table_widget
+    def close(self):
+        self.removePoint()
+        return super(EstacasCv, self).close()
 
-    def copy_cells_to_clipboard(self):
-        if len(self.table_widget.selectionModel().selectedIndexes()) > 0:
-            columnIndex=list(set(index.column() for index in self.table_widget.selectionModel().selectedIndexes()))
-            rowIndex=list(set(index.row() for index in self.table_widget.selectionModel().selectedIndexes()))
-            columnIndex.sort()
-            rowIndex.sort()
-            nSelectedColumns=len(columnIndex)
-            nSelectedRows=len(rowIndex)
-            matx=[[None for a in range(max(columnIndex[-1]-columnIndex[0]+1,nSelectedColumns))] for a in range(max(1+rowIndex[-1]-rowIndex[0],nSelectedRows))]
-            start=[rowIndex[0],columnIndex[0]]
+    def accept(self):
+        self.removePoint()
+        return super(EstacasCv, self).accept()
 
-            for index in self.table_widget.selectionModel().selectedIndexes():
-                i=index.row()-start[0]
-                j=index.column()-start[1]
-                matx[i][j]=index.data()
+    def removePoint(self):
+        root = QgsProject.instance()
+        try:
+            if self.point:
+                root.removeMapLayer(self.point)
+        except RuntimeError as e:
+                pass#Duplicado
+        from ..model.helper.qgsgeometry import refreshCanvas
+        refreshCanvas(self.iface)
 
+    def zoom(self, row, column):
+        root = QgsProject.instance()
+        try:
+            if self.point:
+                root.removeMapLayer(self.point)
+        except RuntimeError as e:
+                pass#Duplicado
 
-            import numpy as np
-            final=np.array(matx).transpose()
-            matx=[]
-            for col in final:
-                if any(x is not None for x in col):
-                    matx.append(col)
-            final=np.array(matx).transpose()
-            clipboard=""
-            for row in final:
-                if not any(x is not None for x in row):
-                    continue
-                for column in row:
-                        clipboard += str(column if column else "")+'\t'
-                clipboard += '\n'
+        #ZOOM
+        scale = 100
+        table=self.tableWidget
+        e, x, y = table.item(row,0).text(), float(table.item(row,4).text()), float(table.item(row,3).text())
+        point = QgsPointXY(x,y)
+        rect = QgsRectangle(x - scale, y - scale, x + scale, y + scale)
+        self.iface.mapCanvas().setExtent(rect)
+        self.iface.mapCanvas().refresh()
 
 
-            # copy to the system clipboard
-            sys_clip = QtWidgets.QApplication.clipboard()
-            sys_clip.setText(clipboard)
+        #ADD Point Layer
+        layer = QgsVectorLayer("Point?crs=%s"%(root.crs().authid()), "Estaca: "+str(e),"memory")
+        layer.setCrs(root.crs())
+        prov = layer.dataProvider()
+        feat = QgsFeature()
+        feat.setGeometry(QgsGeometry.fromPointXY(point))
+        prov.addFeatures([feat])
+        root.addMapLayer(layer, False)
+        QgsProject.instance().layerTreeRoot().insertLayer(0, layer)
+        self.point=layer
+
 
 
 class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
@@ -926,7 +1076,6 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         root.addMapLayer(layer, False)
         QgsProject.instance().layerTreeRoot().insertLayer(0, layer)
         self.point=layer
-
 
 
 
@@ -1313,9 +1462,9 @@ class cvEdit(QtWidgets.QDialog, VERTICE_EDIT_DIALOG):
         super(cvEdit, self).__init__(None)
         self.iface = iface
         self.setupUi(self)
+        self.setFixedSize(self.size())
 
-
-    def removeCv(self, iface):
+    def removeCv(self):
         self.groupBox_2.setFlat(True)
         self.groupBox_2.setStyleSheet("border:1;")
 
@@ -1385,33 +1534,33 @@ class SetCtAtiDialog(QtWidgets.QDialog, SETCTATI_DIALOG):
             pass
 
 
-#TODO convert to relative scale
+#TODO convert to real scale
 class setEscalaDialog(QtWidgets.QDialog, SET_ESCALA_DIALOG):
     def __init__(self, iface):
         super(setEscalaDialog, self).__init__(None)
         self.iface=iface
+        self.x: QtWidgets.QSpinBox
+        self.y: QtWidgets.QSpinBox
         self.setupUi(self)
         self.vb=self.iface.vb
-        self.x.setValidator(QtGui.QDoubleValidator())
-        self.y.setValidator(QtGui.QDoubleValidator())
-        self.x.setText('1.0')
-        self.y.setText('1.0')
-        self.x.returnPressed.connect(self.changed)
-        self.y.returnPressed.connect(self.changed)
+        self.x.setValue(1.0)
+        self.y.setValue(1.0)
+        self.x.valueChanged.connect(self.changed)
+        self.y.valueChanged.connect(self.changed)
         self.zoomBtn.clicked.connect(self.zoom)
 
     def getX(self):
-        return float(self.x.text())
+        return float(self.x.value())
 
     def getY(self):
-        return float(self.y.text())
-
+        return float(self.y.value())
 
     def zoom(self):
         self.vb.autoRange()
 
     def changed(self):
-        self.vb.scaleBy((self.getX(),self.getY()))
+        self.zoom()
+        self.vb.scaleBy((self.getX(), self.getY()))
 
 
 class SelectFeatureDialog(QtWidgets.QDialog, SELECT_FEATURE):
@@ -1485,3 +1634,58 @@ class SelectFeatureDialog(QtWidgets.QDialog, SELECT_FEATURE):
             self.result=-1
             self.tableWidget.setDisabled(True)
 
+class ProgressDialog(QtWidgets.QDialog, PROGRESS_DIALOG):
+
+    def __init__(self, iface, msg=None):
+        super().__init__(iface)
+        self.iface=iface
+        self.setupUi(self)
+
+        self.Dialog: QtWidgets.QDialog
+        self.label: QtWidgets.QLabel
+        self.progressBar: QtWidgets.QProgressBar
+
+        if not msg is None:
+            self.label.setText(str(msg))
+        self.progressBar.setValue(0)
+
+    def setValue(self, value):
+        self.progressBar.setValue(int(value))
+
+class EstacaRangeSelect(QtWidgets.QDialog, BRUCKNER_SELECT):
+
+    def __init__(self, iface, estacas):
+        super().__init__(iface)
+        self.iface=iface
+        self.setupUi(self)
+
+        self.Dialog : QtWidgets.QDialog
+        self.final_2 : QtWidgets.QComboBox
+        self.inicial : QtWidgets.QComboBox
+        self.label : QtWidgets.QLabel
+        self.label_2 : QtWidgets.QLabel
+
+        estacas=[str(e) for e in estacas]
+        self.inicial.addItems(estacas)
+        self.inicial.setCurrentIndex(0)
+        self.final_2.addItems(estacas)
+        self.final_2.setCurrentIndex(1)
+        self.inicial.currentIndexChanged.connect(self.change1)
+        self.final_2.currentIndexChanged.connect(self.change2)
+
+        self.ei=float(self.inicial.currentText())
+        self.ef=float(self.final_2.currentText())
+
+    def change1(self):
+        self.inicial : QtWidgets.QComboBox
+        self.final_2 : QtWidgets.QComboBox
+        if self.inicial.currentIndex() >= self.final_2.currentIndex():
+            self.final_2.setCurrentIndex(self.inicial.currentIndex()+1)
+        self.ei=float(self.inicial.currentText())
+
+    def change2(self):
+        self.inicial : QtWidgets.QComboBox
+        self.final_2 : QtWidgets.QComboBox
+        if self.final_2.currentIndex() <= self.inicial.currentIndex():
+            self.final_2.setCurrentIndex(self.inicial.currentIndex()+1)
+        self.ef=float(self.final_2.currentText())

@@ -152,6 +152,12 @@ class QPrismoid(prismoide, QThread):
        #TODO replace custom offset 20
         self.replaceFaceKeepZ(f, i)
 
+    def getFaces(self):
+        """Iterate through primoid's faces  -> face"""
+        for face in self.faces:
+            yield face
+
+
     def getPrismoide(self):
         prismoid=prismoide()
         prismoid.fromFaces(self.faces)
@@ -210,8 +216,8 @@ class QPrismoid(prismoide, QThread):
     #Correct 20 m problem
     #Add distance vision to CV's
     #Better horizontal plotind and drawing
-    #horizontal Curves plotting
-    #Generate intersec table
+
+
 
     #TODO reduce getArea and getVolume calls by doing it on instanciacion and checking if primsmoid changed before getVolume call
     #TODO verify prismoid restoring

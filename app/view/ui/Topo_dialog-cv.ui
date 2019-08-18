@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>901</width>
-    <height>660</height>
+    <width>916</width>
+    <height>666</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -55,7 +55,7 @@
             <string extracomment="Dados referentes ao  vértice 1"/>
            </property>
            <property name="text">
-            <string>TextLabel</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -233,7 +233,7 @@
          <item>
           <widget class="QLabel" name="uiestaca">
            <property name="text">
-            <string>TextLabel</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -273,7 +273,7 @@
             <string extracomment="Cota do vértice em edição"/>
            </property>
            <property name="text">
-            <string>Co&amp;ta:</string>
+            <string>&amp;Cota:</string>
            </property>
            <property name="buddy">
             <cstring>uicota</cstring>
@@ -356,7 +356,7 @@
             <string extracomment="Dados referentes ao  vértice 3"/>
            </property>
            <property name="text">
-            <string>TextLabel</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -915,20 +915,17 @@
      <item>
       <widget class="QLabel" name="cotaLabel_23">
        <property name="text">
-        <string>&amp;Lutilizado</string>
-       </property>
-       <property name="buddy">
-        <cstring>uiLutilizado</cstring>
+        <string>L utilizado</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="uiLutilizado">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+      <widget class="QDoubleSpinBox" name="uiLutilizado">
+       <property name="maximum">
+        <double>99999.990000000005239</double>
+       </property>
+       <property name="singleStep">
+        <double>10.000000000000000</double>
        </property>
       </widget>
      </item>
@@ -944,16 +941,6 @@
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
-     <item>
-      <widget class="QPushButton" name="helpBtn">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="text">
-        <string>AJUDA</string>
-       </property>
-      </widget>
-     </item>
      <item>
       <widget class="QPushButton" name="viewCurveBtn">
        <property name="text">
@@ -1080,7 +1067,6 @@
   <tabstop>uihorizontal2</tabstop>
   <tabstop>addCurveBtn</tabstop>
   <tabstop>viewCurveBtn</tabstop>
-  <tabstop>uiLutilizado</tabstop>
   <tabstop>nextBtn</tabstop>
   <tabstop>previousBtn</tabstop>
   <tabstop>verticeCb</tabstop>
@@ -1098,7 +1084,6 @@
   <tabstop>uiKdes</tabstop>
   <tabstop>uiLmin</tabstop>
   <tabstop>uiLdes</tabstop>
-  <tabstop>helpBtn</tabstop>
  </tabstops>
  <resources/>
  <connections/>

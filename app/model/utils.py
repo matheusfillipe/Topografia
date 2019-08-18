@@ -3,6 +3,9 @@ from __future__ import print_function
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QDialog, QLabel
 from future import standard_library
+
+from ..model.config import Config
+
 standard_library.install_aliases()
 from builtins import str
 from builtins import range
@@ -348,13 +351,24 @@ def longRoundFloat(f:float):
 def longRoundFloat2str(f:float):
     return str(round(f,longPrecision))
 
-
-##TODO mudar precisão de 20m
 def roundUpFloat2str(f:float):
-    return str(round(int(f/20+1),0))
+    return str(round(int(f/Config.instance().DIST+1),0))
 
-def estacaInt2Str(i:int):
-    return str(int(i/20))+"+"+str(i%20)
+def prog2estacaStr(i :float):
+    if i%Config.instance().DIST != 0:
+        return str(int(i/Config.instance().DIST))+"+"+str(i%Config.instance().DIST)
+    else:
+        return str(int(i/Config.instance().DIST))
+
+def estaca2progFloat(s: str):
+    if '+' in s:
+        i=int(s.split("+")[0])
+        f=float(s.split("+")[1])
+        return i*Config.instance().DIST+f
+    else:
+        return int(s)*Config.instance().DIST
+
+
 
 class imgDialog(QDialog):
 
@@ -400,6 +414,7 @@ def yesNoDialog(iface, title="Atenção", info="", message=""):
     msgBox.setDefaultButton(QtWidgets.QMessageBox.No)
     msgBox.show()
     return msgBox.exec_() == QtWidgets.QMessageBox.Yes
+
 
 
 def getBlockRecAndItemFromPointInRaster(layer, p):

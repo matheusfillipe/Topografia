@@ -1,13 +1,15 @@
 from __future__ import print_function
 # -*- coding: utf-8 -*-
 import webbrowser
+from copy import deepcopy
 
-from PyQt5.QtCore import QVariant
+from PyQt5.QtCore import QVariant, QFile
+from pathlib import Path
 from qgis.PyQt import QtGui, QtWidgets
 
 from qgis._gui import QgsMapToolEmitPoint
 
-
+from ..controller.Geometria.Prismoide import QPrismoid
 
 try:
     from PIL import Image
@@ -23,7 +25,8 @@ from ..model.config import Config
 from ..model.estacas import Estacas as EstacasModel
 from ..model.knn import KNN
 from ..model.utils import *
-from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv, EstacasIntersec
+from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv, EstacasIntersec, ProgressDialog, \
+    EstacaRangeSelect
 from ..view.curvas import Curvas as CurvasView
 
 
@@ -77,6 +80,7 @@ class Estacas(object):
         self.preview.btnGerarTracado.clicked.connect(self.geraTracado)
         self.preview.tableEstacas.itemClicked.connect(self.itemClickTableEstacas)
         self.preview.tableEstacas.itemActivated.connect(self.itemClickTableEstacas)
+        self.preview.tableEstacas.itemSelectionChanged.connect(self.itemClickTableEstacas)
         self.preview.btnOpenCv.clicked.connect(self.openCv)
         self.preview.deleted.connect(self.deleteEstaca)
         self.preview.btnDuplicar.clicked.connect(self.duplicarEstaca)
@@ -107,7 +111,107 @@ class Estacas(object):
 
         self.viewCv.btnGen.clicked.connect(self.generateIntersec)
         self.viewCv.btnTrans.clicked.connect(self.generateTrans)
+        self.viewCv.btnBruck.clicked.connect(self.bruckner)
+        self.viewCv.btnPrint.clicked.connect(self.exportDXF)
+        self.viewCv.btnCsv.clicked.connect(self.exportCSV)
         self.viewCv.btnClean.clicked.connect(self.cleanTrans)
+
+
+    def bruckner(self):
+        X, est, prism = self.model.getTrans(self.model.id_filename)
+        if X:
+            #Database Trans
+            self.trans=Ui_sessaoTipo(self.iface, est[1], self.estacasHorizontalList, X, est[0], prism=prism)
+        else:
+            messageDialog(None,"Erro!", message="A sessão transversal não está definida!")
+            return
+        prismoide:QPrismoid
+        prismoide=self.trans.prismoide
+
+        dialog=EstacaRangeSelect(None, [prog2estacaStr(x) for x in X])
+        if not dialog.exec_():
+            return
+
+        X=[float(x) for x in X]
+        ei=int(dialog.inicial.currentIndex())
+        ef=int(dialog.final_2.currentIndex())
+        X=X[ei:ef+1]
+        V=[]
+        vAcumulado=0
+        for x in range(1,len(X)+1):
+            vAcumulado+=-prismoide.getVolume(ei+x-1,ei+x)
+            V.append(vAcumulado)
+        V=[v + abs(min(V))+1000 for v in V]
+        X=[x/Config.instance().DIST for x in X]
+
+        import matplotlib.pyplot as plt
+        line, = plt.plot(X, V, lw=2)
+        plt.title("Diagrama de Bruckner")
+        plt.xlabel(u'Estacas')
+        plt.ylabel(u'Volume m³')
+        plt.grid(True)
+        plt.show()
+
+
+    def exportDXF(self):
+        filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save dxf",filter="Arquivo DXF (*.dxf)")
+        if filename[0] in ["", None]: return
+        estacas=self.viewCv.get_estacas()
+
+        Lpoints=[]
+        if self.viewCv.mode=="CV":
+            points=[]
+            for e in estacas:
+                points.append(QgsPoint(float(e[-2]), float(e[-1])))
+            Lpoints.append(points)
+
+        elif self.viewCv.mode=="T":
+            points=[]
+            for e in estacas:
+                points.append(QgsPoint(float(e[4]), float(e[3]), float(e[-3])))
+            Lpoints.append(points)
+
+        self.saveDXF(filename[0], Lpoints)
+
+
+    def saveDXF(self, filename, listOfListOfPoints):   #[ [ QgsPoint[ x,y], [x,y] ...] , [ [ x,y] , [x,y] ...] ....] Each list is a feature
+        layer=QgsVectorLayer("LineStringZ?crs=%s"%(QgsProject.instance().crs().authid()), "Perfil: " if self.viewCv.mode=="CV" else "Traçado Horizontal: "
+                                                                                            + self.model.getNameFromId(self.model.id_filename), "memory")
+        layer.setCrs(QgsCoordinateReferenceSystem(QgsProject.instance().crs()))
+        features=[]
+        for points in listOfListOfPoints:
+            feat=QgsFeature()
+            feat.setGeometry(QgsGeometry.fromPolyline(points))
+            features.append(feat)
+        layer.dataProvider().addFeatures(features)
+        layer.updateExtents()
+
+#        QgsProject.instance().addMapLayer(layer)
+        dxfExport=QgsDxfExport()
+        dxfExport.setMapSettings(self.iface.mapCanvas().mapSettings())
+        dxfExport.addLayers([QgsDxfExport.DxfLayer(layer)])
+        dxfExport.setSymbologyScale(1)
+        dxfExport.setSymbologyExport(QgsDxfExport.SymbolLayerSymbology)
+        dxfExport.setLayerTitleAsName(True)
+        dxfExport.setDestinationCrs(layer.crs())
+        dxfExport.setForce2d(False)
+        dxfExport.setExtent(layer.dataProvider().extent())
+
+        error=dxfExport.writeToFile(QFile(filename), "UTF-8")
+        if error[0] != QgsVectorFileWriter.NoError:
+            msgLog(str(error))
+            messageDialog(title="Erro!", message="Não foi possível realizar a conversão para DXF!")
+
+
+    def exportCSV(self):
+        filename = self.view.saveEstacasCSV()
+        if filename[0] in ["", None]: return
+        estacas = self.viewCv.get_estacas()
+        self.model.table = estacas
+        if self.viewCv.mode=="CV":
+            self.model.saveCSV(filename, noWGS=True)
+        else:
+            self.model.saveCSV(filename)
 
     def geraCurvas(self, arquivo_id=None):
         table=self.preview.tableEstacas
@@ -125,7 +229,7 @@ class Estacas(object):
         elif l<1: #criar traçado, iniciar edição
             name=self.fileName("Traçado "+str(len(self.model.listTables())+1))
             if not name: return
-            self.new(dados=(name, self.newEstacasLayer(name=name), Config.DIST, []))
+            self.new(dados=(name, self.newEstacasLayer(name=name), Config.instance().DIST, []))
         else:
             self.openEstaca()
             self.view.btnCurva.click()
@@ -178,7 +282,17 @@ class Estacas(object):
             return None
         self.openEstaca()
         estacas = self.view.get_estacas()
+
+        if not hasattr(self,"perfil"):
+            tipo, class_project = self.model.tipo()
+            self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename), iface=self)
+        table = deepcopy(self.perfil.getVertices())
+        cvData=deepcopy(self.perfil.getCurvas())
+
         self.model=self.model.saveEstacas(filename, estacas)
+        self.model.table = table
+        self.model.cvData=cvData
+        self.model.saveGreide(self.model.id_filename)
         self.update()
 
         self.view.clear()
@@ -192,57 +306,92 @@ class Estacas(object):
         self.updateTables()
         self.geraCurvas(self.model.id_filename)
 
+        prog, est, prism = self.model.getTrans(self.model.id_filename)
+        if prog:
+            self.trans=Ui_sessaoTipo(self.iface, est[1], self.estacasHorizontalList, prog, est[0], prism=prism)
+            self.saveTrans()
+
     def cleanTrans(self):
-        self.model.cleanTrans(idEstacaTable=self.model.id_filename)
+        if yesNoDialog(None, message="Tem certeza que quer excluir os dados transversais?"):
+            self.model.cleanTrans(idEstacaTable=self.model.id_filename)
 
     def generateIntersec(self):
-
-        viewIntersec=EstacasIntersec
-
         self.openEstaca()
-        self.openCv()
+        horizontais = self.view.get_estacas()  #x = 4, y =3
 
-        table=[]
+        points=[]
+        progs=[]
+        for h in horizontais:
+            points.append(QgsPoint(float(h[4]), float(h[3])))
+            progs.append(float(h[2]))
+        road=QgsGeometry.fromPolyline(points)
 
         QgsMessageLog.logMessage("Iniciando comparação", "Topografia", level=0)
+        verticais=[]
+        self.openCv()
+        vprogs=[]
+        for v in self.viewCv.get_estacas():  # prog=2 em ambos
+           if float(v[2]) in progs:
+                h = horizontais[progs.index(float(v[2]))]
+                desc="" if h[1]=="" and v[1]=="" else h[1]+" + "+v[1]
+                verticais.append([v[0], desc, v[2], h[3], h[4], v[3], h[5], h[6]])
+           else:
+                pt=road.interpolate(float(v[2])).asPoint()
+                pt2=road.interpolate(float(v[2])+.1).asPoint()
+                verticais.append([v[0], v[1], v[2], pt.y(), pt.x(),v[3], None, azimuth(pt, pt2)])  #Não sei a cota 6
+           vprogs.append(float(v[2]))
 
-        l=len(self.estacasVerticalList)
-        if len(self.estacasHorizontalList)>l:
-            l=len(self.estacasHorizontalList)
+        table=verticais
+        i=0
+        for h in horizontais:
+            if float(h[2]) not in vprogs:
+                table.append([h[0],h[1],h[2],h[3],h[4],None,h[5],h[6]])  #Não sei o greide 5
 
-        horizontal=self.estacasHorizontalList
-        vertical=self.estacasVerticalList
+        table = sorted(table, key=lambda x: float(x[2]))  #Organizar em ordem da progressiva
 
-        for i in range(0,l):
-            hor=horizontal[i]
-            vert=vertical[i]
-            res=()
-
-            if hor[2]<vert[2]:
-                res = (hor[0],hor[1],hor[2],vert[3],hor[5],hor[3],hor[4],hor[6])
-
-            elif hor[2]==vert[2]:
-                if(len(vert[1])>0):
-                    res=(hor[0],hor[1]+" & "+vert[1],hor[2],vert[3],hor[5],hor[3],hor[4],hor[6])
+        progAnt=float(table[0][2])
+        anterior=[table[0][-2],table[0][-3]] #cota, greide
+        for i,t in enumerate(table):  #Interpolar greides e cotas desconhecidos
+            atual=[t[-2],t[-3]] #cota, greide
+            if None in atual:
+                if i==0:
+                    distAnt=1000000
                 else:
-                    res=(hor[0],hor[1],hor[2],vert[3],hor[5],hor[3],hor[4],hor[6])
-            else:
-                res = (hor[0],hor[1],hor[2],vert[3],hor[5],hor[3],hor[4],hor[6])
+                    distAnt=float(t[2])-progAnt
+                j=1
+                while i+j < len(table)-1:  # Próxima estaca inteira
+                    if float(table[i+j][2])%Config.instance().DIST==0:
+                        proxima=[table[i+j][-2],table[i+j][-3]] #cota, greide
+                        distProx=float(table[i+j][2])-float(t[2])
+                        break
+                    j+=1
+                else:
+                    proxima=anterior
+                    distProx=1000000
 
-# 0u"Estaca" 1,u"Descrição",2u"Progressiva",3u"Norte",4u"Este",5u"Cota",6u"Azimute"))
-# 0u"Estaca" 1u"Descrição",2u"Progressiva"3,u"Cota"))
-# 0u"Estaca",1u"Descrição",2u"Progressiva",3u"Cota", 4u"Relevo",5Norte ,6Este, 7u"Azimute"))
+                try:
+                    from numpy import interp  # Interpola os valores de greide e cota desconhecidos em pontos críticos
+                    table[i][-2]=interp(0, [-distAnt, distProx], [float(anterior[0]), float(proxima[0])])
+                    table[i][-3]=interp(0, [-distAnt, distProx], [float(anterior[1]), float(proxima[1])])
+                except Exception as e:
+                    msgLog(str(e))
+                    table[i][-2]=0
+                    table[i][-3]=0
 
-            table.append(res)
+            if float(t[2])%Config.instance().DIST==0: #se é uma estaca inteira se torna a anterior
+                anterior=atual
+                progAnt=float(t[2])
+
 
         QgsMessageLog.logMessage("Fim comparação", "Topografia", level=0)
 
+        self.viewCv.clear()
+        self.viewCv.setIntersect()
         for e in table:
             self.viewCv.fill_table(tuple(e), True)
-
+        self.viewCv.setWindowTitle(self.model.getNameFromId(self.model.id_filename) + ": Estacas")
+        self.viewCv.btnGen.clicked.connect(self.openCv)
         self.nextView=self.viewCv
-
-
 
     def new(self, layer=None, dados=None):
         self.view.clear()
@@ -252,7 +401,7 @@ class Estacas(object):
         self.model.iface=self.iface
         if not dados is None:
             filename, lyr, dist, estaca = dados
-            id_estaca, table = self.model.new(dist, estaca, lyr, filename) if not isGeopckg else self.model.newEmpty(Config.DIST,filename)
+            id_estaca, table = self.model.new(dist, estaca, lyr, filename) if not isGeopckg else self.model.newEmpty(Config.instance().DIST,filename)
             self.elemento = id_estaca
             self.model.id_filename = id_estaca
             self.estacasHorizontalList=[]
@@ -266,6 +415,7 @@ class Estacas(object):
             self.view.empty=empty
             self.model.save(id_estaca)
             self.updateTables()
+            Config.instance().store("DIST",dados[-2])
 
             return self.model.getNewId()
 
@@ -275,6 +425,7 @@ class Estacas(object):
         tipo, class_project = self.model.tipo()
         self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename), iface=self)
         self.perfil.save.connect(self.saveGreide)
+        self.perfil.reset.connect(self.cleanGreide)
         self.perfil.showMaximized()
         self.perfil.exec_()
 
@@ -284,17 +435,21 @@ class Estacas(object):
         self.model.cvData=self.perfil.getCurvas()
         self.model.saveGreide(self.model.id_filename)
 
+    def cleanGreide(self):
+        if self.model.id_filename == -1: return
+        self.model.cleanGreide(self.model.id_filename)
+        self.perfil.justClose()
+        self.perfilView()
+
     def generateTrans(self):
         prog, est, prism = self.model.getTrans(self.model.id_filename)
-
         if prog:
             #Database Trans
             self.trans=Ui_sessaoTipo(self.iface, est[1], self.estacasHorizontalList, prog, est[0], prism=prism)
         else:
             #New trans
             terreno = self.obterTerrenoTIFF()
-            self.trans=Ui_sessaoTipo(self.iface, terreno, self.estacasHorizontalList, self.estacasVerticalList, greide=self.model.getGreide(self.model.id_filename))
-
+            self.trans=Ui_sessaoTipo(self.iface, terreno, self.estacasHorizontalList, self.estacasVerticalList, greide=self.model.getGreide(self.model.id_filename), title="Transversal: "+str(self.model.getNameFromId(self.model.id_filename)))
         self.trans.save.connect(self.saveTrans)
         self.trans.plotar.connect(self.plotTransLayer)
         self.trans.show()
@@ -373,81 +528,154 @@ class Estacas(object):
 
 
     def obterTerrenoTIFF(self, plotTrans=False, index=-1):
-
         filename = self.view.openTIFF()
-        if filename in ['', None]:  return
-
+        if filename in ['', None]: return
         terreno=[]
 
-      #  try:
-        img = Image.open(filename)
-        img.size = tuple(img.tile[-1][1][2:])
-        self.img_origem = img.tag.get(33922)[3:5]
-        self.tamanho_pixel = img.tag.get(33550)[:2]
-        self.estacas = self.view.get_estacas()
+        #progressBar=ProgressDialog(None)
+        #progressBar.show()
 
-        estacas = self.estacas
+        try:
+            layer=None
+            for l in self.iface.mapCanvas().layers():
+                if l.source() == filename:
+                    layer=l
+            if layer is None:
+                msgLog("Layer não encontrada")
+                return []
+            msgLog("Interpolando Layer: "+str(layer.name()))
+            estacas = self.estacas = self.view.get_estacas()
+
+            # fazer multithreading
+            for i, _ in enumerate(estacas):
+                if plotTrans and index !=-1:
+                    i=index
+
+                v=[]
+                az=float(estacas[i][6])
+                perp=az+90
 
 
-        # fazer multithreading
-        for i, _ in enumerate(estacas):
-            v=[]
-            az=float(estacas[i][6])
-            perp=az+90
-            if perp>360:
-                perp=perp-360
+                if perp>360:
+                    perp=perp-360
 
-            nsign=1
-            esign=1
-            if perp<90:
                 nsign=1
                 esign=1
-            elif perp<180:
-                nsign=-1
-                esign=1
-            elif perp<270:
-                nsign=-1
-                esign=-1
-            elif perp<360:
+                if perp<90:
+                    nsign=1
+                    esign=1
+                elif perp<180:
+                    nsign=-1
+                    esign=1
+                elif perp<270:
+                    nsign=-1
+                    esign=-1
+                elif perp<360:
+                    nsign=1
+                    esign=-1
+
+                pointsList=[]
+
+                #TODO: Change fixed offset between transversal points and allow user to decide transversal sampled spacement
+                for y in range(-Config.instance().T_SPACING, Config.instance().T_SPACING+1):
+                    yangleE=esign*y*abs(math.sin(perp*math.pi/180))
+                    yangleN=nsign*y*abs(math.cos(perp*math.pi/180))
+
+                    try:
+                        xPoint=float(float(estacas[i][4])+yangleE)
+                        yPoint=float(float(estacas[i][3])+yangleN)
+
+                        cota = cotaFromTiff(layer, QgsPointXY(xPoint, yPoint))
+                        v.append([y,float(cota)])
+                        pointsList.append([xPoint, yPoint])
+
+                    except ValueError as e:
+                        self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
+                        return False
+                    except IndexError as e:
+                        continue
+
+                terreno.append(v)
+
+
+                if plotTrans:
+                    if index==-1:
+                        self.drawPoints(pointsList, str(i))
+                        self.drawPoint(pointsList[0], str(i))
+                    if index==i:
+                        self.drawPoints(pointsList, str(i))
+                        self.drawPoint(pointsList[0], str(i))
+                        return
+
+        except e:
+            msgLog("Interpolação Falhou: "+str(e))
+            img = Image.open(filename)
+            img.size = tuple(img.tile[-1][1][2:])
+            self.img_origem = img.tag.get(33922)[3:5]
+            self.tamanho_pixel = img.tag.get(33550)[:2]
+            self.estacas = self.view.get_estacas()
+
+            estacas = self.estacas
+
+            # fazer multithreading
+            for i, _ in enumerate(estacas):
+                v=[]
+                az=float(estacas[i][6])
+                perp=az+90
+                if perp>360:
+                    perp=perp-360
+
                 nsign=1
-                esign=-1
+                esign=1
+                if perp<90:
+                    nsign=1
+                    esign=1
+                elif perp<180:
+                    nsign=-1
+                    esign=1
+                elif perp<270:
+                    nsign=-1
+                    esign=-1
+                elif perp<360:
+                    nsign=1
+                    esign=-1
 
-            pointsList=[]
+                pointsList=[]
 
-            #TODO: Change fixed offset between transversal points and allow user to decide transversal sampled spacement
-            for y in range(-30, 31):
+                #TODO: Change fixed offset between transversal points and allow user to decide transversal sampled spacement
+                for y in range(-Config.instance().T_SPACING, Config.instance().T_SPACING+1):
+                    yangleE=esign*y*abs(math.sin(perp*math.pi/180))*self.tamanho_pixel[0]
+                    yangleN=nsign*y*abs(math.cos(perp*math.pi/180))*self.tamanho_pixel[1]
 
-                yangleE=esign*y*abs(math.sin(perp*math.pi/180))*self.tamanho_pixel[0]
-                yangleN=nsign*y*abs(math.cos(perp*math.pi/180))*self.tamanho_pixel[1]
+                    try:
+                        xPoint=float(float(estacas[i][4])+yangleE)
+                        yPoint=float(float(estacas[i][3])+yangleN)
 
-                try:
-                    xPoint=float(float(estacas[i][4])+yangleE)
-                    yPoint=float(float(estacas[i][3])+yangleN)
+                        pixel = (int(abs(xPoint - self.img_origem[0]) / self.tamanho_pixel[0]),
+                                 int(abs(yPoint - self.img_origem[1]) / self.tamanho_pixel[1]))
 
-                    pixel = (int(abs(xPoint - self.img_origem[0]) / self.tamanho_pixel[0]),
-                             int(abs(yPoint - self.img_origem[1]) / self.tamanho_pixel[1]))
+                        v.append([y,float(img.getpixel(pixel))])
+                        pointsList.append([xPoint, yPoint])
 
-                    v.append([y,float(img.getpixel(pixel))])
-                    pointsList.append([xPoint, yPoint])
+                    except ValueError as e:
+                        self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
+                        return False
+                    except IndexError as e:
+                        continue
 
-                except ValueError as e:
-                    self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
-                    return False
-                except IndexError as e:
-                    continue
+                terreno.append(v)
 
-            if plotTrans:
-                if index==-1:
-                    self.drawPoints(pointsList, str(i))
-                    self.drawPoint(pointsList[0], str(i))
-                if index==i:
-                    self.drawPoints(pointsList, str(i))
-                    self.drawPoint(pointsList[0], str(i))
 
-            terreno.append(v)
-
+                if plotTrans:
+                    if index==-1:
+                        self.drawPoints(pointsList, str(i))
+                        self.drawPoint(pointsList[0], str(i))
+                    if index==i:
+                        self.drawPoints(pointsList, str(i))
+                        self.drawPoint(pointsList[0], str(i))
 
         return terreno
+
 
     def drawPoint(self, point, name):
         layer = QgsVectorLayer("Point", name, "memory")
@@ -522,7 +750,7 @@ class Estacas(object):
 
     def drawEstacas(self, estacas):
         layer = QgsVectorLayer('LineString?crs=%s'%(QgsProject.instance().crs().authid()), str(self.model.getNameFromId(self.model.id_filename)), "memory")
-        layer.setCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().layer(0).crs()))
+        layer.setCrs(QgsCoordinateReferenceSystem(QgsProject.instance().crs()))
         pr = layer.dataProvider()
         poly = QgsFeature()
 
@@ -815,7 +1043,6 @@ class Estacas(object):
     '''
 
     def openEstaca(self, i=0):
-      
         if self.model.id_filename == -1: return
         self.view.clear()
         estacas = self.model.loadFilename()
@@ -829,21 +1056,21 @@ class Estacas(object):
 
     def openCv(self):
         self.openEstaca()
-        if self.model.id_filename == -1: return
         self.viewCv.clear()
-
+        self.viewCv.setWindowTitle(str(self.model.getNameFromId(self.model.id_filename))+": Verticais")
         estacas=[]
-
         tipo, class_project = self.model.tipo()
-        self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename))
+        
+        try:
+            self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename))
+        except Exception as e:
+            messageDialog(None, title="Erro!", message="Perfil Vertical ainda não foi definido!")
+            msgLog(str(e))
+            return None
 
-        (estaca,descricao,progressiva,cota) = (0,"V1",0,self.perfil.getVertices()[0][1])
+        (estaca,descricao,progressiva,cota) = (0, "V1", 0, self.perfil.getVertices()[0][1])
         estacas.append((estaca,descricao,progressiva,cota))
-
-
         missingCurveDialog=[]
-
-
         y=float(cota)
         points=[]
 
@@ -854,11 +1081,13 @@ class Estacas(object):
             if self.perfil.cvList[i][1]!="None":
                 L=float(self.perfil.cvList[i][1])
 
-
             pontosCv=CV(i1, i2, L,self.perfil.roi.getHandlePos(i), self.perfil.roi.getHandlePos(i-1))
-
             points.append({"cv": pontosCv, "i1": i1/100, "i2": i2/100, "L": L, "i": i})
 
+        if len(points)==0:
+            messageDialog(None, title="Erro!", message="Perfil Vertical ainda não foi definido!")
+            msgLog("len(points)==0")
+            return None
 
         x=0
         i=points[0]["i1"]
@@ -952,8 +1181,7 @@ class Estacas(object):
              est+=1
 
         if len(missingCurveDialog) > 0:
-            from PyQt5.QtWidgets import QMessageBox
-            QMessageBox.about(self.viewCv, "Atenção!", "Nenhum comprimento de curva foi definido no perfil vertical para os vértices: " + str(missingCurveDialog)[1:-1])
+            messageDialog(self.viewCv, "Atenção!", message="Nenhum comprimento de curva foi definido no perfil vertical para os vértices: " + str(missingCurveDialog)[1:-1])
 
         dx=float(self.perfil.getVertices()[-1:][0][0])-x
         x+=dx
@@ -965,18 +1193,26 @@ class Estacas(object):
         estacas.append((estaca,descricao,progressiva,cota))
 
         self.estacasVerticalList=estacas
-
+        self.viewCv.clear()
+        self.viewCv.setCv()
         for e in estacas:
             self.viewCv.fill_table(tuple(e), True)
 
+        self.viewCv.btnGen.clicked.connect(self.generateIntersec)
         self.nextView=self.viewCv
 
 
 
-    def itemClickTableEstacas(self, item):
+    def itemClickTableEstacas(self, item=None):
         self.click = True
-        ident = int(self.preview.tableEstacas.item(item.row(), 0).text())
-        self.model.id_filename = ident
+        if item is None:
+            self.preview.tableEstacas: QtWidgets.QTableWidget
+            item=self.preview.tableEstacas.currentItem()
+        try:
+            ident = int(self.preview.tableEstacas.item(item.row(), 0).text())
+            self.model.id_filename = ident
+        except:
+            pass
 
     def openEstacaCSV(self):
         self.view.clear()
@@ -1025,7 +1261,7 @@ class Estacas(object):
         while finalResult>0 or result>0:
             self.update()
             result = self.preview.exec_()
-
+            self.nextView.resize(self.nextView.width(), self.nextView.height()+1)
             if result:
                 self.preview.close()
                 self.nextView.show()

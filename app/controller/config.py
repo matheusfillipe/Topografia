@@ -71,12 +71,14 @@ class Config(object):
             return
         self.model.newfile(filename)
 
-    def openfile(self):
-        filename = u"{0}".format(self.conf.open_file()[0])
+    def openfile(self, filename=None):
+        if filename is None:
+            filename = u"{0}".format(self.conf.open_file()[0])
+            if filename in ["",None] or not(filename.endswith('lzip')):
+                self.conf.error('SELECIONE UM ARQUIVO lzip PARA SER ABERTO\n'+filename+' invalido!')
+                return
 
-        if filename in ["",None] or not(filename.endswith('lzip')):
-            self.conf.error('SELECIONE UM ARQUIVO lzip PARA SER ABERTO\n'+filename+' invalido!')
-            return
+        ModelConfig.instance().store("FILE_PATH", filename)
         self.model.openfile(filename)
         self.update()
 
@@ -147,3 +149,5 @@ class Config(object):
             self.update()
         else:
             self.model.crs = crs
+
+

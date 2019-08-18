@@ -157,7 +157,10 @@ class Estacas(object):
         name = con.execute("SELECT name FROM TABLEESTACA WHERE id=?", (str(id),)).fetchall()
         con.close()
         compactZIP(Config.fileName)
-        return name[0][0]
+        if name[0][0]:
+            return str(name[0][0])
+        else:
+            return ""
 
     def deleteEstaca(self, idEstacaTable):
         self.removeGeoPackage(self.getNameFromId(idEstacaTable))
@@ -202,33 +205,31 @@ class Estacas(object):
             con.execute(
                    "INSERT INTO GREIDE (x,cota,TABLEESTACA_id)values(?,?,?)",
                    lt)
-
         con.isolation_level = None
         con.execute("VACUUM")
         con.isolation_level = ''
- 
         con.commit()
         con.execute("DELETE FROM CURVA_VERTICAL_DADOS WHERE TABLEESTACA_id = ?", (idEstacaTable,))
         con.commit()
-
         for linha in self.cvData:
             linha.append(int(idEstacaTable))
-
             lt = tuple(linha)
-
             con.execute(
                     "INSERT INTO CURVA_VERTICAL_DADOS (CURVA_id, L,TABLEESTACA_id)values(?,?,?)",
                     lt)
-
         con.isolation_level = None
         con.execute("VACUUM")
         con.isolation_level = ''
-       
- 
         con.commit()
-      
         con.close()
+        compactZIP(Config.fileName)
 
+    def cleanGreide(self,id_filename):
+        extractZIP(Config.fileName)
+        con = sqlite3.connect("tmp/data/data.db")
+        con.execute("DELETE FROM GREIDE WHERE TABLEESTACA_id = ?", (id_filename,))
+        con.commit()
+        con.close()
         compactZIP(Config.fileName)
 
     def saveTrans(self, id_filename, prismoid:prismoide):
@@ -314,8 +315,6 @@ class Estacas(object):
         compactZIP(Config.fileName)
 
 
-
-
     def getTrans(self, idEstacaTable):
          try:
             extractZIP(Config.fileName)
@@ -398,7 +397,7 @@ class Estacas(object):
         self.table = estacas
         return estacas
 
-    def saveCSV(self, filename):
+    def saveCSV(self, filename, noWGS=False):
         delimiter = str(Config.CSV_DELIMITER.strip()[0])
         table=deepcopy(self.table)
         with open(filename[0], "w") as fo:
@@ -408,15 +407,16 @@ class Estacas(object):
                    r[i+1]=c.replace(".",",")
                 writer.writerow(r)
 
-        table=deepcopy(self.table)
-        with open(filename[0].split(".")[0]+"_WGS84.csv", "w") as fo:
-            writer = csv.writer(fo, delimiter=delimiter, dialect='excel')
-            for r in table:
-                pt=pointToWGS84(QgsPointXY(float(str(r[4]).replace(",",'.')),float(str(r[3]).replace(",","."))))
-                r[4],r[3]=str(pt.x()),str(pt.y())
-                for i,c in enumerate(r[1:]):
-                    r[i+1]=c.replace(".",",")
-                writer.writerow(r)
+        if not noWGS:
+            table=deepcopy(self.table)
+            with open(filename[0].split(".")[0]+"_WGS84.csv", "w") as fo:
+                writer = csv.writer(fo, delimiter=delimiter, dialect='excel')
+                for r in table:
+                    pt=pointToWGS84(QgsPointXY(float(str(r[4]).replace(",",'.')),float(str(r[3]).replace(",","."))))
+                    r[4],r[3]=str(pt.x()),str(pt.y())
+                    for i,c in enumerate(r[1:]):
+                        r[i+1]=c.replace(".",",")
+                    writer.writerow(r)
 
 
     def gera_vertice(self, isCalc):
@@ -430,7 +430,7 @@ class Estacas(object):
         sem_internet = True# not internet_on()
 
         if not self.distancia or self.distancia<=0:
-            self.distancia=Config.DIST
+            self.distancia=Config.instance().DIST
 
         if hasattr(self, "iface") and sum(1 for f in self.layer.getFeatures())>1 and not isCalc:
             selectFeatureDialog=SelectFeatureDialog(self.iface, self.layer)
@@ -470,7 +470,7 @@ class Estacas(object):
                     else:
                         cota = 0.0
                     estaca=int(estaca)
-                    yield ['%d+%f' % (estaca, resto) if resto != 0 else '%d' % (estaca), 'v%d' % i, prog, ponto_inicial.y(),
+                    yield ['%d+%f' % (estaca, resto) if resto != 0 else '%d' % (estaca), 'PI%d' % i, prog, ponto_inicial.y(),
                        ponto_inicial.x(), cota,
                        az], ponto_inicial, estacas_inteiras, prog, az, sobra, tamanho_da_linha, cosa, cosb, tipo, elemento, resto
 
@@ -485,7 +485,7 @@ class Estacas(object):
             estaca=int(estaca)
             i=int(int(i)+1)
             cota = getElevation(crs, QgsPoint(float(ponto_final.x()), float(ponto_final.y())))
-            yield ['%d+%f' % (estaca, resto), 'v%d' % i, prog, ponto_final.y(), ponto_final.x(), cota,
+            yield ['%d+%f' % (estaca, resto), 'PI%d' % i, prog, ponto_final.y(), ponto_final.x(), cota,
                    az], ponto_final, 0, tamanho_da_linha, az, sobra, tamanho_da_linha, cosa, cosb, tipo, elemento, resto
 
 
@@ -542,7 +542,7 @@ class Estacas(object):
                  curvaComputadaCount-=1
 
             elif not emCurva: #Vértice
-                vertice[0],vertice[1]=str(estaca)+"+"+str(resto) if estaca else vertice[0],"V"+str(vertexCount)
+                vertice[0],vertice[1]=str(estaca)+"+"+str(resto) if estaca else vertice[0],"PI"+str(vertexCount)
                 estacas.append(vertice)
                 vertexCount+=1
 

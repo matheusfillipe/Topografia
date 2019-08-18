@@ -114,7 +114,7 @@ class ROI(GraphicsObject):
     sigClicked = QtCore.Signal(object, object)
     sigRemoveRequested = QtCore.Signal(object)
     
-    def __init__(self, pos, size=Point(1, 1), angle=0.0, invertible=False, maxBounds=None, snapSize=1.0, scaleSnap=False, translateSnap=False, rotateSnap=False, parent=None, pen=None, movable=True, removable=False):
+    def __init__(self, pos, size=Point(1, 1), angle=0.0, invertible=False, maxBounds=None, snapSize=1.0, scaleSnap=False, translateSnap=True, rotateSnap=False, parent=None, pen=None, movable=False, removable=False):
         GraphicsObject.__init__(self, parent)
         self.setAcceptedMouseButtons(QtCore.Qt.RightButton)
 #        self.setAcceptedMouseButtons(QtCore.Qt.LeftButton)
@@ -1245,6 +1245,8 @@ class Handle(UIGraphicsItem):
             self.setAcceptedMouseButtons(self.acceptedMouseButtons() & ~QtCore.Qt.RightButton)
             
     def removeClicked(self):
+        if hasattr(self,"edge") and self.edge:
+            return
         self.sigRemoveRequested.emit(self)
     
     def edit(self):
@@ -1311,9 +1313,7 @@ class Handle(UIGraphicsItem):
         ## Inform ROIs that a drag is happening 
         ##  note: the ROI is informed that the handle has moved using ROI.movePoint
         ##  this is for other (more nefarious) purposes.
-        #for r in self.roi:
-            #r[0].pointDragEvent(r[1], ev)
-            
+
         if ev.isFinish():
             if self.isMoving:
                 for r in self.rois:
@@ -1327,7 +1327,14 @@ class Handle(UIGraphicsItem):
             self.cursorOffset = self.scenePos() - ev.buttonDownScenePos()
             
         if self.isMoving:  ## note: isMoving may become False in mid-drag due to right-click.
-            pos = ev.scenePos() + self.cursorOffset
+            pos=None
+
+            if hasattr(self, "fixedOnX") and self.fixedOnX:
+               pos = Point(self.startPos.x(), ev.scenePos().y() + self.cursorOffset.y())
+            if hasattr(self, "fixedOnY") and self.fixedOnY:
+               pos = Point(ev.scenePos().x() + self.cursorOffset.x(), self.startPos.y())
+
+            pos = ev.scenePos() + self.cursorOffset if pos is None else pos
             self.movePoint(pos, ev.modifiers(), finish=False)
 
     def movePoint(self, pos, modifiers=QtCore.Qt.KeyboardModifier(), finish=True):
@@ -1884,7 +1891,10 @@ class PolyLineROI(ROI):
         
     def removeHandle(self, handle, updateSegments=True):
         ROI.removeHandle(self, handle)
-        handle.sigRemoveRequested.disconnect(self.removeHandle)
+        try:
+            handle.sigRemoveRequested.disconnect(self.removeHandle)
+        except:
+            pass
         
         if not updateSegments:
             return

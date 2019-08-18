@@ -9,8 +9,8 @@ from qgis.core import QgsProject, QgsFields, QgsField, QgsPoint
 from ..view.ui.ch import CurvasCompositorDialog, EMPTY_DATA
 from ..model.utils import msgLog, PointTool
 
-from ..model.helper.qgsgeometry import wasInitialized, tangentFeaturesFromPointList, refreshCanvas, circleArc, inSpiral, \
-    outSpiral, tangent, featureCount
+from ..model.helper.qgsgeometry import *
+
 
 sip.setapi('QString', 2)
 
@@ -144,7 +144,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.txtVelocidade: QtWidgets.QLineEdit
         self.deflexao: QtWidgets.QLineEdit
         
-        self.txtDist.setText(str(Config.DIST))
+        self.txtDist.setText(str(Config.instance().DIST))
 
         self.buttons=[self.btnAjuda, self.btnApagar, self.btnCalcular, self.btnCancela, self.btnClose, self.btnEditar,
                                self.btnInsere, self.btnNew, self.btnRelatorio ]
@@ -233,17 +233,24 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
 
     def exec_(self):
+        self.comboCurva: QtWidgets.QComboBox
+        if self.comboCurva.count()>1:
+            self.comboCurva.setCurrentIndex(1)
         if self.view.empty and not featureCount(self.layer):
             PT=PointTool(self.iface, self.pointLayerDefine)
             PT.start()
             self.setNoLayer()
-        return super(Curvas, self).exec_()
+        else:
+            return super(Curvas, self).exec_()
 
     def pointLayerDefine(self, point):
-        tangentFeaturesFromPointList(self.layer,[QgsPoint(point), QgsPoint(point.x()+0.001,point.x()+0.001)])
+        point=QgsPointXY(point)
+        tangentFeaturesFromPointList(self.layer,[QgsPoint(point), QgsPoint(point.x(),point.y()+.001)])
         refreshCanvas(self.iface, self.layer)
         self.comboCurva.addItem("PI"+str(0))
         self.enableInterface()
+        self.justStarted=True
+        return super(Curvas, self).exec_()
 
     def setNoLayer(self):
         self.oldTitle=self.windowTitle()
@@ -285,34 +292,67 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
         i=-1
         data=None
-        for tipo, index, state in self.c.readData():
-            i+=1
-            if tipo=="C":
-                data=circleArc(layer, state, index, self.layer, self.comboCurva.currentIndex())
-                k=0
-                vmax="120 km/h"
 
-            elif tipo=="EE":
-                data=inSpiral(layer, state, index, self.layer, self.comboCurva.currentIndex())
-                k=0
-                vmax="120 km/h"
+        if hasattr(self,"justStarted") and self.justStarted:
+             for tipo, index, state in self.c.readData():
+                i+=1
+                if tipo=="C":
+                    data=circleArc2(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                    k=0
+                    vmax="120 km/h"
 
-            elif tipo=="ES":
-                data=outSpiral(layer, state, index, self.layer, self.comboCurva.currentIndex())
-                k=0
-                vmax="120 km/h"
+                elif tipo=="EE":
+                    data=inSpiral2(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                    k=0
+                    vmax="120 km/h"
 
-            elif tipo=="T":
-                data=tangent(layer, state, index, self.layer, self.comboCurva.currentIndex())
-                k=0
-                vmax="120 km/h"
-            else:
-                continue
+                elif tipo=="ES":
+                    data=outSpiral2(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                    k=0
+                    vmax="120 km/h"
 
-            if len(self.c.dados)-1<i:
-                self.c.dados.append(None)
+                elif tipo=="T":
+                    data=tangent2(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                    k=0
+                    vmax="120 km/h"
+                else:
+                    continue
 
-            self.c.dados[i]=data
+                if len(self.c.dados)-1<i:
+                    self.c.dados.append(None)
+
+                self.c.dados[i]=tipo, data
+
+        else:
+            for tipo, index, state in self.c.readData():
+                i+=1
+                if tipo=="C":
+                    data=circleArc(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                    k=0
+                    vmax="120 km/h"
+
+                elif tipo=="EE":
+                    data=inSpiral(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                    k=0
+                    vmax="120 km/h"
+
+                elif tipo=="ES":
+                    data=outSpiral(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                    k=0
+                    vmax="120 km/h"
+
+                elif tipo=="T":
+                    data=tangent(layer, state, index, self.layer, self.comboCurva.currentIndex())
+                    k=0
+                    vmax="120 km/h"
+                else:
+                    continue
+
+                if len(self.c.dados)-1<i:
+                    self.c.dados.append(None)
+
+                self.c.dados[i]=tipo, data
+
         refreshCanvas(self.iface, layer)
 
 
@@ -324,16 +364,65 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
     def saveCurva(self):
         self.layer: QgsVectorLayer
+        self.comboCurva : QtWidgets.QComboBox
 
-        #Delete all features of self.layer and add layer geometry in between
-        self.layer.dataProvider().deleteFeatures([f.id() for f in self.layer.getFeatures()])
-        tangentFeaturesFromPointList(self.layer, self.PIs)
+        curvaFeats=featuresList(self.c.layer)
+        if hasattr(self,"justStarted") and self.justStarted:
+            features=[]
+            PI=0
+            hasEverCurve=False
+            for i, feat in enumerate(curvaFeats):
+                if str(self.c.dados[i][0]).startswith("T"):
+                    feat.setAttributes([str(self.c.dados[i][0]), ""])
+                    if hasEverCurve:
+                        PI+=1
+                        hasEverCurve=False
+                else:
+                    feat.setAttributes([str(self.c.dados[i][0]), "PI"])
+                    hasEverCurve=True
+
+                features.append(feat)
+
+            self.layer.dataProvider().deleteFeatures([f.id() for f in self.layer.getFeatures()])
+            self.layer.addFeatures(features)
+            self.layer.updateExtents()
+            self.justStarted=False
+
+        elif len(curvaFeats)>0:
+            #Delete all features of self.layer and add layer geometry in between
+            features=[]
+            for i,feat in enumerate(self.layer.getFeatures()):
+                if i==self.comboCurva.currentIndex()-1:
+                    g=splitFeatures(curvaFeats[0], feat)
+                    f=QgsFeature(self.layer.fields())
+                    f.setAttributes(feat.attributes())
+                    f.setGeometry(g)
+                    features.append(f)
+                    for i,feat in enumerate(curvaFeats):
+                        feat.setAttributes([str(self.c.dados[i][0]), str(self.comboCurva.currentText())])
+                        features.append(feat)
+
+                elif i == self.comboCurva.currentIndex():
+                    g=splitFeatures(curvaFeats[-1],feat)
+                    f=QgsFeature(self.layer.fields())
+                    f.setAttributes(feat.attributes())
+                    f.setGeometry(g)
+                    features.append(f)
+
+                else:
+                    features.append(feat)
+
+            self.layer.dataProvider().deleteFeatures([f.id() for f in self.layer.getFeatures()])
+            self.layer.addFeatures(features)
+            self.layer.updateExtents()
+
         QgsProject.instance().removeMapLayer(self.c.layer.id())
         refreshCanvas(self.iface, self.layer)
         self.show()
 
     def resetCurva(self):
         QgsProject.instance().removeMapLayer(self.c.layer.id())
+        refreshCanvas(self.iface, self.layer)
         self.show()
 
     def editar(self):

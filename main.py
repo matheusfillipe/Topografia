@@ -34,7 +34,7 @@ from qgis.PyQt.QtWidgets import QAction, QShortcut
 
 from .app.model.config import Config as cfg
 from .app.controller.config import Config
-from .app.controller.estacas import Estacas
+from .app.controller.estacas import Estacas, msgLog
 from qgis.PyQt.QtCore import QSettings
 from .app.model.utils import addGoogleXYZTiles
 import tempfile, pathlib
@@ -43,7 +43,16 @@ from . import resources
 
 
 DEBUG=True
-SHORTCUT="Ctrl+Alt+"
+SHORTCUT="Ctrl+Alt+"  # 1,2,3,4,5,6,7 for each item in menu
+PYDEV = ""
+
+try:
+    from . import pydevpath # STRING containing pydev's egg path
+    PYDEV = pydevpath.pydev
+except:
+    DEBUG = False
+
+
 
 class TopoGrafia(object):
     """QGIS Plugin Implementation."""
@@ -70,21 +79,20 @@ class TopoGrafia(object):
 
 
         #DEBUG CLIENT
-        global DEBUG
+        global DEBUG, PYDEV
         if DEBUG:
             try:
                 import sys
-                sys.path.append('/home/matheus/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/181.5087.37/debug-eggs/pycharm-debug.egg')
+                sys.path.append(PYDEV)
                 import pydevd
-                pydevd.settrace('localhost', port=5553, stdoutToServer=True, stderrToServer=True)
-            except:
-                pass
+                pydevd.settrace('localhost', port=5553, stdoutToServer=False, stderrToServer=False)
+            except Exception as e:
+                msgLog(str(e))
 
-        #Wonderful Code here
         try:
             addGoogleXYZTiles(iface, QSettings)
-        except:
-            pass
+        except Exception as e:
+            msgLog("Not possible to add Google Tiles:  "+str(e))
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -106,6 +114,7 @@ class TopoGrafia(object):
         #instancia do controller de config
         self.conf = Config(iface)
         self.conf.iface=iface
+        self.conf.model.instance()
         '''
             Elemento dialogo.
         '''
@@ -269,7 +278,7 @@ class TopoGrafia(object):
 
         self.add_action(
             icon_path_curva,
-            text=self.tr(u'Curvas Horizontais em tabela'),
+            text=self.tr(u'Edição'),
             callback=self.run_tracado,
             parent=self.iface.mainWindow())
 
@@ -288,9 +297,12 @@ class TopoGrafia(object):
     def run_tracado(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         if self.conf.model.filename in [None,'']:
-            self.conf.openfile()
+            if len(cfg.instance().FILE_PATH)>0:
+                self.conf.openfile(cfg.instance().FILE_PATH)
+            else:
+                self.conf.openfile()
         if not self.conf.model.filename in [None,'']:
-            self.estacas.run()
+            self.run = self.estacas.run()
 
     def run(self):
         pass

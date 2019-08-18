@@ -20,13 +20,11 @@ from copy import deepcopy
 
 ##############################################################################################################
 #TODO:
-#Corrigir bugs: reposicionamento dos handles quando outro é arrastado, 
-#limpar curva vertical quando outra é criada por cima (handle.curve) ou quando handle é exluído
-#reposicionar curvas verticais e replotar quando segmentos ou handles são movidos
+
+
 #checar se as curvas são possíveis
 #Features to  ADD
-#Zoom button no menu de curva vertical
-#Cálculo de aterro imbutido 
+#Cálculo de aterro imbutido
 #ctrl+Z utility
 #add menu interface and grid and printing scale export
 
@@ -78,6 +76,7 @@ class cv():
         self.curve=pg.PlotCurveItem()       
         self.update(i1,i2,L,handlePos, lastHandlePos)
 
+
     def update(self, i1, i2, L,handlePos, lastHandlePos):
         if L!=0:
             self.i1=i1
@@ -128,20 +127,10 @@ class cv():
 
 
 class cvEditDialog(cvEdit):
-    
-
-####move buttons combo box is causing crash and taking too log to load,computação desnecessária?
-###solve problem at vertice creation with not disabled interface and get add button functionality to work
-####find problem with image helper dialog
-####find estaca???
-####Aplly edit on ok click
-
 
     def __init__(self,roi, i):
         super(cvEditDialog, self).__init__(None)
 #        self.addCurveBtn.clicked.connect(self.raiseCurveGroupeBox)
-
-
         self.setupUi(self)
         self.isBeingModified=False
         self.i=i
@@ -157,7 +146,6 @@ class cvEditDialog(cvEdit):
         for linha in estacas:
             est.append(linha[0])
         self.estacas=est
-
 
         self.cota=self.getHandlePos(i).y()
         self.horizontal=self.getHandlePos(i).x()
@@ -183,11 +171,12 @@ class cvEditDialog(cvEdit):
             self.Lutilizado=self.handle.curve.L
             self.groupBox_2.setEnabled(True)
         except AttributeError:
-            self.handle.curve = cv(self.i1, self.i2, 0, self.handle.pos, self.getHandlePos(i-1))
+            self.handle.curve = cv(self.i1, self.i2, 0, self.handle.pos(), self.getHandlePos(i-1))
             #self.uiLutilizado.setText(str(self.handle.curve.L))
 
-        self.initialCurve = cv(self.handle.curve.i1,self.handle.curve.i2, self.handle.curve.L, self.handle.curve.handlePos, self.handle.curve.lastHandlePos)
-        self.uiLutilizado.returnPressed.connect(self.updateL)
+        self.initialCurve = cv(self.handle.curve.i1, self.handle.curve.i2, self.handle.curve.L, self.handle.curve.handlePos, self.handle.curve.lastHandlePos)
+        self.uiLutilizado.valueChanged.connect(self.updateL)
+        self.addCurveBtn.clicked.connect(self.updateL)
 
         self.uicota1.setText(roundFloat2str(self.getHandlePos(i-1).y()))
         self.uicota2.setText(roundFloat2str(self.getHandlePos(i+1).y()))
@@ -196,7 +185,7 @@ class cvEditDialog(cvEdit):
         self.redefineUI(-10)
         self.updateVerticesCb()
 
-        self.helpBtn.clicked.connect(self.displayHelp)
+#       self.helpBtn.clicked.connect(self.displayHelp)
         self.viewCurveBtn.clicked.connect(self.viewCurva)
 
 
@@ -210,12 +199,11 @@ class cvEditDialog(cvEdit):
         dialog.exec_()
 
 
-
     def setupValidators(self):
         self.uicota.setValidator(QtGui.QDoubleValidator())
         self.uihorizontal1.setValidator(QtGui.QDoubleValidator())
         self.uihorizontal2.setValidator(QtGui.QDoubleValidator())
-        self.uiLutilizado.setValidator(QtGui.QDoubleValidator())
+#        self.uiLutilizado.setValidator(QtGui.QDoubleValidator())
         self.uiL.setValidator(QtGui.QDoubleValidator())
 
 
@@ -288,7 +276,7 @@ class cvEditDialog(cvEdit):
     def updateL(self):
         try:
             if not self.isBeingModified:  
-                self.Lutilizado=float(self.uiLutilizado.text())
+                self.Lutilizado=float(self.uiLutilizado.value())
                 self.handle.curve.update(self.i1, self.i2, self.Lutilizado,self.getHandlePos(self.i), self.getHandlePos(self.i-1))
                 self.roi.plotWidget.addItem(self.handle.curve.curve)
 
@@ -321,17 +309,6 @@ class cvEditDialog(cvEdit):
         self.uiG.setText(longRoundFloat2str(self.G))
         self.uicota.setText(roundFloat2str(self.cota))
 
-#        c=0
-#        for a, x in self.textEditList:
-#            c+=1
-#            try:
-#                if c-1==elm:
-#                    continue
-#                else:
-#                    a.setText(str(longRoundFloat2str(x)))
-#            except:
-#                continue
-
 
         if self.G > 0:
             self.uiCurveType.setText("Côncava")
@@ -352,7 +329,7 @@ class cvEditDialog(cvEdit):
         self.uif.setText(('{:0.3e}'.format(g/(2*float(self.Lutilizado)))))
         self.uiLmin.setText(roundFloat2str(Kmin*abs(g)))
         self.uiLdes.setText(roundFloat2str(Kdes*abs(g)))
-        self.uiLutilizado.setText(str(self.Lutilizado))
+        self.uiLutilizado.setValue(float(self.Lutilizado))
         self.uiL.setText(str(velproj*.6))
 
         self.isBeingModified = False
@@ -368,9 +345,17 @@ class cvEditDialog(cvEdit):
 
     def updateVerticesCb(self):
 
-        for i in range(1,len(self.roi.handles)-2):
+        self.verticeCb: QtWidgets.QComboBox
+        self.verticeCb.clear()
+        for i in range(1, len(self.roi.handles)):
             self.verticeCb.addItem(str(i))
 
+        try:
+            self.verticeCb.currentIndexChanged.disconnect()
+            self.nextBtn.clicked.disconnect()
+            self.previousBtn.clicked.disconnect()
+        except:
+            pass
 
         self.verticeCb.setCurrentIndex(self.i)
         self.verticeCb.currentIndexChanged.connect(self.changeVertice)
@@ -388,6 +373,11 @@ class cvEditDialog(cvEdit):
             self.nextBtn.setEnabled(True)
 
     def changeVertice(self, i):
+        if i<=0:
+            i=self.i
+        elif i>=len(self.roi.handles)-1:
+            i=self.i
+
         self.save()
         c=cvEditDialog(self.roi, i)
         c.move(self.x(),self.y())
@@ -436,26 +426,29 @@ class CustomPolyLineROI(pg.PolyLineROI):
         self.sigClicked.emit(self, ev)
 
 
-
     def setPoints(self, points, closed=None):
         self.wasInitialized=False   
-        QgsMessageLog.logMessage("Iniciando pontos", "Topografia", level=0)
+        QgsMessageLog.logMessage("Iniciando pontos do perfil", "Topografia", level=0)
         if closed is not None:
             self.closed = closed
         self.clearPoints()
 
-
         for p in points:
-            self.addRotateHandle(p,p)
+            self.addRotateHandle(p, p)
                       
         start = -1 if self.closed else 0
 
         self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
+        self.handles[0]['item'].fixedOnX=True
+        self.handles[0]['item'].edge=True
 
         for i in range(start, len(self.handles)-1):
             self.addSegment(self.handles[i]['item'], self.handles[i+1]['item'])
             j=i+1
             self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+
+        self.handles[j]['item'].fixedOnX=True
+        self.handles[j]['item'].edge=True
 
         self.wasInitialized=True
         self.updateHandles()
@@ -471,7 +464,6 @@ class CustomPolyLineROI(pg.PolyLineROI):
                 except:
                     pass
 
-
             self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
             start = -1 if self.closed else 0
 
@@ -484,8 +476,16 @@ class CustomPolyLineROI(pg.PolyLineROI):
                 except:
                     pass
 
-
             self.wasInitialized=True
+
+    def removeCurva(self, handle):
+        if hasattr(handle, "curve"):
+            self.plotWidget.removeItem(handle.curve.curve)
+            handle.curve.curve.clear()
+
+        self.removeHandle(handle)
+        self.update()
+
 
     def addHandle(self, info, index=None):
         h = pg.ROI.addHandle(self, info, index=index)
@@ -494,9 +494,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
         QgsMessageLog.logMessage("Adicionando Vertice", "Topografia", level=0)
         self.wasInitialized=True
         self.updateHandles()
-
         return h
- 
 
 
     def countHandles(self):
@@ -565,6 +563,8 @@ class CustomPolyLineROI(pg.PolyLineROI):
                 i2 = self.getSegIncl(i, i + 1)
                 L = 0
                 self.handles[i]['item'].curve = cv(i1, i2, L, self.getHandlePos(i), self.getHandlePos(i - 1))
+                self.handles[i]['item'].sigRemoveRequested.disconnect()
+                self.handles[i]['item'].sigRemoveRequested.connect(self.removeCurva)
                 self.plotWidget.addItem(self.handles[i]['item'].curve.curve)
 
             return
@@ -575,6 +575,8 @@ class CustomPolyLineROI(pg.PolyLineROI):
                 i2 = self.getSegIncl(i, i + 1)
                 L = float(cvList[i][1])
                 self.handles[i]['item'].curve = cv(i1, i2, L, self.getHandlePos(i), self.getHandlePos(i - 1))
+                self.handles[i]['item'].sigRemoveRequested.disconnect()
+                self.handles[i]['item'].sigRemoveRequested.connect(self.removeCurva)
                 self.plotWidget.addItem(self.handles[i]['item'].curve.curve)
             else:
 
@@ -582,6 +584,8 @@ class CustomPolyLineROI(pg.PolyLineROI):
                 i2 = self.getSegIncl(i, i + 1)
                 L = 0
                 self.handles[i]['item'].curve = cv(i1, i2, L, self.getHandlePos(i), self.getHandlePos(i - 1))
+                self.handles[i]['item'].sigRemoveRequested.disconnect()
+                self.handles[i]['item'].sigRemoveRequested.connect(self.removeCurva)
                 self.plotWidget.addItem(self.handles[i]['item'].curve.curve)
 
 
@@ -639,6 +643,7 @@ class ssRoi(CustomPolyLineROI):
 class Ui_Perfil(QtWidgets.QDialog):
     
     save = QtCore.pyqtSignal()
+    reset = QtCore.pyqtSignal()
 
     def __init__(self, ref_estaca, tipo, classeProjeto, greide, cvList, wintitle="Perfil Longitudinal", iface=None):
         super(Ui_Perfil, self).__init__(None)
@@ -646,8 +651,8 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.initVars(ref_estaca, tipo, classeProjeto, greide, cvList, wintitle)
         self.setupUi(self)
 
-    def initVars(self, ref_estaca, tipo, classeProjeto, greide, cvList, wintitle):
 
+    def initVars(self, ref_estaca, tipo, classeProjeto, greide, cvList, wintitle):
         self.everPloted=False
         self.ref_estaca = ref_estaca
         self.tipo = tipo
@@ -659,8 +664,7 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.vb=CustomViewBox()
         self.perfilPlot = pg.PlotWidget(viewBox=self.vb,  enableMenu=False, title=wintitle)
         self.perfilPlot.curves=[]
-        self.saved=False
-
+        self.saved=True
 
 
     def __setAsNotSaved(self):
@@ -669,7 +673,6 @@ class Ui_Perfil(QtWidgets.QDialog):
 
 
     def perfil_grafico(self):
-
         pontos = []
         k = 0
         while True:
@@ -733,7 +736,7 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.roi.getMenu()
         I=[] 
         handles=self.roi.getHandles()
-        for i in range(0,len(self.roi.getHandles())-1):
+        for i in range(0, len(self.roi.getHandles())-1):
                 g1=[]
                 g2=[]
                 handle=handles[i]
@@ -810,8 +813,6 @@ class Ui_Perfil(QtWidgets.QDialog):
 
     def modifiedRoiStarted(self):
         self.roi.updateHandles()
-
-
         try:
             self.maxInclinationIndicatorLine.clear()
         except:
@@ -828,9 +829,8 @@ class Ui_Perfil(QtWidgets.QDialog):
     def estaca2(self,ind):
         self.estaca2txt = ind-1
 
-    def setupUi(self, PerfilTrecho):
 
-    
+    def setupUi(self, PerfilTrecho):
         PerfilTrecho.setObjectName(_fromUtf8("PerfilTrecho"))
         PerfilTrecho.resize(590, 169)
   
@@ -862,6 +862,11 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.btnCancel.setText("Fechar")
         self.btnCancel.clicked.connect(self.close)
 
+        self.btnReset=QtWidgets.QPushButton(PerfilTrecho)
+        self.btnReset.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnReset.setText("Limpar")
+        self.btnReset.clicked.connect(self.resetGeometry)
+
         Hlayout=QtWidgets.QHBoxLayout()
         Vlayout=QtWidgets.QVBoxLayout()
 
@@ -870,21 +875,24 @@ class Ui_Perfil(QtWidgets.QDialog):
         Hlayout.addWidget(self.btnCalcular)
         Hlayout.addWidget(self.btnAutoRange) 
         Hlayout.addWidget(self.btnSave)
+        Hlayout.addWidget(self.btnReset)
         Hlayout.addWidget(self.btnCancel)
         Vlayout.addLayout(Hlayout)
         Vlayout.addWidget(self.lblTipo)
         Vlayout.addWidget(self.perfilPlot)
-
        
-        self.setLayout(Vlayout)          
-
+        self.setLayout(Vlayout)
 
         PerfilTrecho.setWindowTitle(_translate("PerfilTrecho", "Perfil do trecho", None))
         self.calcularGreide()
         self.btnCalcular.setText("Calcular")
 
-    def showEscalaDialog(self):
+    def resetGeometry(self):
+        reset=yesNoDialog(self, message="Realmente deseja excluir esse perfil?")
+        if reset:
+            self.reset.emit()
 
+    def showEscalaDialog(self):
         dialog=setEscalaDialog(self)
         dialog.show()
         if dialog.exec_()==QtWidgets.QDialog.Accepted:
@@ -904,7 +912,6 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.lblTipo.setText("Salvo!")
     
     def getCurvas(self):
-
         r=[]        
         for i in range(0,self.roi.countHandles()):
             x=[]
@@ -919,7 +926,6 @@ class Ui_Perfil(QtWidgets.QDialog):
         return r
 
     def getVertices(self):
-
         r=[]
         for handle in self.roi.getHandles():
            x=[]
@@ -934,21 +940,27 @@ class Ui_Perfil(QtWidgets.QDialog):
             return True
         else:
             return False
-                
 
-    def closeEvent(self, event):
-
+    def reject(self):
         if (not self.wasSaved()):
-           
             closedialog = closeDialog(self)
             closedialog.setModal(True)
+            closedialog.save.connect(self.__exitSave)
+#            closedialog.cancel.connect(closedialog.close)
+            closedialog.dischart.connect(self.justClose)
+            closedialog.exec_()
+            return
+        return super(Ui_Perfil, self).reject()
 
+
+    def closeEvent(self, event):
+        if (not self.wasSaved()):
+            closedialog = closeDialog(self)
+            closedialog.setModal(True)
             closedialog.save.connect(self.__exitSave)
             closedialog.cancel.connect(event.ignore)
             closedialog.dischart.connect(self.close)
-
             closedialog.exec_()
-    
         else:
             event.accept()
             super(Ui_Perfil, self).closeEvent(event)
@@ -957,8 +969,9 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.salvarPerfil()
         self.close()
 
-
-
+    def justClose(self):
+        self.wasSaved=lambda: True
+        self.close()
 
 
 
@@ -970,13 +983,12 @@ class Ui_sessaoTipo(Ui_Perfil):
     save = QtCore.pyqtSignal()
     plotar = QtCore.pyqtSignal(int)
 
-    def __init__(self, iface, terreno, hor, ver=[], st=False, prism=None, estacanum=0, greide=[]):
+    def __init__(self, iface, terreno, hor, ver=[], st=False, prism=None, estacanum=0, greide=[], title="Perfil Transversal"):
 
         self.progressiva=[]
         self.terreno=[]
         self.iface=iface
         self.editMode=True
-
 
         if not st:
             msgLog("Creating new terrain")
@@ -1006,7 +1018,7 @@ class Ui_sessaoTipo(Ui_Perfil):
 
         self.current=estacanum
 
-        super(Ui_sessaoTipo, self).__init__(iface, 0, 0, st[self.current], [], "Perfil Transversal")
+        super(Ui_sessaoTipo, self).__init__(iface, 0, 0, st[self.current], [], title)
 
         if prism is None:
             try:

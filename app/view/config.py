@@ -26,14 +26,87 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         settings = QSettings()
         settings.setValue("/Projections/defaultBehaviour", "prompt")
         super(TopoConfig, self).__init__(parent)
-        # Set up the user interface from Designer.
-        # After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
         self.iface = iface
         self.setupUi(self)
         self.setup()
+
+        self.TopoDialogBase: QtWidgets.QDialog
+        self.button_box: QtWidgets.QDialogButtonBox
+        self.comboClasse: QtWidgets.QComboBox
+        self.comboMap: QtWidgets.QComboBox
+        self.comboUnits: QtWidgets.QComboBox
+        self.estacas: QtWidgets.QDoubleSpinBox
+        self.groupBox: QtWidgets.QGroupBox
+        self.groupBox_2: QtWidgets.QGroupBox
+        self.label: QtWidgets.QLabel
+        self.label_10: QtWidgets.QLabel
+        self.label_11: QtWidgets.QLabel
+        self.label_12: QtWidgets.QLabel
+        self.label_2: QtWidgets.QLabel
+        self.label_3: QtWidgets.QLabel
+        self.label_4: QtWidgets.QLabel
+        self.label_5: QtWidgets.QLabel
+        self.label_6: QtWidgets.QLabel
+        self.label_7: QtWidgets.QLabel
+        self.label_8: QtWidgets.QLabel
+        self.label_9: QtWidgets.QLabel
+        self.montanhosoMax: QtWidgets.QDoubleSpinBox
+        self.montanhosoMin: QtWidgets.QDoubleSpinBox
+        self.onduladoMax: QtWidgets.QDoubleSpinBox
+        self.onduladoMin: QtWidgets.QDoubleSpinBox
+        self.planoMax: QtWidgets.QDoubleSpinBox
+        self.planoMin: QtWidgets.QDoubleSpinBox
+        self.tableCRS: QtWidgets.QTableWidget
+        self.transversal: QtWidgets.QDoubleSpinBox
+        self.txtCRS: QtWidgets.QLineEdit
+        self.txtCSV: QtWidgets.QLineEdit
+        self.unitsList=['m','Km','mm']
+
+        self.dataAssociationWrite = {Config.data[0]: self.units,
+                                Config.data[1]: self.txtCSV.text,
+                                Config.data[2]: self.estacas.value,
+                                Config.data[3]: self.transversal.value,
+                                Config.data[4]: self.comboClasse.currentIndex,
+                                Config.data[5]: self.txtCRS.text,
+                                Config.data[6]: self.planoMin.value,
+                                Config.data[7]: self.planoMax.value,
+                                Config.data[8]: self.onduladoMin.value,
+                                Config.data[9]: self.onduladoMax.value,
+                                Config.data[10]: self.montanhosoMin.value,
+                                Config.data[11]: self.montanhosoMax.value
+        }
+
+        self.dataAssociationRead = {Config.data[0]: self.setUnits,
+                                 Config.data[1]: self.txtCSV.setText,
+                                 Config.data[2]: self.estacas.setValue,
+                                 Config.data[3]: self.transversal.setValue,
+                                 Config.data[4]: self.comboClasse.setCurrentIndex,
+                                 Config.data[5]: self.txtCRS.setText,
+                                 Config.data[6]: self.planoMin.setValue,
+                                 Config.data[7]: self.planoMax.setValue,
+                                 Config.data[8]: self.onduladoMin.setValue,
+                                 Config.data[9]: self.onduladoMax.setValue,
+                                 Config.data[10]: self.montanhosoMin.setValue,
+                                 Config.data[11]: self.montanhosoMax.setValue
+        }
+    def show(self):
+        for d in self.dataAssociationRead:
+            try:
+                self.dataAssociationRead[d](Config.instance().read(d, getattr(Config, d)))
+            except:
+                pass
+        return super(TopoConfig, self).show()
+
+    def setUnits(self, s:str):
+        self.comboUnits.setCurrentIndex(self.unitsList.index(s))
+
+    def units(self):
+        return self.unitsList[self.comboUnits.currentIndex()]
+
+    def accept(self):
+        for d in self.dataAssociationWrite:
+            setattr(Config, d, self.dataAssociationWrite[d]())
+            Config.instance().store(d,self.dataAssociationWrite[d]())
 
     def setup(self):
         self.setWindowTitle(u"Configurações")
@@ -44,16 +117,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.tableCRS.setSelectionBehavior(QAbstractItemView.SelectRows)
         # self.conf.tableCRS.setRowCount(300)
         self.tableCRS.setHorizontalHeaderLabels((u"ID", u"CRS"))
-        self.tableCRS = self.tableCRS
-        self.comboClasse = self.comboClasse
-        self.comboMap = self.comboMap
-        self.cmpPlanoMin = self.planoMin
-        self.cmpPlanoMax = self.planoMax
-        self.cmpOnduladoMin = self.onduladoMin
-        self.cmpOnduladoMax = self.onduladoMax
-        self.cmpMontanhosoMin = self.montanhosoMin
-        self.cmpMontanhosoMax = self.montanhosoMax
-        self.comboUnits = self.comboUnits
+
 
 
     def changeCRS(self, crs):
@@ -88,12 +152,12 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         # print model.CSV_DELIMITER
         self.txtCSV.setText(U"%s" % model.CSV_DELIMITER)
         self.comboClasse.setCurrentIndex(model.class_project + 1)
-        self.cmpPlanoMin.setValue(model.dataTopo[0])
-        self.cmpPlanoMax.setValue(model.dataTopo[1])
-        self.cmpOnduladoMin.setValue(model.dataTopo[2])
-        self.cmpOnduladoMax.setValue(model.dataTopo[3])
-        self.cmpMontanhosoMin.setValue(model.dataTopo[4])
-        self.cmpMontanhosoMax.setValue(model.dataTopo[5])
+        self.planoMin.setValue(model.dataTopo[0])
+        self.planoMax.setValue(model.dataTopo[1])
+        self.onduladoMin.setValue(model.dataTopo[2])
+        self.onduladoMax.setValue(model.dataTopo[3])
+        self.montanhosoMin.setValue(model.dataTopo[4])
+        self.montanhosoMax.setValue(model.dataTopo[5])
         self.comboMap.setCurrentIndex(model.ordem_mapa.index(model.tipo_mapa) + 1)
         self.comboUnits.setCurrentIndex(model.ordem_units.index(model.UNITS))
 
@@ -138,7 +202,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         extent.setMinimal()
 
         # load vector layers
-        registry = QgsMapLayerRegistry.instance()
+        registry = QgsMapLayer.instance()
 
         try:
             os.mkdir(r"%s/tmp" % (source_dir))

@@ -7,7 +7,7 @@ import shutil
 import sqlite3
 import zipfile
 from pathlib import Path
-from qgis._core import QgsApplication
+from qgis._core import QgsApplication, QgsProject
 import tempfile
 
 
@@ -34,12 +34,40 @@ def compactZIP(filename):
 
 
 class Config(object):
+    FILE_PATH=""
+    PLUGIN_NAME="Topografia"
     fileName = ''
     UNITS = 'm'
     CSV_DELIMITER = ';'
     DIST=20
     RANDOM="__ix35-_-xxx901381asdioADJ398(__"
     TMP_FOLDER="TopoRoad/"
+    T_SPACING=30
+    CLASSE_INDEX=4
+    crs = 2676
+    planoMin = 0.0
+    planoMax = 8.0
+    onduladoMin = 8.0
+    onduladoMax = 20.0
+    montanhosoMin = 20.0
+    montanhosoMax = 100.0
+
+    data=["UNITS",
+         "CSV_DELIMITER",
+         "DIST",
+         "T_SPACING",
+         "CLASSE_INDEX",
+         "crs",
+         "planoMin",
+         "planoMax",
+         "onduladoMin",
+         "onduladoMax",
+         "montanhosoMin",
+         "montanhosoMax",
+         "FILE_PATH",
+         "TMP_FOLDER",
+          ]
+
 
 
     def __init__(self):
@@ -65,7 +93,7 @@ class Config(object):
         self.CSV_DELIMITER = ';'
         Config.UNITS = self.UNITS
         Config.CSV_DELIMITER = self.CSV_DELIMITER
-        Config.DIST=20
+
 
     def create_datatable(self,dbPath='data/data.db'):
         con = sqlite3.connect(dbPath)
@@ -295,4 +323,32 @@ class Config(object):
 
     def mudancaClasseProjeto(self, pos):
         self.class_project = pos - 1
+
+    def store(self, key, value):
+        assert len(key) > 0 and type(key) == str and key in self.data, "Invalid key!"
+        proj = QgsProject.instance()
+        proj.writeEntry(Config.PLUGIN_NAME, key, value)
+
+    def read(self, key):
+        assert len(key) > 0 and type(key) == str and key in self.data, "Invalid key!"
+        proj = QgsProject.instance()
+        value : str
+        value = proj.readEntry(Config.PLUGIN_NAME, key, str(getattr(Config, key)))[0]
+        if value.isdigit():
+            value=int(value)
+        else:
+            try:
+                value=float(value)
+            except:
+                pass
+        setattr(self, key, value)
+        return value
+
+    @classmethod
+    def instance(cls):
+        cfg=cls()
+        for d in cfg.data:
+            cfg.read(d)
+        Config.fileName=cfg.FILE_PATH
+        return cfg
 

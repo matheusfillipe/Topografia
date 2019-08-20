@@ -1,19 +1,15 @@
 from __future__ import print_function
-from builtins import str
+
 # -*- coding: utf-8 -*-
 import os
+from builtins import str
 
 from qgis.PyQt import uic, QtWidgets
-
-import qgis
-
-from ..model.config import Config
 from qgis.PyQt.QtCore import QSettings
 from qgis.PyQt.QtWidgets import QAbstractItemView
-from ..model.utils import addGoogleXYZTiles
-
 from qgis._core import *
 
+from ..model.config import Config
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/Topo_dialog_conf.ui'))
@@ -60,6 +56,8 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.transversal: QtWidgets.QDoubleSpinBox
         self.txtCRS: QtWidgets.QLineEdit
         self.txtCSV: QtWidgets.QLineEdit
+        self.offsetSpinBox: QtWidgets.QSpinBox
+        
         self.unitsList=['m','Km','mm']
 
         self.dataAssociationWrite = {Config.data[0]: self.units,
@@ -73,7 +71,8 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                                 Config.data[8]: self.onduladoMin.value,
                                 Config.data[9]: self.onduladoMax.value,
                                 Config.data[10]: self.montanhosoMin.value,
-                                Config.data[11]: self.montanhosoMax.value
+                                Config.data[11]: self.montanhosoMax.value,
+                                Config.data[12]: self.offsetSpinBox.value
         }
 
         self.dataAssociationRead = {Config.data[0]: self.setUnits,
@@ -87,8 +86,10 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                                  Config.data[8]: self.onduladoMin.setValue,
                                  Config.data[9]: self.onduladoMax.setValue,
                                  Config.data[10]: self.montanhosoMin.setValue,
-                                 Config.data[11]: self.montanhosoMax.setValue
+                                 Config.data[11]: self.montanhosoMax.setValue,
+                                 Config.data[12]: self.offsetSpinBox.setValue
         }
+
     def show(self):
         for d in self.dataAssociationRead:
             try:
@@ -117,8 +118,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.tableCRS.setSelectionBehavior(QAbstractItemView.SelectRows)
         # self.conf.tableCRS.setRowCount(300)
         self.tableCRS.setHorizontalHeaderLabels((u"ID", u"CRS"))
-
-
+        self.tableCRS:QtWidgets.QTableWidget
 
     def changeCRS(self, crs):
         if crs == None:

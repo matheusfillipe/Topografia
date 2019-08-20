@@ -1,43 +1,45 @@
-from builtins import str
-from builtins import object
 # -*- coding: utf-8 -*-
 import json
 import os
 import shutil
 import sqlite3
 import zipfile
+from builtins import object
+from builtins import str
 from pathlib import Path
+
 from qgis._core import QgsApplication, QgsProject
-import tempfile
 
 
 def extractZIP(filename):
     z = zipfile.ZipFile(filename, "r")
     os.chdir(os.path.dirname(filename))
-    if not os.path.exists('tmp'):
-        os.makedirs('tmp')
-    z.extractall("tmp")
+    if not os.path.exists(Config.instance().TMP_DIR_PATH+'tmp'):
+        os.makedirs(Config.instance().TMP_DIR_PATH+'tmp')
+    z.extractall(Config.instance().TMP_DIR_PATH+"tmp")
     z.close()
-    return Path('tmp/data/').rglob("*.gpkg*")
+    return Path(Config.instance().TMP_DIR_PATH+'tmp/data/').rglob("*.gpkg*")
 
 
 def compactZIP(filename):
     z = zipfile.ZipFile(filename, "w")
     os.chdir(os.path.dirname(filename))
-    z.write('tmp/data/data.db','data/data.db',zipfile.ZIP_DEFLATED)
-    z.write('tmp/data/config.json','data/config.json',zipfile.ZIP_DEFLATED)
-    tracs=Path('tmp/data/').rglob("*.gpkg*")
+    z.write(Config.instance().TMP_DIR_PATH+'tmp/data/data.db','data/data.db',zipfile.ZIP_DEFLATED)
+    z.write(Config.instance().TMP_DIR_PATH+'tmp/data/config.json','data/config.json',zipfile.ZIP_DEFLATED)
+    tracs=Path(Config.instance().TMP_DIR_PATH+'tmp/data/').rglob("*.gpkg*")
     for trac in tracs:
         z.write(str(trac),'data/'+trac.name,zipfile.ZIP_DEFLATED)
-    tracs = Path('tmp/data/').rglob("*.prism")
+    tracs = Path(Config.instance().TMP_DIR_PATH+'tmp/data/').rglob("*.prism")
     for trac in tracs:
         z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
 
     z.close()
-    shutil.rmtree('tmp')
+    shutil.rmtree(Config.instance().TMP_DIR_PATH+'tmp')
 
 
 class Config(object):
+    # Valore padrão
+
     FILE_PATH=""
     PLUGIN_NAME="Topografia"
     fileName = ''
@@ -55,6 +57,13 @@ class Config(object):
     onduladoMax = 20.0
     montanhosoMin = 20.0
     montanhosoMax = 100.0
+    TMP_DIR_PATH = RANDOM
+    T_OFFSET = 2.5
+
+    #   DADOS para serem armazenados no projeto do qgis.
+    #   Cada string nessa lista é criada como um atributo de Config.instance() que pode ser lida por
+    #Config.instance().nome e armazenada com Config.instance().store(nome, valor)
+    # Chamadas de Config.instance() em loop são pouco eficientes! Não utilizar
 
     data=["UNITS",
          "CSV_DELIMITER",
@@ -68,8 +77,10 @@ class Config(object):
          "onduladoMax",
          "montanhosoMin",
          "montanhosoMax",
+         "T_OFFSET",
          "FILE_PATH",
          "TMP_FOLDER",
+         "TMP_DIR_PATH"
           ]
 
 
@@ -246,12 +257,12 @@ class Config(object):
         f.write('')
         f.close()
         os.chdir(os.path.dirname(zip_arch_path))
-        if os.path.exists('tmp'):
-            shutil.rmtree('tmp')
+        if os.path.exists(Config.instance().TMP_DIR_PATH+'tmp'):
+            shutil.rmtree(Config.instance().TMP_DIR_PATH+'tmp')
         z = zipfile.ZipFile(zip_arch_path, "w")
-        if not os.path.exists('tmp/data'):
-            os.makedirs('tmp/data')
-        os.chdir('tmp')
+        if not os.path.exists(Config.instance().TMP_DIR_PATH+'tmp/data'):
+            os.makedirs(Config.instance().TMP_DIR_PATH+'tmp/data')
+        os.chdir(Config.instance().TMP_DIR_PATH+'tmp')
 
         con = self.create_datatable()
         res = con.execute("SELECT id FROM PROJECT").fetchall()
@@ -276,14 +287,14 @@ class Config(object):
         z.write('data/config.json', "data/config.json", zipfile.ZIP_DEFLATED)
         os.chdir('..')
         z.close()
-        shutil.rmtree('tmp')
+        shutil.rmtree(Config.instance().TMP_DIR_PATH+'tmp')
 
     def openfile(self, filename):
         self.filename = filename
         Config.fileName = self.filename
         extractZIP(filename)
-        self.create_datatable("tmp/data/data.db")
-        con = sqlite3.connect("tmp/data/data.db")
+        self.create_datatable(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
         cur = con.execute("SELECT crs, classeprojeto, maxplano,maxondulado,maxmontanhoso,tipomapa FROM PROJECT")
         proj = cur.fetchone()
         self.crs = proj[0]
@@ -298,19 +309,19 @@ class Config(object):
         ]
         con.close()
         self.tipo_mapa = proj[5]
-        with open('tmp/data/config.json', 'r') as outfile:
+        with open(Config.instance().TMP_DIR_PATH+'tmp/data/config.json', 'r') as outfile:
             dados = json.load(outfile)
             self.CSV_DELIMITER = dados['csv_delimiter']
             self.UNITS = dados['units']
             Config.UNITS = self.UNITS
             Config.CSV_DELIMITER = self.CSV_DELIMITER
-        shutil.rmtree('tmp')
+        shutil.rmtree(Config.instance().TMP_DIR_PATH+'tmp')
 
     def savefile(self):
         if self.filename in [None,'']:
             raise Exception(u'Não é possivel salvar pois não foi aberto ou criado um novo arquivo')
         extractZIP(self.filename)
-        con = sqlite3.connect("tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
         con.execute("UPDATE PROJECT SET crs=?,classeprojeto=?,maxplano=?,maxondulado=?,maxmontanhoso=?,tipomapa=? WHERE id=1",(self.crs,self.class_project,self.dataTopo[1],self.dataTopo[3],self.dataTopo[5],self.tipo_mapa))
         con.commit()
         con.close()
@@ -319,15 +330,15 @@ class Config(object):
         dados = {}
         dados['csv_delimiter']= self.CSV_DELIMITER
         dados['units'] = self.UNITS
-        with open('tmp/data/config.json', 'w') as outfile:
+        with open(Config.instance().TMP_DIR_PATH+'tmp/data/config.json', 'w') as outfile:
             json_formatado = json.dumps(dados)
             outfile.write(json_formatado)
 
         z = zipfile.ZipFile(u"%s" % self.filename, "w")
-        z.write('tmp/data/data.db','data/data.db',zipfile.ZIP_DEFLATED)
-        z.write('tmp/data/config.json','data/config.json',zipfile.ZIP_DEFLATED)
+        z.write(Config.instance().TMP_DIR_PATH+'tmp/data/data.db','data/data.db',zipfile.ZIP_DEFLATED)
+        z.write(Config.instance().TMP_DIR_PATH+'tmp/data/config.json','data/config.json',zipfile.ZIP_DEFLATED)
         z.close()
-        shutil.rmtree('tmp')
+        shutil.rmtree(Config.instance().TMP_DIR_PATH+'tmp')
 
     def listCRS(self, txt=''):
         con = sqlite3.connect(QgsApplication.srsDatabaseFilePath())

@@ -392,7 +392,7 @@ class imgDialog(QDialog):
         label.setPixmap(pixmap)
         self.resize(pixmap.width(), pixmap.height())
 
-def messageDialog(iface, title="Concluído", info="", message=""):
+def messageDialog(iface=None, title="Concluído", info="", message=""):
     msgBox = QtWidgets.QMessageBox(iface)
     msgBox.setIcon(QtWidgets.QMessageBox.Question)
     msgBox.setWindowTitle(title)
@@ -404,7 +404,7 @@ def messageDialog(iface, title="Concluído", info="", message=""):
     return msgBox.exec_() == QtWidgets.QMessageBox.Ok
 
 
-def yesNoDialog(iface, title="Atenção", info="", message=""):
+def yesNoDialog(iface=None, title="Atenção", info="", message=""):
     msgBox = QtWidgets.QMessageBox(iface)
     msgBox.setIcon(QtWidgets.QMessageBox.Question)
     msgBox.setWindowTitle(title)

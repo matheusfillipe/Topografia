@@ -101,12 +101,18 @@ class TopoGrafia(object):
             if qVersion() > '4.3.3':
                 QCoreApplication.installTranslator(self.translator)
 
-        pathlib.Path(tempfile.gettempdir()+"/"+cfg.TMP_FOLDER).mkdir(parents=True, exist_ok=True)
+        tmp_path=pathlib.Path(cfg.instance().TMP_DIR_PATH)
+        if not tmp_path.is_dir():
+            tmp_path=pathlib.Path(tempfile.gettempdir() + "/" + cfg.TMP_FOLDER)
+            tmp_path.mkdir(parents=True, exist_ok=True)
+            cfg.instance().store("TMP_DIR_PATH", str(tmp_path))
+
 
         # Declare instance attributes
         self.actionCounter=0
         self.actions = []
         self.menu = self.tr(u'&Topografia')
+
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'TopoGrafia')
         self.toolbar.setObjectName(u'TopoGrafia')
@@ -269,13 +275,13 @@ class TopoGrafia(object):
             text=self.tr(u'Google Rasters'),
             callback=self.conf.carregamapa,
             parent=self.iface.mainWindow())
-
-        self.add_action(
-            icon_path_carta,
-            text=self.tr(u'Abrir Cartas'),
-            callback=self.conf.carregacarta,
-            parent=self.iface.mainWindow())
-
+#
+#        self.add_action(
+#            icon_path_carta,
+#            text=self.tr(u'Abrir Cartas'),
+#            callback=self.conf.carregacarta,
+#            parent=self.iface.mainWindow())
+#
         self.add_action(
             icon_path_curva,
             text=self.tr(u'Edição'),
@@ -298,11 +304,16 @@ class TopoGrafia(object):
 
         """Removes the plugin menu item and icon from QGIS GUI."""
         if forceOpen:
-            self.conf.model.filename = self.conf.openfile(None)
+            filename=self.conf.model.filename = self.conf.openfile(None)
+            if filename in [None,'', False, True] or (not type(filename) == str):
+                return
 
         filename = cfg.FILE_PATH
         if filename in [None,'', False, True] or (not type(filename) == str):
             self.conf.model.filename=self.conf.openfile()
+            if filename in [None, '', False, True] or (not type(filename) == str):
+                return
+
         elif (not self.conf.model.filename in [None,'', False, True]) and type(self.conf.model.filename) == str:
             filename = self.conf.model.filename
         elif type(filename) == str and len(filename) > 0:

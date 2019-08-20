@@ -140,7 +140,7 @@ class QPrismoid(prismoide, QThread):
         right.setPoints(rightpts)
 
 #        if self.progressiva[i] == 580.0:
-#            test(plotCurve(tmp), "tmp")
+#            test(plotCurve(tmp), Config.instance().TMP_DIR_PATH+"tmp")
 #            test(plotCurve(right), "right")
 #            test(plotCurve(left), "left")
 
@@ -210,8 +210,7 @@ class QPrismoid(prismoide, QThread):
     #correct saving prismoid
     #correct terreno prismoid intersec lines on each side to trim
     #Set superelevation and super width rules
-    #Bruckner diagram
-    #Plot all
+
 
     #Correct 20 m problem
     #Add distance vision to CV's
@@ -220,4 +219,4 @@ class QPrismoid(prismoide, QThread):
 
 
     #TODO reduce getArea and getVolume calls by doing it on instanciacion and checking if primsmoid changed before getVolume call
-    #TODO verify prismoid restoring
+

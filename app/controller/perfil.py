@@ -1,21 +1,18 @@
 from __future__ import absolute_import
+
+import functools
 from builtins import zip
-from builtins import str
-from builtins import range
 
-# -*- coding: utf-8 -*-
-
-
-from qgis.PyQt import QtCore, QtWidgets, QtGui
 import numpy as np
+from qgis.PyQt import QtGui
 
 from ..model import constants
 from ..model.utils import *
-from ... import PyQtGraph as pg
 from ..view.estacas import cvEdit, closeDialog, rampaDialog, QgsMessageLog, ApplyTransDialog, SetCtAtiDialog, \
     setEscalaDialog, ssRampaDialog
-import functools
-from copy import deepcopy
+from ... import PyQtGraph as pg
+
+# -*- coding: utf-8 -*-
 
 
 ##############################################################################################################
@@ -635,10 +632,53 @@ class ssRoi(CustomPolyLineROI):
             self.wasModified.emit()
             self.sigRegionChangeFinished.emit(self)
 
+    def setPoints(self, points, closed=None):
+        self.wasInitialized = False
+        QgsMessageLog.logMessage("Iniciando pontos do perfil transversal", "Topografia", level=0)
+        if closed is not None:
+            self.closed = closed
+        self.clearPoints()
+
+        for p in points:
+            self.addRotateHandle(p, p)
+
+        start = -1 if self.closed else 0
+
+        self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
+
+        for i in range(start, len(self.handles) - 1):
+            self.addSegment(self.handles[i]['item'], self.handles[i + 1]['item'])
+            j = i + 1
+            self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+
+        self.wasInitialized = True
+        self.updateHandles()
+
+    def updateHandles(self):
+
+        if self.wasInitialized:
+            for i in range(0, len(self.handles) - 1):
+
+                try:
+                    self.handles[i]['item'].sigEditRequest.disconnect()
+                except:
+                    pass
+
+            self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
+            start = -1 if self.closed else 0
+
+            for i in range(start, len(self.handles) - 1):
+                j = i + 1
+                self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+                try:
+                    diag = cvEditDialog(self, j)
+                    diag.reset()
+                except:
+                    pass
+
+            self.wasInitialized = True
 
 
-   
-   
 class Ui_Perfil(QtWidgets.QDialog):
     
     save = QtCore.pyqtSignal()
@@ -1022,7 +1062,6 @@ class Ui_sessaoTipo(Ui_Perfil):
         else:
             self.prismoide = Prismoide.QPrismoid(prism=prism, cti=7)
 
-        self.setFixedSize(1000, 600)
         self.roi.sigRegionChangeFinished.connect(self.updateData)
 
         self.updateAreaLabels()
@@ -1071,7 +1110,6 @@ class Ui_sessaoTipo(Ui_Perfil):
             Y.append(y)
 
         self.perfilPlot.plot(X,Y)
-
         self.updateLabels()
 
 

@@ -289,7 +289,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
         vmax=0
         k=0
-
         i=-1
         data=None
 
@@ -367,30 +366,19 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.comboCurva : QtWidgets.QComboBox
 
         curvaFeats=featuresList(self.c.layer)
+        features = []
         if hasattr(self,"justStarted") and self.justStarted:
-            features=[]
-            PI=0
-            hasEverCurve=False
-            for i, feat in enumerate(curvaFeats):
-                if str(self.c.dados[i][0]).startswith("T"):
-                    feat.setAttributes([str(self.c.dados[i][0]), ""])
-                    if hasEverCurve:
-                        PI+=1
-                        hasEverCurve=False
-                else:
-                    feat.setAttributes([str(self.c.dados[i][0]), "PI"])
-                    hasEverCurve=True
-
+            i=0
+            for f, tipo in zip(curvaFeats, self.c.dados):
+                feat=QgsFeature(self.layer.fields())
+                feat.setGeometry(f.geometry())
+                feat.setAttributes([i,str(tipo[0]), "Traçado"])
                 features.append(feat)
-
-            self.layer.dataProvider().deleteFeatures([f.id() for f in self.layer.getFeatures()])
-            self.layer.addFeatures(features)
-            self.layer.updateExtents()
+                i+=1
             self.justStarted=False
 
         elif len(curvaFeats)>0:
             #Delete all features of self.layer and add layer geometry in between
-            features=[]
             for i,feat in enumerate(self.layer.getFeatures()):
                 if i==self.comboCurva.currentIndex()-1:
                     g=splitFeatures(curvaFeats[0], feat)
@@ -412,9 +400,9 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
                 else:
                     features.append(feat)
 
-            self.layer.dataProvider().deleteFeatures([f.id() for f in self.layer.getFeatures()])
-            self.layer.addFeatures(features)
-            self.layer.updateExtents()
+        self.layer.dataProvider().deleteFeatures([f.id() for f in self.layer.getFeatures()])
+        self.layer.addFeatures(features)
+        self.layer.updateExtents()
 
         QgsProject.instance().removeMapLayer(self.c.layer.id())
         refreshCanvas(self.iface, self.layer)

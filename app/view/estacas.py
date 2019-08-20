@@ -1,44 +1,24 @@
 from __future__ import print_function
 
-import typing
-from builtins import range
-# -*- coding: utf-8 -*-
-
-import os
 import sip
-from copy import copy
+from builtins import range
 
-from qgis.PyQt.QtGui import QKeySequence
-from qgis.PyQt import QtCore, QtWidgets, QtWidgets, QtGui
-from qgis.PyQt import uic
 import numpy as np
-
-from qgis.PyQt.QtCore import QObject
-from qgis.PyQt.QtCore import QVariant
-from qgis.PyQt.QtWidgets import QAbstractItemView
-from qgis.PyQt.QtWidgets import QDialog
-from qgis._core import QgsCoordinateReferenceSystem
-from qgis._core import QgsFeature
-from qgis._core import QgsField
-from qgis._core import QgsGeometry
-from qgis._core import QgsProject
-from qgis._core import QgsPoint
-from qgis._core import QgsRectangle
-from qgis._core import QgsVectorLayer
-
-
-from qgis.PyQt.QtCore import * 
-from qgis.PyQt.QtWidgets import *
-from qgis.core import *
-
-from ..model.config import Config
-from ..model.utils import decdeg2dms, formatValue
-import subprocess
-
 import qgis
+from qgis.PyQt import QtWidgets, QtGui
+from qgis.PyQt import uic
+from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtGui import QKeySequence
+from qgis.PyQt.QtWidgets import *
+from qgis._core import QgsCoordinateReferenceSystem
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import *
+
+from ..model.config import Config
+from ..model.utils import formatValue, msgLog
+
+# -*- coding: utf-8 -*-
 sip.setapi('QString',2)
 sip.setapi('QVariant',2)
 
@@ -142,7 +122,7 @@ class CopySelectedCellsAction(QtWidgets.QAction):
                         clipboard += str(column if column else "")+'\t'
                 clipboard += '\n'
 
-
+            clipboard=clipboard.replace(".", ",")
             # copy to the system clipboard
             sys_clip = QtWidgets.QApplication.clipboard()
             sys_clip.setText(clipboard)
@@ -185,7 +165,6 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
 
 
     def curvasDialog(self, estacas, layer):
-        import copy
         coordenadas=[[float(x),float(y)] for y,x in zip([e[3] for e in estacas],[e[4] for e in estacas])].copy()
 
 
@@ -1691,23 +1670,112 @@ class SelectFeatureDialog(QtWidgets.QDialog, SELECT_FEATURE):
             self.result=-1
             self.tableWidget.setDisabled(True)
 
-class ProgressDialog(QtWidgets.QDialog, PROGRESS_DIALOG):
+from qgis.PyQt.QtWidgets import QProgressBar
+from qgis.PyQt.QtCore import *
 
-    def __init__(self, iface, msg=None):
-        super().__init__(iface)
+class ProgressDialog():#QtWidgets.QProgressDialog):  #, PROGRESS_DIALOG):
+
+    def __init__(self, iface, msg=None, noProgressBar=False):
+
         self.iface=iface
-        self.setupUi(self)
+        self.text=None
+        self.floor=0
+        self.stepValue=1
+        self.ceiling=100
+        self.value=0
 
-        self.Dialog: QtWidgets.QDialog
-        self.label: QtWidgets.QLabel
+ #       self.setupUi(self)
+#
+#        self.Dialog: QtWidgets.QDialog
+#        self.label: QtWidgets.QLabel
+#        self.progressBar: QtWidgets.QProgressBar
+#
+#        if not msg is None:
+#            self.label.setText(str(msg))
+#        self.progressBar.setValue(0)
+##        self.setWindowFlags((self.windowFlags() | Qt.CustomizeWindowHint) & ~Qt.WindowCloseButtonHint)
+#
+#        if noProgressBar:
+#            self.progressBar.hide()
+#        self.stepValue=1
+ #       super(ProgressDialog, self).__init__(iface)
+ #       self.setLabelText(msg)
+ #       self.setWindowTitle("Aguarde")
+
+
+    def show(self):
+   #     r=super().forceShow()
+   #     self.setWindowModality(Qt.WindowModal)
+   #     self.setValue(0)
+   #     return r
+            if self.text==None:
+                self.text="Carregando"
+
+            self.progressMessageBar = iface.messageBar().createMessage(self.text)
+            self.progressBar = QProgressBar()
+            self.progressBar.setMaximum(100)
+            self.progressBar.setValue(0)
+            self.progressBar.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.progressMessageBar.layout().addWidget(self.progressBar)
+            self.iface.messageBar().pushWidget(self.progressMessageBar, Qgis.Info)
+
+
+#    def forceShow(self):
+#        return super(ProgressDialog, self).forceShow()
+
+#    def keyPressEvent(self, a0: QtGui.QKeyEvent):
+#        if a0.key() != Qt.Key_Escape:
+#            super().keyPressEvent(a0)
+#        else:
+#            self.showMinimized()
+#
+    def setValue(self, f:float):
         self.progressBar: QtWidgets.QProgressBar
+        self.progressBar.setValue(f)
+        self.floor=f
 
-        if not msg is None:
-            self.label.setText(str(msg))
-        self.progressBar.setValue(0)
+    def setLoop(self, ceiling, totalSteps, floor=None):
+        """
+        :param ceiling: Onde quero chegar (Startinf point) in range 0-100
+        :param totalSteps: Número de passos (Number of loop steps)  0-100
+        :param floor: Onde vou partir (Starting value) 0-100
+        :return:
+        """
+        if floor is None:
+            self.floor=self.progressBar.value()
+        else:
+            self.floor=floor
+            self.progressBar.setValue(floor)
+        self.ceiling=ceiling
+        self.totalSteps=totalSteps
+        self.stepValue=(self.ceiling-self.floor)/totalSteps
 
-    def setValue(self, value):
-        self.progressBar.setValue(int(value))
+    def increment(self):
+        """
+        Dá um passo. Útil para ser usada em loop
+        :return:
+        """
+        self.progressBar: QtWidgets.QProgressBar
+        self.value+=self.stepValue
+        self.setValue(int(min(self.value, self.ceiling)))
+      #  msgLog("Progress bar"+str(self.progressBar.value()))
+
+    def close(self):
+         self.progressBar.setValue(0)
+         self.__init__(self.iface)
+     #   return super().close()
+         self.iface.messageBar().clearWidgets()
+
+    def setText(self, s):
+        self.text=s
+        try:
+            if hasattr(self, "progressBar") and self.progressBar.isVisible():
+                self.close()
+                self.show()
+        except:  #C++ runtine error because progressBar was deleted
+            pass
+
+
 
 class EstacaRangeSelect(QtWidgets.QDialog, BRUCKNER_SELECT):
 

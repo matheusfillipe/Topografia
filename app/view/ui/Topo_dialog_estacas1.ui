@@ -125,6 +125,9 @@
             <property name="text">
              <string>Gerar Curvas</string>
             </property>
+            <property name="shortcut">
+             <string>Alt+C</string>
+            </property>
             <property name="autoDefault">
              <bool>false</bool>
             </property>

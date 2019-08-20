@@ -94,7 +94,7 @@ QGIS (anteriormente conhecido como Quantum GIS) é um software livre com código
 [Python3](https://www.python.org/) - Python is a programming language that lets you work quickly
 and integrate systems more effectively
 
-####Documentação:
+#### Documentação:
 
 [Python3](https://www.python.org/)
 
@@ -114,8 +114,10 @@ and integrate systems more effectively
 
 ## Licença
 
-
 ### GPL 2
 <br>
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.                                   
+
+
+
 

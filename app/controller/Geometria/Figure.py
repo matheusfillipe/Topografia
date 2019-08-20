@@ -1024,7 +1024,7 @@ class prismoide(figure):
             nextFace=self.faces[i]
             self.volume+=(face.getArea()+nextFace.getArea())*abs(face.position.z()-nextFace.position.z())/2
 
-        return self.volume/1000
+        return self.volume
 
 class square(curve):
 

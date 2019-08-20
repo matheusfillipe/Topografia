@@ -467,7 +467,7 @@ class Estacas(object):
                 estaca = []
                 for field in r:
                     s=str(field).replace(",", ".")
-                    estaca.append(u"%s" % field)
+                    estaca.append(u"%s" % s)
                 estacas.append(estaca)
         self.table = estacas
         return estacas
@@ -480,8 +480,8 @@ class Estacas(object):
             if type(header)==list:
                 writer.writerow(header)
             for r in table:
-                for i,c in enumerate(r[1:]):
-                   r[i+1]=c.replace(".",",")
+                for i,c in enumerate(r):
+                   r[i]=c.replace(".",",")
                 writer.writerow(r)
 
         if not noWGS:
@@ -493,8 +493,8 @@ class Estacas(object):
                 for r in table:
                     pt=pointToWGS84(QgsPointXY(float(str(r[4]).replace(",",'.')),float(str(r[3]).replace(",","."))))
                     r[4],r[3]=str(pt.x()),str(pt.y())
-                    for i,c in enumerate(r[1:]):
-                        r[i+1]=c.replace(".",",")
+                    for i,c in enumerate(r):
+                        r[i]=c.replace(".",",")
                     writer.writerow(r)
 
 

@@ -306,26 +306,26 @@ def cleanup():
     ## ALL QGraphicsItems must have a scene before they are deleted.
     ## This is potentially very expensive, but preferred over crashing.
     ## Note: this appears to be fixed in PySide as of 2012.12, but it should be left in for a while longer..
-    app = QtGui.QApplication.instance()
-    if app is None or not isinstance(app, QtGui.QApplication):
-        # app was never constructed is already deleted or is an
-        # QCoreApplication/QGuiApplication and not a full QApplication
-        return
-    import gc
-    s = QtGui.QGraphicsScene()
-    for o in gc.get_objects():
-        try:
-            if isinstance(o, QtGui.QGraphicsItem) and isQObjectAlive(o) and o.scene() is None:
-                if getConfigOption('crashWarning'):
-                    sys.stderr.write('Error: graphics item without scene. '
-                        'Make sure ViewBox.close() and GraphicsView.close() '
-                        'are properly called before app shutdown (%s)\n' % (o,))
-                
-                s.addItem(o)
-        except RuntimeError:  ## occurs if a python wrapper no longer has its underlying C++ object
-            continue
-    _cleanupCalled = True
-
+#    app = QtGui.QApplication.instance()
+#    if app is None or not isinstance(app, QtGui.QApplication):
+#        # app was never constructed is already deleted or is an
+#        # QCoreApplication/QGuiApplication and not a full QApplication
+#        return
+#    import gc
+#    s = QtGui.QGraphicsScene()
+#    for o in gc.get_objects():
+#        try:
+#            if isinstance(o, QtGui.QGraphicsItem) and isQObjectAlive(o) and o.scene() is None:
+#                if getConfigOption('crashWarning'):
+#                    sys.stderr.write('Error: graphics item without scene. '
+#                        'Make sure ViewBox.close() and GraphicsView.close() '
+#                        'are properly called before app shutdown (%s)\n' % (o,))
+#
+#                s.addItem(o)
+#        except RuntimeError:  ## occurs if a python wrapper no longer has its underlying C++ object
+#            continue
+#    _cleanupCalled = True
+#
 atexit.register(cleanup)
 
 # Call cleanup when QApplication quits. This is necessary because sometimes

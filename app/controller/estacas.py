@@ -134,7 +134,7 @@ class Estacas(object):
         X,V=self.brucknerThread(X, est, prismoide, ei, ef)
         import matplotlib.pyplot as plt
         line, = plt.plot(X, V, lw=2)
-        self.progressDialog.setValue(100)
+        self.progressDialog.setValue(90)
         plt.title("Diagrama de Bruckner")
         plt.xlabel(u'Estacas')
         plt.ylabel(u'Volume m³')
@@ -151,7 +151,7 @@ class Estacas(object):
         X=X[ei:ef+1]
         V=[]
         vAcumulado=0
-        self.progressDialog.setLoop(98, len(X))
+        self.progressDialog.setLoop(50, len(X))
         for x in range(1,len(X)+1):
             vAcumulado+=-prismoide.getVolume(ei+x-1,ei+x)
             V.append(vAcumulado)
@@ -159,7 +159,7 @@ class Estacas(object):
 
         V=[v + abs(min(V))+1000 for v in V]
         X=[x/Config.instance().DIST for x in X]
-        self.progressDialog.setValue(90)
+        self.progressDialog.setValue(80)
         return X, V
 
 
@@ -689,7 +689,9 @@ class Estacas(object):
                     estacas = self.estacas = self.view.get_estacas()
                 else:
                     return
-        # fazer multithreading
+          # fazer multithreading ?
+            self.progressDialog.setValue(0)
+            self.progressDialog.setLoop(100, len(estacas))
             for i, _ in enumerate(estacas):
                 if plotTrans and index !=-1:
                     i=index
@@ -721,12 +723,8 @@ class Estacas(object):
 
 
                 OFFSET=Config.instance().T_OFFSET
-                self.progressDialog.setValue(0)
-                self.progressDialog.setLoop(100,2*int(Config.instance().T_SPACING/OFFSET))
-                #TODO angulo bagunçou pq mudei como y varia
-                for y in range(int(-Config.instance().T_SPACING/OFFSET), int((Config.instance().T_SPACING+1)/OFFSET)):
-                    self.progressDialog.increment()
-                    y=y*OFFSET
+                for yi in range(int(-Config.instance().T_SPACING), int(Config.instance().T_SPACING+1)):
+                    y=yi*OFFSET
 
                     yangleE=esign*y*abs(math.sin(perp*math.pi/180))
                     yangleN=nsign*y*abs(math.cos(perp*math.pi/180))
@@ -745,6 +743,8 @@ class Estacas(object):
                     except IndexError as e:
                         continue
 
+
+                self.progressDialog.increment()
                 terreno.append(v)
 
 
@@ -771,7 +771,11 @@ class Estacas(object):
                     estacas = self.estacas = self.view.get_estacas()
                 else:
                     return
-                    # fazer multithreading
+
+            # fazer multithreading?
+            self.progressDialog.setValue(0)
+            self.progressDialog.setLoop(100, len(estacas))
+
             for i, _ in enumerate(estacas):
                 v=[]
                 az=float(estacas[i][6])
@@ -797,11 +801,8 @@ class Estacas(object):
                 pointsList=[]
 
                 OFFSET=Config.instance().T_OFFSET
-                self.progressDialog.setValue(0)
-                self.progressDialog.setLoop(100,2*int(Config.instance().T_SPACING/OFFSET))
-                for y in range(int(-Config.instance().T_SPACING/OFFSET), int((Config.instance().T_SPACING+1)/OFFSET)):
-                    self.progressDialog.increment()
-                    y=y*OFFSET
+                for yi in range(int(-Config.instance().T_SPACING), int(Config.instance().T_SPACING+1)):
+                    y=yi*OFFSET
 
                     yangleE=esign*y*abs(math.sin(perp*math.pi/180))*self.tamanho_pixel[0]
                     yangleN=nsign*y*abs(math.cos(perp*math.pi/180))*self.tamanho_pixel[1]
@@ -823,7 +824,7 @@ class Estacas(object):
                         continue
 
                 terreno.append(v)
-
+                self.progressDialog.increment()
 
                 if plotTrans:
                     if index==-1:

@@ -48,7 +48,7 @@ class Config(object):
     DIST=20
     RANDOM="__ix35-_-xxx901381asdioADJ398(__"
     TMP_FOLDER="TopografiaPluginTemporaryLayers/"
-    T_SPACING=30
+    T_SPACING=10
     CLASSE_INDEX=4
     crs = 2676
     planoMin = 0.0
@@ -58,7 +58,7 @@ class Config(object):
     montanhosoMin = 20.0
     montanhosoMax = 100.0
     TMP_DIR_PATH = RANDOM
-    T_OFFSET = 2.5
+    T_OFFSET = 3.0
 
     #   DADOS para serem armazenados no projeto do qgis.
     #   Cada string nessa lista é criada como um atributo de Config.instance() que pode ser lida por
@@ -367,7 +367,7 @@ class Config(object):
     def store(self, key, value):
         assert len(key) > 0 and type(key) == str and key in self.data, "Invalid key!"
         proj = QgsProject.instance()
-        proj.writeEntry(Config.PLUGIN_NAME, key, value)
+        proj.writeEntry(Config.PLUGIN_NAME, key, str(value))
 
     def read(self, key):
         assert len(key) > 0 and type(key) == str and key in self.data, "Invalid key!"

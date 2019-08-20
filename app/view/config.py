@@ -90,12 +90,20 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                                  Config.data[12]: self.offsetSpinBox.setValue
         }
 
+        self.transversal.valueChanged.connect(self.updateEspassamentoSpinBox)
+        self.offsetSpinBox.valueChanged.connect(self.updateEspassamentoSpinBox)
+
+    def updateEspassamentoSpinBox(self):
+        self.t_espassamento.setValue(self.transversal.value() * self.offsetSpinBox.value())
+
     def show(self):
         for d in self.dataAssociationRead:
+            cfg=Config.instance()
             try:
-                self.dataAssociationRead[d](Config.instance().read(d, getattr(Config, d)))
+                self.dataAssociationRead[d](getattr(cfg, d))
             except:
                 pass
+        self.t_espassamento.setValue(self.transversal.value()*self.offsetSpinBox.value())
         return super(TopoConfig, self).show()
 
     def setUnits(self, s:str):
@@ -107,7 +115,9 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
     def accept(self):
         for d in self.dataAssociationWrite:
             setattr(Config, d, self.dataAssociationWrite[d]())
-            Config.instance().store(d,self.dataAssociationWrite[d]())
+            Config.instance().store(d, self.dataAssociationWrite[d]())
+        x=Config.instance().T_OFFSET
+        return super(TopoConfig, self).accept()
 
     def setup(self):
         self.setWindowTitle(u"Configurações")

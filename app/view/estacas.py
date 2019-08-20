@@ -1768,6 +1768,7 @@ class ProgressDialog():#QtWidgets.QProgressDialog):  #, PROGRESS_DIALOG):
 
     def setText(self, s):
         self.text=s
+        self.textSet=True
         try:
             if hasattr(self, "progressBar") and self.progressBar.isVisible():
                 self.close()

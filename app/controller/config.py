@@ -135,12 +135,12 @@ class Config(object):
             self.changeCRS()
 
             self.dataTopo = [
-                self.conf.cmpPlanoMin.value(),
-                self.conf.cmpPlanoMax.value(),
-                self.conf.cmpOnduladoMin.value(),
-                self.conf.cmpOnduladoMax.value(),
-                self.conf.cmpMontanhosoMin.value(),
-                self.conf.cmpMontanhosoMax.value()
+                self.conf.planoMin.value(),
+                self.conf.planoMax.value(),
+                self.conf.onduladoMin.value(),
+                self.conf.onduladoMax.value(),
+                self.conf.montanhosoMin.value(),
+                self.conf.montanhosoMax.value()
             ]
             self.model.dataTopo = self.dataTopo
             self.model.CSV_DELIMITER = self.conf.txtCSV.text()

@@ -69,7 +69,10 @@ class Config(object):
         filename = u"{0}".format(self.conf.new_file()[0])
         if filename in ["",None]:
             return
-        ModelConfig.instance().store("FILE_PATH", filename)
+        if filename.endswith(".lzip"):
+            ModelConfig.instance().store("FILE_PATH", filename)
+        else:
+            ModelConfig.instance().store("FILE_PATH", filename+".lzip")
         self.model.newfile(filename)
 
     def openfile(self, filename=None):

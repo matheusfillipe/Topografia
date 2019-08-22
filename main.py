@@ -308,7 +308,7 @@ class TopoGrafia(object):
             if filename in [None,'', False, True] or (not type(filename) == str):
                 return
 
-        filename = cfg.FILE_PATH
+        filename = cfg.instance().FILE_PATH
         if filename in [None,'', False, True] or (not type(filename) == str):
             self.conf.model.filename=self.conf.openfile()
             if filename in [None, '', False, True] or (not type(filename) == str):

@@ -59,6 +59,7 @@ class Config(object):
     montanhosoMax = 100.0
     TMP_DIR_PATH = RANDOM
     T_OFFSET = 3.0
+    interpol=0
 
     #   DADOS para serem armazenados no projeto do qgis.
     #   Cada string nessa lista é criada como um atributo de Config.instance() que pode ser lida por
@@ -79,8 +80,10 @@ class Config(object):
          "montanhosoMax",
          "T_OFFSET",
          "FILE_PATH",
+          "interpol",
          "TMP_FOLDER",
          "TMP_DIR_PATH"
+
           ]
 
 
@@ -366,8 +369,12 @@ class Config(object):
 
     def store(self, key, value):
         assert len(key) > 0 and type(key) == str and key in self.data, "Invalid key!"
-        proj = QgsProject.instance()
-        proj.writeEntry(Config.PLUGIN_NAME, key, str(value))
+        if key=="interpol":
+            proj = QgsProject.instance()
+            proj.writeEntry(Config.PLUGIN_NAME, key, str(int(value)))
+        else:
+            proj = QgsProject.instance()
+            proj.writeEntry(Config.PLUGIN_NAME, key, str(value))
 
     def read(self, key):
         assert len(key) > 0 and type(key) == str and key in self.data, "Invalid key!"
@@ -391,5 +398,12 @@ class Config(object):
             cfg.read(d)
             setattr(Config, d, getattr(cfg, d))
         Config.fileName = cfg.FILE_PATH
+        try:
+            cfg.interpol = bool(int(cfg.interpol))
+        except ValueError:
+            if cfg.interpol=='False':
+                cfg.interpol = False
+            if cfg.interpol=='True':
+                cfg.interpol = True
         return cfg
 

@@ -72,7 +72,8 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                                 Config.data[9]: self.onduladoMax.value,
                                 Config.data[10]: self.montanhosoMin.value,
                                 Config.data[11]: self.montanhosoMax.value,
-                                Config.data[12]: self.offsetSpinBox.value
+                                Config.data[12]: self.offsetSpinBox.value,
+                                Config.data[14]: self.interpol.isChecked
         }
 
         self.dataAssociationRead = {Config.data[0]: self.setUnits,
@@ -87,8 +88,9 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                                  Config.data[9]: self.onduladoMax.setValue,
                                  Config.data[10]: self.montanhosoMin.setValue,
                                  Config.data[11]: self.montanhosoMax.setValue,
-                                 Config.data[12]: self.offsetSpinBox.setValue
-        }
+                                 Config.data[12]: self.offsetSpinBox.setValue,
+                                 Config.data[14]: self.interpol.setChecked
+                                }
 
         self.transversal.valueChanged.connect(self.updateEspassamentoSpinBox)
         self.offsetSpinBox.valueChanged.connect(self.updateEspassamentoSpinBox)

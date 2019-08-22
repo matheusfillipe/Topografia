@@ -283,25 +283,25 @@ class Estacas(object):
 
 
     def geraCurvas(self, arquivo_id=None):
-#        table=self.preview.tableEstacas
-#        table : QtWidgets.QTableWidget
+        table=self.preview.tableEstacas
+        table : QtWidgets.QTableWidget
 #
-#        if not arquivo_id:
-#            l=len(table.selectionModel().selectedRows())
-#        else: #curva para traçado
-#            self.newEstacasLayer(name=self.model.getNameFromId(arquivo_id))
-#            self.view.openLayers()
-#            return
+        if not arquivo_id:
+            l=len(table.selectionModel().selectedRows())
+        else: #curva para traçado
+            self.newEstacasLayer(name=self.model.getNameFromId(arquivo_id))
+            self.view.openLayers()
+            return
 #
 #        if l>1:
 #            self.preview.error(u"Selecione um único arquivo!")
-#        elif l<1: #criar traçado, iniciar edição
+        if l<1: #criar traçado, iniciar edição
             name=self.fileName("Traçado "+str(len(self.model.listTables())+1))
             if not name: return
             self.new(dados=(name, self.newEstacasLayer(name=name), Config.instance().DIST, []))
-#        else:
-#            self.openEstaca()
-#            self.view.btnCurva.click()
+        else:
+            self.openEstaca()
+            self.view.btnCurva.click()
 
     def joinFeatures(self):
         layer=self.view.curvaLayers[0]
@@ -573,11 +573,11 @@ class Estacas(object):
         prog, est, prism = self.model.getTrans(self.model.id_filename)
         if prog:
             #Database Trans
-            self.progressDialog.setValue(50)
+            self.progressDialog.setValue(1)
             self.trans=Ui_sessaoTipo(self.iface, est[1], self.model.load_intersect(), prog, est[0], prism=prism)
         else:
             #New trans
-            self.progressDialog.setValue(50)
+            self.progressDialog.setValue(1)
             self.openEstaca(False)
             terreno = self.obterTerrenoTIFF()
             self.trans=Ui_sessaoTipo(self.iface, terreno, self.model.load_intersect(), self.estacasVerticalList, greide=self.model.getGreide(self.model.id_filename), title="Transversal: "+str(self.model.getNameFromId(self.model.id_filename)))
@@ -662,12 +662,15 @@ class Estacas(object):
 
 
     def plotTransLayer(self, index):
+        self.progressDialog.show()
         self.obterTerrenoTIFF(True, index)
+        self.progressDialog.close()
 
 
     def obterTerrenoTIFF(self, plotTrans=False, index=-1):
-        filename = self.view.openTIFF()
-        if filename in ['', None]: return
+        if not plotTrans:
+            filename = self.view.openTIFF()
+            if filename in ['', None]: return
         terreno=[]
 
         #progressBar=ProgressDialog(None)
@@ -675,13 +678,14 @@ class Estacas(object):
 
         try:
             layer=None
-            for l in self.iface.mapCanvas().layers():
-                if l.source() == filename:
-                    layer=l
-            if layer is None:
-                msgLog("Layer não encontrada")
-                return []
-            msgLog("Interpolando Layer: "+str(layer.name()))
+            if not plotTrans:
+                for l in self.iface.mapCanvas().layers():
+                    if l.source() == filename:
+                        layer=l
+                if layer is None:
+                    msgLog("Layer não encontrada")
+                    return []
+                msgLog("Interpolando Layer: "+str(layer.name()))
 
             estacas = self.estacas = self.model.load_intersect()
             if not estacas:
@@ -697,7 +701,7 @@ class Estacas(object):
                     i=index
 
                 v=[]
-                az=float(estacas[i][6])
+                az=float(estacas[i][7])
                 perp=az+90
 
 
@@ -723,17 +727,21 @@ class Estacas(object):
 
 
                 OFFSET=Config.instance().T_OFFSET
+                interpol=Config.instance().interpol
                 for yi in range(int(-Config.instance().T_SPACING), int(Config.instance().T_SPACING+1)):
                     y=yi*OFFSET
 
                     yangleE=esign*y*abs(math.sin(perp*math.pi/180))
                     yangleN=nsign*y*abs(math.cos(perp*math.pi/180))
-
+                    msgLog("Computando azimute transversal: "+str(perp))
                     try:
                         xPoint=float(float(estacas[i][4])+yangleE)
                         yPoint=float(float(estacas[i][3])+yangleN)
 
-                        cota = cotaFromTiff(layer, QgsPointXY(xPoint, yPoint))
+                        if not plotTrans:
+                            cota = cotaFromTiff(layer, QgsPointXY(xPoint, yPoint), interpol)
+                        else:
+                            cota=0
                         v.append([y,float(cota)])
                         pointsList.append([xPoint, yPoint])
 
@@ -759,6 +767,7 @@ class Estacas(object):
 
         except e:
             msgLog("Interpolação Falhou: "+str(e))
+
             img = Image.open(filename)
             img.size = tuple(img.tile[-1][1][2:])
             self.img_origem = img.tag.get(33922)[3:5]
@@ -799,6 +808,8 @@ class Estacas(object):
                     esign=-1
 
                 pointsList=[]
+
+                #TODO... tamanho pixel para plotrans?
 
                 OFFSET=Config.instance().T_OFFSET
                 for yi in range(int(-Config.instance().T_SPACING), int(Config.instance().T_SPACING+1)):
@@ -937,6 +948,9 @@ class Estacas(object):
         self.progressDialog.show()
 
         try:
+            if not Config.instance().interpol:
+                raise 1
+
             l=False
             for l in self.iface.mapCanvas().layers():
                 if l.source() == filename:
@@ -953,7 +967,7 @@ class Estacas(object):
             for i, _ in enumerate(estacas):
                 cota = cotaFromTiff(layer, QgsPointXY(float(estacas[i][4]),float(estacas[i][3])))
                 if cota:
-                    estacas[i][5] = "%f" % cota
+                    estacas[i][5] = roundFloat2str(cota)
                 else:
                     self.preview.error(u"Pontos do traçado estão fora do raster selecionado!!!")
                     break

@@ -437,6 +437,8 @@ def getBlockRecAndItemFromPointInRaster(layer, p):
     pixelExtent = QgsRectangle(xMin, yMin, xMax, yMax)
     # 1 is referring to band 1
     block = dp.block(1, finalExtent, layer.width(), layer.height())
+    del dp
+
 
     if pixelExtent.contains(pt):
         return block, pixelExtent, row, col
@@ -456,6 +458,7 @@ def rectCell(layer, row, col):
     xMax = xMin + xres
     yMax = finalExtent.yMaximum() - row * yres
     yMin = yMax - yres
+    del dp
     return QgsRectangle(xMin, yMin, xMax, yMax)
 
 
@@ -486,12 +489,16 @@ def cotaFromTiff(layer, p, interpolate=True):
         # pesos
         I = [(max_dist - l) / max_dist if l < max_dist else 0 for l in L]
         # média
+        del matx
+        del b
+        del rec
+
         return sum(v * i for v, i in zip(V, I)) / sum(I)
 
 
     v = layer.dataProvider().sample(p, 1)
-    if layer.extent().contains(p):
-        return v.results()[1]
+    if layer.extent().contains(p) and v[1]:
+        return v[0]
     else:
         return 0
 

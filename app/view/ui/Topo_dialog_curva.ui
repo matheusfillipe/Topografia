@@ -17,17 +17,6 @@
    <item row="5" column="4">
     <layout class="QVBoxLayout" name="verticalLayout_9">
      <item>
-      <widget class="QLabel" name="label_24">
-       <property name="text">
-        <string>Distância entre
-estacas:</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QLineEdit" name="txtDist"/>
      </item>
      <item>
@@ -509,7 +498,7 @@ estacas:</string>
         <x>240</x>
         <y>110</y>
         <width>175</width>
-        <height>170</height>
+        <height>221</height>
        </rect>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -554,6 +543,17 @@ estacas:</string>
            </property>
            <property name="text">
             <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_24">
+           <property name="text">
+            <string>Distância entre
+estacas:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
            </property>
           </widget>
          </item>

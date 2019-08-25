@@ -9,7 +9,8 @@ from qgis.PyQt.QtCore import QSettings
 from qgis.PyQt.QtWidgets import QAbstractItemView
 from qgis._core import *
 
-from ..model.config import Config
+from ..model.utils import yesNoDialog
+from ..model.config import Config, extractZIP, compactZIP
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/Topo_dialog_conf.ui'))
@@ -94,6 +95,16 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
 
         self.transversal.valueChanged.connect(self.updateEspassamentoSpinBox)
         self.offsetSpinBox.valueChanged.connect(self.updateEspassamentoSpinBox)
+        self.dbBuild: QtWidgets.QPushButton
+        self.dbBuild.clicked.connect(self.buildDb)
+
+    def buildDb(self):
+        if yesNoDialog(iface=self, message="Tem certeza que deseja reconstruir o banco de dados?"):
+            cfg=Config.instance()
+            extractZIP(cfg.FILE_PATH)
+            con=cfg.create_datatable(cfg.TMP_DIR_PATH + "tmp/data/data.db")
+            con.close()
+            compactZIP(cfg.FILE_PATH)
 
     def updateEspassamentoSpinBox(self):
         self.t_espassamento.setValue(self.transversal.value() * self.offsetSpinBox.value())

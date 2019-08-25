@@ -16,7 +16,7 @@ from qgis.gui import *
 from qgis.utils import *
 
 from ..model.config import Config
-from ..model.utils import formatValue, msgLog
+from ..model.utils import formatValue, msgLog, prog2estacaStr
 
 # -*- coding: utf-8 -*-
 sip.setapi('QString',2)
@@ -1525,12 +1525,12 @@ class ApplyTransDialog(QtWidgets.QDialog, APLICAR_TRANSVERSAL_DIALOG):
         self.setupUi2()
 
     def setupUi2(self):
-        self.firstCb.addItems(list(map(str, self.progressiva)))
+        self.firstCb.addItems(list(map(prog2estacaStr, self.progressiva)))
         self.firstCb.currentIndexChanged.connect(self.setSecondCb)
         self.setSecondCb()
 
     def setSecondCb(self):
-        self.secondCb.addItems(list(map(str, self.progressiva[self.firstCb.currentIndex()+1:])))
+        self.secondCb.addItems(list(map(prog2estacaStr, self.progressiva[self.firstCb.currentIndex()+1:])))
         self.secondCb.currentIndexChanged.connect(self.setIndexes)
         self.setIndexes()
 

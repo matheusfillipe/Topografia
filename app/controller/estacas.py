@@ -122,24 +122,34 @@ class Estacas(object):
     def bruckner(self):
 
         self.progressDialog.show()
-        X, est, prismoide=self.loadTrans()
-
-        dialog=EstacaRangeSelect(None, [prog2estacaStr(x) for x in X])
-        if not dialog.exec_():
-            return
-        ei = int(dialog.inicial.currentIndex())
-        ef = int(dialog.final_2.currentIndex())
-
         self.progressDialog.setValue(0)
-        X,V=self.brucknerThread(X, est, prismoide, ei, ef)
+        table = self.model.load_bruckner()
+
+        if not table:  # if non existent, compute
+            X, est, prismoide=self.loadTrans()
+            if not X:
+                messageDialog(message="Sessão Transversal não definida!")
+                return
+            self.progressDialog.setValue(10)
+            X,V=self.brucknerThread(X, est, prismoide, 0, len(X)-1)
+
+        else:
+            X, V = zip(*table)
+            X=[float(x) for x in X]
+            V=[float(v) for v in V]
+
+        self.progressDialog.setValue(90)
+
+        #TODO Replace with pyqtgraph
         import matplotlib.pyplot as plt
         line, = plt.plot(X, V, lw=2)
-        self.progressDialog.setValue(90)
         plt.title("Diagrama de Bruckner")
         plt.xlabel(u'Estacas')
         plt.ylabel(u'Volume m³')
         plt.grid(True)
+
         self.progressDialog.close()
+
         plt.show()
 
 
@@ -151,7 +161,7 @@ class Estacas(object):
         X=X[ei:ef+1]
         V=[]
         vAcumulado=0
-        self.progressDialog.setLoop(50, len(X))
+        self.progressDialog.setLoop(30, len(X))
         for x in range(1,len(X)+1):
             vAcumulado+=-prismoide.getVolume(ei+x-1,ei+x)
             V.append(vAcumulado)
@@ -160,6 +170,7 @@ class Estacas(object):
         V=[v + abs(min(V))+1000 for v in V]
         X=[x/Config.instance().DIST for x in X]
         self.progressDialog.setValue(80)
+        self.model.saveBruckner(list(zip(X, V)))
         return X, V
 
 
@@ -581,7 +592,7 @@ class Estacas(object):
             self.openEstaca(False)
             terreno = self.obterTerrenoTIFF()
             self.trans=Ui_sessaoTipo(self.iface, terreno, self.model.load_intersect(), self.estacasVerticalList, greide=self.model.getGreide(self.model.id_filename), title="Transversal: "+str(self.model.getNameFromId(self.model.id_filename)))
-        self.progressDialog.setValue(90)
+        self.progressDialog.setValue(95)
         return prog, est, prism
 
     def generateTrans(self):
@@ -695,7 +706,8 @@ class Estacas(object):
                     return
           # fazer multithreading ?
             self.progressDialog.setValue(0)
-            self.progressDialog.setLoop(100, len(estacas))
+            self.progressDialog.setLoop(90, len(estacas))
+            ri=RasterInterpolator()
             for i, _ in enumerate(estacas):
                 if plotTrans and index !=-1:
                     i=index
@@ -739,7 +751,7 @@ class Estacas(object):
                         yPoint=float(float(estacas[i][3])+yangleN)
 
                         if not plotTrans:
-                            cota = cotaFromTiff(layer, QgsPointXY(xPoint, yPoint), interpol)
+                            cota = ri.cotaFromTiff(layer, QgsPointXY(xPoint, yPoint), interpol)
                         else:
                             cota=0
                         v.append([y,float(cota)])
@@ -767,7 +779,6 @@ class Estacas(object):
 
         except e:
             msgLog("Interpolação Falhou: "+str(e))
-
             img = Image.open(filename)
             img.size = tuple(img.tile[-1][1][2:])
             self.img_origem = img.tag.get(33922)[3:5]
@@ -959,13 +970,14 @@ class Estacas(object):
             if not l:
                 self.preview.error(u"Salve a layer antes de usa-lá!")
                 return
-            from ..model.utils import cotaFromTiff
+            from ..model.utils import RasterInterpolator
+            ri=RasterInterpolator()
             self.estacas = self.view.get_estacas()
             estacas = self.estacas
             self.progressDialog.setLoop(100, len(estacas))
 
             for i, _ in enumerate(estacas):
-                cota = cotaFromTiff(layer, QgsPointXY(float(estacas[i][4]),float(estacas[i][3])))
+                cota = ri.cotaFromTiff(layer, QgsPointXY(float(estacas[i][4]),float(estacas[i][3])))
                 if cota:
                     estacas[i][5] = roundFloat2str(cota)
                 else:
@@ -1457,6 +1469,7 @@ class Estacas(object):
        # s.exec_()
         self.update()
         self.click = False
+        self.preview.setWindowTitle(Config.instance().FILE_PATH)
         self.preview.show()
 
         finalResult=False
@@ -1464,6 +1477,7 @@ class Estacas(object):
 
         lastFinalResult=True
         lastResult=False
+
 
         while finalResult>0 or result>0:
             self.update()

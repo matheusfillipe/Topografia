@@ -415,91 +415,99 @@ def yesNoDialog(iface=None, title="Atenção", info="", message=""):
     msgBox.show()
     return msgBox.exec_() == QtWidgets.QMessageBox.Yes
 
+class RasterInterpolator():
+    def __init__(self):
+        self.BLOCK=None
+        self.LAYER=None
+
+    def getBlockRecAndItemFromPointInRaster(self,layer, p):
+        pt = p  # QgsCoordinateTransform(QgsProject.instance().crs(),layer.crs(),QgsProject.instance()).transform(p)
+        dp = layer.dataProvider()
+        finalExtent = dp.extent()
+
+        # Calculate the row / column where the point falls
+        xres = layer.rasterUnitsPerPixelX()
+        yres = layer.rasterUnitsPerPixelY()
+
+        from math import floor
+        col = abs(floor((pt.x() - finalExtent.xMinimum()) / xres))
+        row = abs(floor((finalExtent.yMaximum() - pt.y()) / yres))
+
+        xMin = finalExtent.xMinimum() + col * xres
+        xMax = xMin + xres
+        yMax = finalExtent.yMaximum() - row * yres
+        yMin = yMax - yres
+        pixelExtent = QgsRectangle(xMin, yMin, xMax, yMax)
+        # 1 is referring to band 1
+        if not(self.LAYER is None or self.BLOCK is None) and layer == self.LAYER:
+            block=self.BLOCK
+        else:
+            block = dp.block(1, finalExtent, layer.width(), layer.height())
+            self.BLOCK=block
+            self.LAYER=layer
+
+        del dp
+
+        if pixelExtent.contains(pt):
+            return block, pixelExtent, row, col
+        else:
+            return False, False, False, False
 
 
-def getBlockRecAndItemFromPointInRaster(layer, p):
-    pt = p  # QgsCoordinateTransform(QgsProject.instance().crs(),layer.crs(),QgsProject.instance()).transform(p)
-    dp = layer.dataProvider()
-    finalExtent = dp.extent()
+    def rectCell(self, layer, row, col):
+        dp = layer.dataProvider()
+        finalExtent = dp.extent()
 
-    # Calculate the row / column where the point falls
-    xres = layer.rasterUnitsPerPixelX()
-    yres = layer.rasterUnitsPerPixelY()
+        # Calculate the row / column where the point falls
+        xres = layer.rasterUnitsPerPixelX()
+        yres = layer.rasterUnitsPerPixelY()
 
-    from math import floor
-    col = abs(floor((pt.x() - finalExtent.xMinimum()) / xres))
-    row = abs(floor((finalExtent.yMaximum() - pt.y()) / yres))
-
-    xMin = finalExtent.xMinimum() + col * xres
-    xMax = xMin + xres
-    yMax = finalExtent.yMaximum() - row * yres
-    yMin = yMax - yres
-    pixelExtent = QgsRectangle(xMin, yMin, xMax, yMax)
-    # 1 is referring to band 1
-    block = dp.block(1, finalExtent, layer.width(), layer.height())
-    del dp
+        xMin = finalExtent.xMinimum() + col * xres
+        xMax = xMin + xres
+        yMax = finalExtent.yMaximum() - row * yres
+        yMin = yMax - yres
+        del dp
+        return QgsRectangle(xMin, yMin, xMax, yMax)
 
 
-    if pixelExtent.contains(pt):
-        return block, pixelExtent, row, col
-    else:
-        return False, False, False, False
+    def cotaFromTiff(self, layer, p, interpolate=True):
+        p = QgsCoordinateTransform(QgsProject.instance().crs(), layer.crs(), QgsProject.instance()).transform(p)
+        if interpolate:
 
-
-def rectCell(layer, row, col):
-    dp = layer.dataProvider()
-    finalExtent = dp.extent()
-
-    # Calculate the row / column where the point falls
-    xres = layer.rasterUnitsPerPixelX()
-    yres = layer.rasterUnitsPerPixelY()
-
-    xMin = finalExtent.xMinimum() + col * xres
-    xMax = xMin + xres
-    yMax = finalExtent.yMaximum() - row * yres
-    yMin = yMax - yres
-    del dp
-    return QgsRectangle(xMin, yMin, xMax, yMax)
-
-
-def cotaFromTiff(layer, p, interpolate=True):
-    p = QgsCoordinateTransform(QgsProject.instance().crs(), layer.crs(), QgsProject.instance()).transform(p)
-    if interpolate:
-
-        b, rec, row, col = getBlockRecAndItemFromPointInRaster(layer, p)
-        if not b:
-            return 0
-
-        #matrix dos 9 pixels
-        matx = [[[None, None, None], [None, None, None], [None, None, None]],
-                [[None, None, None], [None, None, None], [None, None, None]]]
-
-        from itertools import product
-        for i, j in product([-1, 0, 1], [-1, 0, 1]):
-            matx[0][i + 1][j + 1] = b.value(row + i, col + j)  # elevações
-            matx[1][i + 1][j + 1] = rectCell(layer, row + i, col + j).center().distance(p)  # distancias
-            if row < 0 or col < 0 or row >= layer.height() or col >= layer.width():
+            b, rec, row, col = self.getBlockRecAndItemFromPointInRaster(layer, p)
+            if not b:
                 return 0
 
-        V = [matx[0][i][j] for i, j in product([0, 1, 2], [0, 1, 2])] #elevações
-        L = [matx[1][i][j] for i, j in product([0, 1, 2], [0, 1, 2])] #Distancias
+            #matrix dos 9 pixels
+            matx = [[[None, None, None], [None, None, None], [None, None, None]],
+                    [[None, None, None], [None, None, None], [None, None, None]]]
 
-        #tolerância de 1 diagonal inteira
-        max_dist = (layer.rasterUnitsPerPixelX() ** 2 + layer.rasterUnitsPerPixelY() ** 2) ** (1 / 2)
-        # pesos
-        I = [(max_dist - l) / max_dist if l < max_dist else 0 for l in L]
-        # média
-        del matx
-        del b
-        del rec
+            from itertools import product
+            for i, j in product([-1, 0, 1], [-1, 0, 1]):
+                matx[0][i + 1][j + 1] = b.value(row + i, col + j)  # elevações
+                matx[1][i + 1][j + 1] = self.rectCell(layer, row + i, col + j).center().distance(p)  # distancias
+                if row < 0 or col < 0 or row >= layer.height() or col >= layer.width():
+                    return 0
 
-        return sum(v * i for v, i in zip(V, I)) / sum(I)
+            V = [matx[0][i][j] for i, j in product([0, 1, 2], [0, 1, 2])] #elevações
+            L = [matx[1][i][j] for i, j in product([0, 1, 2], [0, 1, 2])] #Distancias
+
+            #tolerância de 1 diagonal inteira
+            max_dist = (layer.rasterUnitsPerPixelX() ** 2 + layer.rasterUnitsPerPixelY() ** 2) ** (1 / 2)
+            # pesos
+            I = [(max_dist - l) / max_dist if l < max_dist else 0 for l in L]
+            # média
+            del matx
+            del b
+            del rec
+
+            return sum(v * i for v, i in zip(V, I)) / sum(I)
 
 
-    v = layer.dataProvider().sample(p, 1)
-    if layer.extent().contains(p) and v[1]:
-        return v[0]
-    else:
-        return 0
+        v = layer.dataProvider().sample(p, 1)
+        if layer.extent().contains(p) and v[1]:
+            return v[0]
+        else:
+            return 0
 
 

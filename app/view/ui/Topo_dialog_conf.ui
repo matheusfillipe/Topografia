@@ -108,25 +108,6 @@
      </property>
     </widget>
    </item>
-   <item row="9" column="4">
-    <widget class="QDoubleSpinBox" name="offsetSpinBox">
-     <property name="whatsThis">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Espaçamento entre os pontos&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="minimum">
-      <double>1.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>8.000000000000000</double>
-     </property>
-     <property name="singleStep">
-      <double>0.500000000000000</double>
-     </property>
-     <property name="value">
-      <double>3.000000000000000</double>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="0">
     <widget class="QLabel" name="label">
      <property name="sizePolicy">
@@ -316,13 +297,6 @@
      </property>
     </widget>
    </item>
-   <item row="9" column="3">
-    <widget class="QLabel" name="label_13">
-     <property name="text">
-      <string> X</string>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="0">
     <widget class="QLineEdit" name="txtCRS"/>
    </item>
@@ -378,19 +352,6 @@
      </item>
     </layout>
    </item>
-   <item row="9" column="1">
-    <widget class="QLabel" name="label_12">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="text">
-      <string>Espaçamento transversal de cada lado (m)</string>
-     </property>
-    </widget>
-   </item>
    <item row="8" column="1">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
@@ -404,33 +365,6 @@
       </widget>
      </item>
     </layout>
-   </item>
-   <item row="10" column="3">
-    <widget class="QLabel" name="label_14">
-     <property name="text">
-      <string>=</string>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="2">
-    <widget class="QSpinBox" name="transversal">
-     <property name="whatsThis">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Número de pontos cotados distribuidos para cada lado da sessão tipo&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="value">
-      <number>10</number>
-     </property>
-    </widget>
-   </item>
-   <item row="10" column="4">
-    <widget class="QDoubleSpinBox" name="t_espassamento">
-     <property name="whatsThis">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Espaçamento em metros a ser cotado a partir de cada lado do centro da sessão transversal. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="readOnly">
-      <bool>true</bool>
-     </property>
-    </widget>
    </item>
    <item row="4" column="3">
     <widget class="QLabel" name="label_6">
@@ -493,6 +427,79 @@
     <widget class="QComboBox" name="comboMap">
      <property name="enabled">
       <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="3">
+    <widget class="QLabel" name="label_14">
+     <property name="text">
+      <string>=</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="4">
+    <widget class="QDoubleSpinBox" name="t_espassamento">
+     <property name="whatsThis">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Espaçamento em metros a ser cotado a partir de cada lado do centro da sessão transversal. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="1">
+    <widget class="QLabel" name="label_12">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Espaçamento transversal de cada lado (m)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="2">
+    <widget class="QSpinBox" name="transversal">
+     <property name="whatsThis">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Número de pontos cotados distribuidos para cada lado da sessão tipo&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="value">
+      <number>10</number>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="3">
+    <widget class="QLabel" name="label_13">
+     <property name="text">
+      <string> X</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="4">
+    <widget class="QDoubleSpinBox" name="offsetSpinBox">
+     <property name="whatsThis">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Espaçamento entre os pontos&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="minimum">
+      <double>1.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>8.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>0.500000000000000</double>
+     </property>
+     <property name="value">
+      <double>3.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="2" colspan="3">
+    <widget class="QPushButton" name="dbBuild">
+     <property name="text">
+      <string>Reconstruir banco de dados</string>
      </property>
     </widget>
    </item>

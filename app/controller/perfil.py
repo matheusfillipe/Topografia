@@ -678,6 +678,84 @@ class ssRoi(CustomPolyLineROI):
 
             self.wasInitialized = True
 
+class brucknerRoi(CustomPolyLineROI):
+    wasModified=QtCore.pyqtSignal()
+    modified=QtCore.pyqtSignal(object)
+
+    def __init__(self, *args, **kwds):
+        super(ssRoi, self).__init__(*args, **kwds)
+
+
+
+    def segmentClicked(self, segment, ev=None, pos=None): ## pos should be in this item's coordinate system
+        if ev != None:
+            pos = segment.mapToParent(ev.pos())
+        elif pos != None:
+            pos = pos
+        else:
+            raise Exception("Either an event or a position must be given.")
+        if ev.button() == QtCore.Qt.RightButton:
+            d = ssRampaDialog(self, segment, pos)
+            d.exec_()
+            self.wasModified.emit()
+            self.sigRegionChangeFinished.emit(self)
+
+        elif ev.button() == QtCore.Qt.LeftButton:
+            h1 = segment.handles[0]['item']
+            h2 = segment.handles[1]['item']
+            i = self.segments.index(segment)
+            h3 = self.addFreeHandle(pos, index=self.indexOfHandle(h2))
+            self.addSegment(h3, h2, index=i+1)
+            segment.replaceHandle(h2, h3)
+            self.wasModified.emit()
+            self.sigRegionChangeFinished.emit(self)
+
+    def setPoints(self, points, closed=None):
+        self.wasInitialized = False
+        QgsMessageLog.logMessage("Iniciando pontos do perfil transversal", "Topografia", level=0)
+        if closed is not None:
+            self.closed = closed
+        self.clearPoints()
+
+        for p in points:
+            self.addRotateHandle(p, p)
+
+        start = -1 if self.closed else 0
+
+        self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
+
+        for i in range(start, len(self.handles) - 1):
+            self.addSegment(self.handles[i]['item'], self.handles[i + 1]['item'])
+            j = i + 1
+            self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+
+        self.wasInitialized = True
+        self.updateHandles()
+
+    def updateHandles(self):
+
+        if self.wasInitialized:
+            for i in range(0, len(self.handles) - 1):
+
+                try:
+                    self.handles[i]['item'].sigEditRequest.disconnect()
+                except:
+                    pass
+
+            self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
+            start = -1 if self.closed else 0
+
+            for i in range(start, len(self.handles) - 1):
+                j = i + 1
+                self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+                try:
+                    diag = cvEditDialog(self, j)
+                    diag.reset()
+                except:
+                    pass
+
+            self.wasInitialized = True
+
 
 class Ui_Perfil(QtWidgets.QDialog):
     
@@ -1244,7 +1322,7 @@ class Ui_sessaoTipo(Ui_Perfil):
 
 
         self.selectEstacaComboBox=QtWidgets.QComboBox(PerfilTrecho)
-        self.selectEstacaComboBox.addItems(list(map(str, self.progressiva)))
+        self.selectEstacaComboBox.addItems(list(map(prog2estacaStr, self.progressiva)))
         self.selectEstacaComboBox.currentIndexChanged.connect(self.changeEstaca)
 
         self.applyBtn=QtWidgets.QPushButton(PerfilTrecho)
@@ -1358,8 +1436,7 @@ class Ui_sessaoTipo(Ui_Perfil):
     def changeEstaca(self):
 
         if not self.changingEstaca:
-
-            self.current = int(self.progressiva.index(float(self.selectEstacaComboBox.currentText())))
+            self.current = int(self.progressiva.index(estaca2progFloat(self.selectEstacaComboBox.currentText())))
             self.reset()
 
 

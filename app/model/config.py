@@ -243,6 +243,13 @@ class Config(object):
                     "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
                     ")")
 
+        con.execute("CREATE TABLE if not exists BRUCKNER_TABLE"
+                    "(id INTEGER primary key AUTOINCREMENT,"                    
+                    "estaca text,"
+                    "volume text,"
+                    "TABLEESTACA_id INTEGER,"
+                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
+                    ")")
 
         con.commit()
         return con

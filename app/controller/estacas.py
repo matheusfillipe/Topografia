@@ -20,7 +20,7 @@ except:
     elif system() == "Windows":
         from ...PILWin import Image
 
-from ..controller.perfil import Ui_Perfil, cv as CV, Ui_sessaoTipo
+from ..controller.perfil import Ui_Perfil, cv as CV, Ui_sessaoTipo, Ui_Bruckner
 from ..model.estacas import Estacas as EstacasModel
 from ..model.knn import KNN
 from ..model.utils import *
@@ -140,17 +140,18 @@ class Estacas(object):
 
         self.progressDialog.setValue(90)
 
-        #TODO Replace with pyqtgraph
-        import matplotlib.pyplot as plt
-        line, = plt.plot(X, V, lw=2)
-        plt.title("Diagrama de Bruckner")
-        plt.xlabel(u'Estacas')
-        plt.ylabel(u'Volume m³')
-        plt.grid(True)
-
+        bruck=Ui_Bruckner(X,V)
+        bruck.showMaximized()
         self.progressDialog.close()
+        bruck.exec_()
 
-        plt.show()
+#        import matplotlib.pyplot as plt
+#        line, = plt.plot(X, V, lw=2)
+#        plt.title("Diagrama de Bruckner")
+#        plt.xlabel(u'Estacas')
+#        plt.ylabel(u'Volume m³')
+#        plt.grid(True)
+#        plt.show()
 
 
     @nongui

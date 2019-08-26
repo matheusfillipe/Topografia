@@ -5,7 +5,7 @@ import os
 from builtins import str
 
 from qgis.PyQt import uic, QtWidgets
-from qgis.PyQt.QtCore import QSettings
+from qgis.PyQt.QtCore import QSettings, Qt
 from qgis.PyQt.QtWidgets import QAbstractItemView
 from qgis._core import *
 
@@ -25,6 +25,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         super(TopoConfig, self).__init__(parent)
         self.iface = iface
         self.setupUi(self)
+        self.setWindowFlags(self.windowFlags() & Qt.WindowContextHelpButtonHint)
         self.setup()
 
         self.TopoDialogBase: QtWidgets.QDialog

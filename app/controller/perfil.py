@@ -683,9 +683,7 @@ class brucknerRoi(CustomPolyLineROI):
     modified=QtCore.pyqtSignal(object)
 
     def __init__(self, *args, **kwds):
-        super(ssRoi, self).__init__(*args, **kwds)
-
-
+        super(brucknerRoi, self).__init__(*args, **kwds)
 
     def segmentClicked(self, segment, ev=None, pos=None): ## pos should be in this item's coordinate system
         if ev != None:
@@ -723,11 +721,19 @@ class brucknerRoi(CustomPolyLineROI):
         start = -1 if self.closed else 0
 
         self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
+        self.handles[0]['item'].fixedOnX=True
+        self.handles[0]['item'].fixedOnY = True
+        self.handles[0]['item'].edge=True
 
         for i in range(start, len(self.handles) - 1):
             self.addSegment(self.handles[i]['item'], self.handles[i + 1]['item'])
             j = i + 1
             self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+            self.handles[j]['item'].fixedOnY = True
+
+        self.handles[j]['item'].fixedOnX=True
+        self.handles[j]['item'].fixedOnY = True
+        self.handles[j]['item'].edge=True
 
         self.wasInitialized = True
         self.updateHandles()
@@ -748,6 +754,7 @@ class brucknerRoi(CustomPolyLineROI):
             for i in range(start, len(self.handles) - 1):
                 j = i + 1
                 self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+                self.handles[j]['item'].fixedOnY = True
                 try:
                     diag = cvEditDialog(self, j)
                     diag.reset()
@@ -1522,3 +1529,32 @@ class Ui_sessaoTipo(Ui_Perfil):
         if diag.exec_()==QtWidgets.QDialog.Accepted:
             self.prismoide.ati=diag.ati
             self.prismoide.cti=diag.cti
+
+class Ui_Bruckner(Ui_Perfil):
+
+    save = QtCore.pyqtSignal()
+    plotar = QtCore.pyqtSignal(int)
+
+    def __init__(self, X, V):
+        self.editMode=True
+        self.X=X
+        self.V=V
+        super(Ui_Bruckner, self).__init__(0, 0, 0, [], [], wintitle="Diagrama de Bruckner")
+    def setAsNotSaved(self):
+        pass
+    def calcularGreide(self):
+        pass
+    def perfil_grafico(self):
+        self.perfilPlot.setWindowTitle('Sessao Tipo')
+#        self.createLabels()
+
+        self.roi = brucknerRoi([[self.X[0],self.V[0]], [self.X[-1], self.V[0]]])
+        self.roi.wasModified.connect(self.setAsNotSaved)
+        self.roi.setAcceptedMouseButtons(QtCore.Qt.RightButton)
+        self.perfilPlot.addItem(self.roi)
+
+        self.roi.setPlotWidget(self.perfilPlot)
+
+        self.perfilPlot.plot(self.X, self.V)
+#        self.updateLabels()
+

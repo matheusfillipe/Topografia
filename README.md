@@ -1,6 +1,7 @@
 # Topografia
 ## Descrição
 
+
 Plugin para qgis 3.x que possibilita o desenvolvimento do projeto geométrico de estradas. Permite a realização do traçado a partir de diretrizes sore o mapa com imagens de satélite e realiza cálculos de curvas horizontais, verticais e volumes de corte e aterro.
 
 Permite a extração dos resultados por meio de layers (Shapefile ou Geopackage), cad (.dxf), planilha (.csv) e imagens (.png)
@@ -8,6 +9,14 @@ Permite a extração dos resultados por meio de layers (Shapefile ou Geopackage)
 A principal objetivo desse plugin é fornecer uma plataforma livre e open source, aliada às funções já existentes no QGIS, como uma alternativa à softwares como o Topograph da Bentley, para o estudo da disciplina de projeto geométrico de estradas. Os dados gerados por esse software ainda não foram completamente validados e não são confiáveis para aplicações em situações reais.
 
 Este plugin funciona para Windows, Mac e Linux, com suas principais funções tendo como única dependência o QGIS instalado no sistema operacional.
+
+---------------------------------------------------------------------
+
+This plugins has the goal to easy the study and apply the process of the geometric road design and comes with the standard Brazilian guidelines for speed limitations, allowed inclinations, curves radius and length.
+
+The basic workflow of this software would be creating a table of segmented points from a vector layer with progressive distance; creating horizontal curves that can be spiral or circular (Polygonized); calculating elevations over it from a raster layer; defining the longitudinal profile with parabolic transition curves curves; computing the intersection between the horizontal and vertical data; computing the perpendicular transversal from a raster layer, setting up the road section over the terrain; computing volume and displaying Bruckner's diagram.
+
+Vertical data can be set and edited with a pyqtgraph interface. The transversal section setup and volume computations are computing intensive and its recomended 8 GB of ram or more. Most tables can be exported or imported in the formats *.csv for tables and *.dxf.
 
 
 ## Recursos

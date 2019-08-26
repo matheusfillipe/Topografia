@@ -17,14 +17,14 @@ qgisMaximumVersion=3.99
 about=This plugins has the goal to easy the study and apply the process of the geometric road design and comes with the standard Brazilian guidelines for speed limitations, allowed inclinations, curves radius and length.
     The basic workflow of this software would be creating a table of segmented points from a vector layer with progressive distance; creating horizontal curves that can be spiral or circular (Polygonized); calculating elevations over it from a raster layer; defining the longitudinal profile with parabolic transition curves curves; computing the intersection between the horizontal and vertical data; computing the perpendicular transversal from a raster layer, setting up the road section over the terrain; computing volume and displaying Bruckner's diagram.
     Vertical data can be set and edited with a pyqtgraph interface. The transversal section setup and volume computations are computing intensive and its recomended 8 GB of ram or more. Most tables can be exported or imported in the formats *.csv for tables and *.dxf.
-tracker=https://github.com/matheusfillipe/Topografia
+tracker=https://github.com/matheusfillipe/Topografia/issues
 repository=https://github.com/matheusfillipe/Topografia
 # End of mandatory metadata
 
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog=Fixes on raster interpolator and added bruckner interface, final project file.
+changelog=Fixes on raster interpolator and added bruckner interface, final lzip project file database format.
 
 # Tags are comma separated with spaces allowed
 tags=topography, road design, civil engineering,

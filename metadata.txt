@@ -10,7 +10,7 @@
 name=Topografia
 qgisMinimumVersion=3.0
 description=Geometric Road Design
-version=0.6
+version=0.7
 author=Lucas, Matheus Fillipe
 email=matheusfillipeag@gmail.com
 qgisMaximumVersion=3.99
@@ -27,7 +27,7 @@ repository=https://github.com/matheusfillipe/Topografia
 changelog=Fixes on raster interpolator and added bruckner interface, final lzip project file database format.
 
 # Tags are comma separated with spaces allowed
-tags=topography, road design, civil engineering,
+tags=topography, road design, civil engineering, python,
 
 homepage=https://github.com/matheusfillipe/Topografia
 category=Plugins

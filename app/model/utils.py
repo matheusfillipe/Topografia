@@ -334,6 +334,9 @@ longPrecision=8
 def roundFloat(f:float):
     return round(f,precision)
 
+def roundFloatShort(f):
+    return round(f,1)
+
 def formatValue(value):
     try:
         if int(float(value))==float(value): #value is a int

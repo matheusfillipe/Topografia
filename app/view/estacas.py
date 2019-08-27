@@ -1388,7 +1388,7 @@ class rampaDialog(QtWidgets.QDialog):
 
 class ssRampaDialog(rampaDialog):
     def __init__(self, roi, segment, pos):
-        super(ssRampaDialog, self).__init__(roi, segment, pos)
+        super(brucknerRampaDialog, self).__init__(roi, segment, pos)
         self.setWindowTitle("Modificar Elemento")
 
     def setupUI(self):
@@ -1491,6 +1491,135 @@ class ssRampaDialog(rampaDialog):
 
         self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.isBeingModified = False
+
+class brucknerRampaDialog(rampaDialog):
+    def __init__(self, roi, segment, pos):
+        super(brucknerRampaDialog, self).__init__(roi, segment, pos)
+        self.setWindowTitle("Modificar Elemento")
+
+    def setupUI(self):
+        r = []
+        for handle in self.roi.getHandles():
+            r.append(handle)
+
+        self.firstHandle = r[0]
+        self.lastHandle = r[len(r) - 1]
+
+        H1layout = QtWidgets.QHBoxLayout()
+        H2layout = QtWidgets.QHBoxLayout()
+        H3layout = QtWidgets.QHBoxLayout()
+        Vlayout = QtWidgets.QVBoxLayout(self)
+
+        label = QtWidgets.QLabel("Modificar Rampa")
+
+        Incl=QtWidgets.QDoubleSpinBox()
+        Incl.setMaximum(100.0)
+        Incl.setMinimum(-100.0)
+        compr=QtWidgets.QDoubleSpinBox()
+        compr.setMaximum(1000000000.0)
+        compr.setMinimum(0.0)
+        cota=QtWidgets.QDoubleSpinBox()
+        cota.setMinimum(0.0)
+        cota.setMaximum(100000000.0)
+        abscissa=QtWidgets.QDoubleSpinBox()
+        abscissa.setMaximum(1000000000.0)
+        abscissa.setMinimum(0.0)
+        Incl.setSingleStep(.01)
+
+        InclLbl = QtWidgets.QLabel(u"Inclinação: ")
+        posInclLbl = QtWidgets.QLabel(u"%")
+        comprLbl = QtWidgets.QLabel(u"Comprimento: ")
+        poscomprLbl = QtWidgets.QLabel(u"m")
+        cotaLbl = QtWidgets.QLabel(u"Cota:      ")
+        poscotaLbl = QtWidgets.QLabel(u"m")
+        abscissalbl = QtWidgets.QLabel(u"Distância até o eixo")
+        posabscissaLbl = QtWidgets.QLabel(u"m")
+
+        h1 = self.segment.handles[0]['item']
+        h2 = self.segment.handles[1]['item']
+
+        self.h1 = h1
+        self.h2 = h2
+
+        self.initialPos = [h1.pos(), h2.pos()]
+
+        b1 = QtWidgets.QPushButton("ok", self)
+        b1.clicked.connect(self.finishDialog)
+        b2 = QtWidgets.QPushButton("cancelar", self)
+        b2.clicked.connect(lambda: self.cleanClose())
+
+        H1layout.addWidget(InclLbl)
+        H1layout.addWidget(Incl)
+        H1layout.addWidget(posInclLbl)
+        H1layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+
+        H1layout.addWidget(comprLbl)
+        H1layout.addWidget(compr)
+        H1layout.addWidget(poscomprLbl)
+        H1layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+
+        H2layout.addWidget(cotaLbl)
+        H2layout.addWidget(cota)
+        H2layout.addWidget(poscotaLbl)
+        H2layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+
+        H2layout.addWidget(abscissalbl)
+        H2layout.addWidget(abscissa)
+        H2layout.addWidget(posabscissaLbl)
+        H2layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+
+        Vlayout.addWidget(label)
+        Vlayout.addLayout(H1layout)
+        Vlayout.addLayout(H2layout)
+        H3layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+        H3layout.addWidget(b1)
+        H3layout.addWidget(b2)
+        Vlayout.addLayout(H3layout)
+
+        self.InclText = Incl
+        self.Incl = 100 * (h2.pos().y() - h1.pos().y()) / (h2.pos().x() - h1.pos().x())
+        self.comprText = compr
+        self.compr = (h2.pos().x() - h1.pos().x())
+        self.cotaText = cota
+        self.cota = h2.pos().y()/1000000
+        self.abscissaText = abscissa
+        self.abscissa = h2.pos().x()
+
+        Incl.setValue(float(round(self.Incl, 2)))
+        compr.setValue(float(round(self.compr, 2)))
+        cota.setValue(float(round(self.cota, 2)))
+        abscissa.setValue(float(round(self.abscissa, 2)))
+
+        compr.valueChanged.connect(self.updateCompr)
+        #cota.valueChanged.connect(self.updateCota)
+        abscissa.valueChanged.connect(self.updateAbscissa)
+        Incl.valueChanged.connect(self.updateIncl)
+
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.isBeingModified = False
+
+        Incl.setDisabled(True)
+        Incl.hide()
+        posabscissaLbl.setText(" Estacas")
+        poscomprLbl.setText(" Estacas")
+        cotaLbl.setText(" Eixo")
+        poscotaLbl.setText(u' 10⁶ m³')
+
+        self.cotasb=cota
+
+    def updateCompr(self):
+        try:
+            if not self.isBeingModified:
+                c = self.compr
+                self.compr = round(float(self.comprText.value()), 2)
+                dc = self.compr - c
+                self.cota = round(self.cota + np.sin(np.deg2rad(self.Incl)) * dc, 2)
+                self.abscissa = round(self.abscissa + np.cos(np.deg2rad(self.Incl)) * dc, 2)
+                self.update()
+                self.redefineUI(1)
+
+        except ValueError:
+            pass
 
 
 class cvEdit(QtWidgets.QDialog, VERTICE_EDIT_DIALOG):

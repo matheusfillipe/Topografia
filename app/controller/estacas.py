@@ -131,27 +131,35 @@ class Estacas(object):
                 messageDialog(message="Sessão Transversal não definida!")
                 return
             self.progressDialog.setValue(10)
-            X,V=self.brucknerThread(X, est, prismoide, 0, len(X)-1)
+            X, V = self.brucknerThread(X, est, prismoide, 0, len(X)-1)
 
         else:
             X, V = zip(*table)
-            X=[float(x) for x in X]
-            V=[float(v) for v in V]
+            X = [float(x) for x in X]
+            V = [float(v) for v in V]
 
         self.progressDialog.setValue(90)
+        dialog=EstacaRangeSelect(None, X)
+        if not dialog.exec_():
+            return
+        ei=dialog.inicial.currentIndex()
+        ef=dialog.final_2.currentIndex()
+        X=X[ei:ef+1]
+        V=V[ei:ef+1]
 
-        bruck=Ui_Bruckner(X,V)
+        bruck = Ui_Bruckner(X, V)
         bruck.showMaximized()
         self.progressDialog.close()
         bruck.exec_()
 
-#        import matplotlib.pyplot as plt
-#        line, = plt.plot(X, V, lw=2)
-#        plt.title("Diagrama de Bruckner")
-#        plt.xlabel(u'Estacas')
-#        plt.ylabel(u'Volume m³')
-#        plt.grid(True)
-#        plt.show()
+    def matplot(self, X, V, title="Diagrama de Bruckner", xlabel=u'Estacas', ylabel=u'Volume m³'):
+        import matplotlib.pyplot as plt
+        line, = plt.plot(X, V, lw=2)
+        plt.title(title)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.grid(True)
+        plt.show()
 
 
     @nongui

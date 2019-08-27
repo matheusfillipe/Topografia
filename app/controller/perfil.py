@@ -4,12 +4,13 @@ import functools
 from builtins import zip
 
 import numpy as np
+from PyQt5.QtCore import QPointF
 from qgis.PyQt import QtGui
 
 from ..model import constants
 from ..model.utils import *
 from ..view.estacas import cvEdit, closeDialog, rampaDialog, QgsMessageLog, ApplyTransDialog, SetCtAtiDialog, \
-    setEscalaDialog, ssRampaDialog
+    setEscalaDialog, brucknerRampaDialog, ssRampaDialog
 from ... import PyQtGraph as pg
 
 # -*- coding: utf-8 -*-
@@ -684,6 +685,22 @@ class brucknerRoi(CustomPolyLineROI):
 
     def __init__(self, *args, **kwds):
         super(brucknerRoi, self).__init__(*args, **kwds)
+        self.ismodifying=False
+    def removeRect(self, handle):
+        try:
+            self.plotWidget.removeItem(handle.leg)
+            self.plotWidget.removeItem(handle.rect1)
+            self.plotWidget.removeItem(handle.rect2)
+        except:
+            pass
+        pg.QtGui.QGuiApplication.processEvents()
+
+    def moveCota(self, y):
+        self.setPos(QPointF(self.pos().x(), y-self.ymed))
+        for handle in self.getHandles()[1:-1]:
+            handle.sigRemoveRequested.emit(handle)
+        self.removeRect(self.getHandles()[0])
+        self.removeRect(self.getHandles()[-1])
 
     def segmentClicked(self, segment, ev=None, pos=None): ## pos should be in this item's coordinate system
         if ev != None:
@@ -693,10 +710,15 @@ class brucknerRoi(CustomPolyLineROI):
         else:
             raise Exception("Either an event or a position must be given.")
         if ev.button() == QtCore.Qt.RightButton:
-            d = ssRampaDialog(self, segment, pos)
+            d = brucknerRampaDialog(self, segment, pos)
+            d.cotasb.setValue((self.pos().y()+self.ymed)/1000000)
+            d.cotasb.valueChanged.connect(lambda: self.moveCota(d.cotasb.value()*1000000))
+            self.ismodifying=True
             d.exec_()
+            self.ismodifying=False
             self.wasModified.emit()
             self.sigRegionChangeFinished.emit(self)
+
 
         elif ev.button() == QtCore.Qt.LeftButton:
             h1 = segment.handles[0]['item']
@@ -705,16 +727,21 @@ class brucknerRoi(CustomPolyLineROI):
             h3 = self.addFreeHandle(pos, index=self.indexOfHandle(h2))
             self.addSegment(h3, h2, index=i+1)
             segment.replaceHandle(h2, h3)
+            y0=self.getHandles()[0].pos().y()
+            h1.setPos(QPointF(h1.pos().x(), y0))
+            h2.setPos(QPointF(h2.pos().x(), y0))
+            h3.setPos(QPointF(h3.pos().x(), y0))
             self.wasModified.emit()
             self.sigRegionChangeFinished.emit(self)
 
     def setPoints(self, points, closed=None):
         self.wasInitialized = False
-        QgsMessageLog.logMessage("Iniciando pontos do perfil transversal", "Topografia", level=0)
+        QgsMessageLog.logMessage("Iniciando pontos do diagrama de bruckner", "Topografia", level=0)
         if closed is not None:
             self.closed = closed
         self.clearPoints()
 
+        first=True
         for p in points:
             self.addRotateHandle(p, p)
 
@@ -728,7 +755,7 @@ class brucknerRoi(CustomPolyLineROI):
         for i in range(start, len(self.handles) - 1):
             self.addSegment(self.handles[i]['item'], self.handles[i + 1]['item'])
             j = i + 1
-            self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+
             self.handles[j]['item'].fixedOnY = True
 
         self.handles[j]['item'].fixedOnX=True
@@ -748,12 +775,12 @@ class brucknerRoi(CustomPolyLineROI):
                 except:
                     pass
 
-            self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
+
             start = -1 if self.closed else 0
 
             for i in range(start, len(self.handles) - 1):
                 j = i + 1
-                self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+
                 self.handles[j]['item'].fixedOnY = True
                 try:
                     diag = cvEditDialog(self, j)
@@ -1538,23 +1565,96 @@ class Ui_Bruckner(Ui_Perfil):
     def __init__(self, X, V):
         self.editMode=True
         self.X=X
+       # self.V=[v/1000000 for v in V]
         self.V=V
         super(Ui_Bruckner, self).__init__(0, 0, 0, [], [], wintitle="Diagrama de Bruckner")
+        self.btnCalcular.setDisabled(True)
+        self.btnSave.setDisabled(True)
+        self.btnReset.clicked.disconnect()
+        self.btnReset.clicked.connect(self.resetView)
+        self.setWindowTitle("Diagrama de Bruckner")
+
+    def resetView(self):
+        for h in self.roi.getHandles()[1:-1]:
+            h.sigRemoveRequested.emit(h)
+        self.roi.removeRect(self.roi.getHandles()[-1])
+        self.roi.removeRect(self.roi.getHandles()[0])
+
     def setAsNotSaved(self):
         pass
+
     def calcularGreide(self):
         pass
-    def perfil_grafico(self):
-        self.perfilPlot.setWindowTitle('Sessao Tipo')
-#        self.createLabels()
 
-        self.roi = brucknerRoi([[self.X[0],self.V[0]], [self.X[-1], self.V[0]]])
+    def perfil_grafico(self):
+        self.perfilPlot.setWindowTitle('Diagrama de Bruckner (m³)')
+#        self.createLabels()
+        ymed=np.average(self.V)
+        self.roi = brucknerRoi([[self.X[0], ymed], [self.X[-1], ymed]])
+        self.roi.ymed=ymed
         self.roi.wasModified.connect(self.setAsNotSaved)
         self.roi.setAcceptedMouseButtons(QtCore.Qt.RightButton)
+        self.roi.sigRegionChangeFinished.connect(self.updater)
         self.perfilPlot.addItem(self.roi)
-
         self.roi.setPlotWidget(self.perfilPlot)
-
         self.perfilPlot.plot(self.X, self.V)
 #        self.updateLabels()
 
+    def updater(self):
+        if not self.roi.ismodifying:
+            handles=[self.roi.getHandlePos(i).x() for i in range(self.roi.countHandles())]
+            lx=handles[0]
+            v0=self.roi.pos().y()+self.roi.ymed
+            dist=Config.instance().DIST
+            for j, x in enumerate(handles[1:]):  #para cada segmento
+                A=0
+                vmax=0
+                xmax=(lx+x)/2
+                i1=max([i for i, ix in enumerate(self.X) if ix <= lx])
+                i2=min([i for i, ix in enumerate(self.X) if ix >= x ])
+
+                for i, v in enumerate(self.V[i1:i2]):  #para cada Volume
+                    dx=self.X[i+1+i1] - self.X[i+i1]
+                    A+=dx*((self.V[i+1+i1] + self.V[i+i1])/2-v0)
+                    if abs(vmax) <= abs(v-v0):
+                        vmax = v-v0
+                        xmax = (self.X[i+1+i1] + self.X[i+i1])/2
+
+                lx=x
+                dm=abs(A/vmax)  # Distância média de transporte  vmax--> altura
+
+                #  Plotar retangulo, associar com handle
+                handle = self.roi.handles[j + 1]['item']
+                self.roi.removeRect(handle)
+                handle.rect1=pg.PlotCurveItem()
+                handle.rect2=pg.PlotCurveItem()
+                handle.rect1.setData([xmax-dm/2, xmax-dm/2, xmax+dm/2, xmax+dm/2],
+                                                             [v0, v0+vmax, v0+vmax, v0],
+                                                             pen=pg.mkPen('b', width=4, style=QtCore.Qt.SolidLine))
+                handle.rect2.setData([xmax, xmax],
+                                                         [v0, v0+vmax],
+                                                         pen=pg.mkPen('r', width=3, style=QtCore.Qt.SolidLine))
+
+                handle.leg=pg.TextItem(color=(200,200,200))
+                handle.leg.setHtml("A = %s m⁴<br>Vmax = %s m³<br>Dm = %s m" % (str(roundFloatShort(A*dist)),
+                                                                               str(roundFloatShort(vmax)),
+                                                                               str(roundFloatShort(dm*dist))))
+                handle.leg.setAnchor((0, abs(vmax)/vmax))
+                handle.leg.setPos(xmax, v0+vmax)
+                handle.sigRemoveRequested.connect(self.roi.removeRect)
+                self.roi.plotWidget.addItem(handle.rect1)
+                self.roi.plotWidget.addItem(handle.rect2)
+                self.roi.plotWidget.addItem(handle.leg)
+
+            pg.QtGui.QGuiApplication.processEvents()
+
+
+
+    def closeEvent(self, event):
+        pass
+
+    def wasSaved(self):
+        pass
+
+    def reject(self):
+        pass

@@ -1288,8 +1288,6 @@ class Handle(UIGraphicsItem):
         self.cvEdit = menu.addAction("Editar o vértice", self.edit)
         return menu
    
-   
-   
 
     def getMenu(self):
         return self.menu
@@ -1329,9 +1327,11 @@ class Handle(UIGraphicsItem):
         if self.isMoving:  ## note: isMoving may become False in mid-drag due to right-click.
             pos=None
 
-            if hasattr(self, "fixedOnX") and self.fixedOnX:
+            if hasattr(self, "fixedOnY") and self.fixedOnY and hasattr(self, "fixedOnX") and self.fixedOnX:
+               pos = Point(self.startPos.x(), self.startPos.y())
+            elif hasattr(self, "fixedOnX") and self.fixedOnX:
                pos = Point(self.startPos.x(), ev.scenePos().y() + self.cursorOffset.y())
-            if hasattr(self, "fixedOnY") and self.fixedOnY:
+            elif hasattr(self, "fixedOnY") and self.fixedOnY:
                pos = Point(ev.scenePos().x() + self.cursorOffset.x(), self.startPos.y())
 
             pos = ev.scenePos() + self.cursorOffset if pos is None else pos
@@ -2131,6 +2131,9 @@ class CrosshairROI(ROI):
         
         
 class RulerROI(LineSegmentROI):
+    def __init__(self, *args, **kwargs):
+        super(RulerROI, self).__init__(*args, **kwargs)
+
     def paint(self, p, *args):
         LineSegmentROI.paint(self, p, *args)
         h1 = self.handles[0]['item'].pos()

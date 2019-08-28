@@ -11,7 +11,7 @@
 name=Topografia
 qgisMinimumVersion=3.0
 description=Geometric Road Design
-version=0.7
+version=0.72
 author=Lucas, Matheus Fillipe
 email=matheusfillipeag@gmail.com
 qgisMaximumVersion=3.99

@@ -1599,11 +1599,12 @@ class brucknerRampaDialog(rampaDialog):
         self.isBeingModified = False
 
         Incl.setDisabled(True)
-        Incl.hide()
         posabscissaLbl.setText(" Estacas")
         poscomprLbl.setText(" Estacas")
         cotaLbl.setText(" Eixo")
         poscotaLbl.setText(u' 10⁶ m³')
+        InclLbl.setDisabled(True)
+        posInclLbl.setDisabled(True)
 
         self.cotasb=cota
 

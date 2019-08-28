@@ -149,6 +149,7 @@ class Estacas(object):
 
         bruck = Ui_Bruckner(X, V)
         bruck.showMaximized()
+        bruck.save.connect(lambda: self.bruckner2DXF(bruck.X, bruck.V))
         self.progressDialog.close()
         bruck.exec_()
 
@@ -182,6 +183,11 @@ class Estacas(object):
         self.model.saveBruckner(list(zip(X, V)))
         return X, V
 
+    def bruckner2DXF(self, X, Y):
+        filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save dxf",filter="Arquivo DXF (*.dxf)")
+        if filename[0] in ["", None]: return
+        dist=Config.instance().DIST
+        self.saveDXF(filename[0], [[QgsPoint(x*dist, y/1000000) for x, y in (zip(X, Y))]])
 
     def exportDXF(self):
         filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save dxf",filter="Arquivo DXF (*.dxf)")
@@ -312,10 +318,10 @@ class Estacas(object):
             self.newEstacasLayer(name=self.model.getNameFromId(arquivo_id))
             self.view.openLayers()
             return
-#
-#        if l>1:
-#            self.preview.error(u"Selecione um único arquivo!")
-        if l<1: #criar traçado, iniciar edição
+
+        if l>1:
+            self.preview.error(u"Selecione um único arquivo!")
+        elif l<1: #criar traçado, iniciar edição
             name=self.fileName("Traçado "+str(len(self.model.listTables())+1))
             if not name: return
             self.new(dados=(name, self.newEstacasLayer(name=name), Config.instance().DIST, []))

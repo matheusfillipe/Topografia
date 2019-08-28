@@ -1569,16 +1569,19 @@ class Ui_Bruckner(Ui_Perfil):
         self.V=V
         super(Ui_Bruckner, self).__init__(0, 0, 0, [], [], wintitle="Diagrama de Bruckner")
         self.btnCalcular.setDisabled(True)
-        self.btnSave.setDisabled(True)
         self.btnReset.clicked.disconnect()
         self.btnReset.clicked.connect(self.resetView)
         self.setWindowTitle("Diagrama de Bruckner")
+        self.btnSave.setText("Exportar")
 
     def resetView(self):
         for h in self.roi.getHandles()[1:-1]:
             h.sigRemoveRequested.emit(h)
         self.roi.removeRect(self.roi.getHandles()[-1])
         self.roi.removeRect(self.roi.getHandles()[0])
+
+    def salvarPerfil(self):
+        self.save.emit()
 
     def setAsNotSaved(self):
         pass
@@ -1639,7 +1642,7 @@ class Ui_Bruckner(Ui_Perfil):
                 handle.leg.setHtml("A = %s m⁴<br>Vmax = %s m³<br>Dm = %s m" % (str(roundFloatShort(A*dist)),
                                                                                str(roundFloatShort(vmax)),
                                                                                str(roundFloatShort(dm*dist))))
-                handle.leg.setAnchor((0, abs(vmax)/vmax))
+                handle.leg.setAnchor((.5, abs(vmax)/vmax))
                 handle.leg.setPos(xmax, v0+vmax)
                 handle.sigRemoveRequested.connect(self.roi.removeRect)
                 self.roi.plotWidget.addItem(handle.rect1)

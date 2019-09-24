@@ -723,7 +723,7 @@ class Estacas(object):
             writer.addFeature(p)
         del writer
         shutil.copy(path, tmp)
-        shutil.copy(tmp, Config.instance().TMP_DIR_PATH+'tmp/data/'+name+".gpkg*")
+        shutil.copy(tmp, Config.instance().TMP_DIR_PATH+'tmp/data/'+name+".gpkg")
         compactZIP(Config.fileName)
         return tmp
 

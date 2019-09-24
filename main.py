@@ -22,6 +22,8 @@
  ***************************************************************************/
 """
 from __future__ import absolute_import
+
+import shutil
 from builtins import object
 # Initialize Qt resources from file resources.py
 # Import the code for the dialog
@@ -104,7 +106,10 @@ class TopoGrafia(object):
         tmp_path=pathlib.Path(cfg.instance().TMP_DIR_PATH)
         if not tmp_path.is_dir():
             tmp_path=pathlib.Path(tempfile.gettempdir() + "/" + cfg.TMP_FOLDER)
-            os.remove(str(tmp_path))
+            try:
+                shutil.rmtree(str(tmp_path))
+            except:
+                pass
             tmp_path.mkdir(parents=True, exist_ok=True)
             cfg.instance().store("TMP_DIR_PATH", str(tmp_path))
 

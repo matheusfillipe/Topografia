@@ -142,11 +142,8 @@ def polyCircle(layer, data, index, layer2, i):
 def polyTransCircle(layer, data, index, layer2, i):
 
     LsMax=data["R"]*abs(data["D"])*np.pi/180
-    LsMin=0
-    pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, clotY(L**2/(2*data["R"]*data["L"]))*L)
-              for L in xrange(data["L"])]
-    pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000.0-clotY(L**2/(2*data["R"]*data["L"]))*L)
-              for L in xrange(data["L"])]))
+    LsMin=0   
+
 
     fcount=featureCount(layer)
     if fcount>0:
@@ -179,6 +176,36 @@ def polyTransCircle(layer, data, index, layer2, i):
     p1=QgsPoint(PI)
     p2=QgsPoint(data["L"]*np.cos(np.deg2rad(angle))+p1.x(), data["L"]*np.sin(np.deg2rad(angle))+p1.y())
     line=QgsGeometry.fromPolyline([p1,p2])
+
+    a1=azi(polyline(l1))
+    a2=azi(polyline(l2))
+    msgLog("a1: "+str(a1)+"   "+"a2: "+str(a2))
+
+   # if a1<=90 or (a1>=180 and a1<=270):    
+    if a2-a1 >= 0:            
+        pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000-clotY(L**2/(2*data["R"]*data["L"]))*L)
+            for L in xrange(data["L"])]
+        pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, clotY(L**2/(2*data["R"]*data["L"]))*L)
+            for L in xrange(data["L"])]))
+    else:
+        pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, clotY(L**2/(2*data["R"]*data["L"]))*L)
+            for L in xrange(data["L"])]
+        pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000-clotY(L**2/(2*data["R"]*data["L"]))*L)
+            for L in xrange(data["L"])]))
+#    else:
+#        if abs(a2-a1) <= 180:
+#            pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, clotY(L**2/(2*data["R"]*data["L"]))*L)
+#              for L in xrange(data["L"])]
+#            pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000.0-clotY(L**2/(2*data["R"]*data["L"]))*L)
+#              for L in xrange(data["L"])]))
+#        else:
+#            pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000-clotY(L**2/(2*data["R"]*data["L"]))*L)
+#              for L in xrange(data["L"])]
+#            pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000-clotY(L**2/(2*data["R"]*data["L"]))*L)
+#              for L in xrange(data["L"])]))
+
+
+
 
     if index == "R":
         if data["C"]:
@@ -312,7 +339,7 @@ def polyTransCircle(layer, data, index, layer2, i):
     elif index == "S":
         data["C"] = True
         corda = 2 * data["R"] * np.sin(np.deg2rad(abs(data["D"]) / 2))
-        data["T"] = abs(corda / (2 * np.tan(np.deg2rad((d) / 2))))
+    
         p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
         p2 = QgsPoint(l2.interpolate(data["T"]).asPoint())
         PI = QgsPoint(PI)
@@ -342,7 +369,11 @@ def polyTransCircle(layer, data, index, layer2, i):
     p2=QgsPoint(polyline(g2)[0])
     p=QgsPoint((p1.x()+p2.x())/2, (p2.y()+p1.y())/2)
     tmp_line=QgsGeometry.fromPolyline([QgsPoint(PI),p])
-    E = abs(p1.distance(p2) * np.tan(np.deg2rad(data["D"] / 4)))
+    theta=data["L"]/(2*data["R"])
+    ys=clotY(theta)*data["L"]
+    p=ys-data["R"]*(1-np.cos(theta))
+    E = abs((data["R"]+p)/np.cos(np.deg2rad((data["D"]+2*np.rad2deg(theta))/2))-data["R"])
+    msgLog("E="+str(E))
     p=QgsPoint(tmp_line.interpolate(E).asPoint())
     circularRing = QgsCircularString()
     circularRing.setPoints([

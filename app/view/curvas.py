@@ -171,7 +171,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.btnCalcular.hide()
         self.nextCurva()
         self.previousCurva()
-        
+
         [w.valueChanged.connect(lambda: self.calcularCurva(False))
          for w in [self.txtVelocidade, self.txtRUtilizado, self.txtEMAX, self.Ls, self.txtD, self.txtFMAX]]
         
@@ -188,12 +188,9 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.PIs=[]
         self.layer=self.view.curvaLayers[0]
         items=[]
-        for vert in self.vertices:
-            n=int(vert[0][-1])
-            if n==c:
-                items.append("PI"+str(c))
-                self.PIs.append(vert[1])
-                c+=1
+        for c, vert in enumerate(self.vertices):
+            items.append("PI"+str(c))
+            self.PIs.append(vert[1])
         items=items[1:-1]
         self.comboCurva.addItems(items)
         if not wasInitialized(self.layer):
@@ -253,7 +250,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
     def exec_(self):
         self.comboCurva: QtWidgets.QComboBox
         if self.comboCurva.count()>1:
-            self.comboCurva.setCurrentIndex(1)
+            self.comboCurva.setCurrentIndex(0)
         if self.view.empty and not featureCount(self.layer):
             PT=PointTool(self.iface, self.pointLayerDefine)
             PT.start()
@@ -395,6 +392,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             self.comboCurva.setCurrentIndex(self.comboCurva.count()-1)
         elif i<self.comboCurva.count()-1:
             self.comboCurva.setCurrentIndex(i)
+            self.next.setEnabled(True)
+            self.prev.setEnabled(True)
 
     def previousCurva(self):
         self.comboCurva: QtWidgets.QComboBox
@@ -404,6 +403,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             self.comboCurva.setCurrentIndex(0)
         elif i>0:
             self.comboCurva.setCurrentIndex(i)
+            self.prev.setEnabled(True)
+            self.next.setEnabled(True)
 
     def saveCurva(self):
         self.layer: QgsVectorLayer
@@ -504,6 +505,21 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         else:  #Curva ainda não cadastrada no db
             pass
 
+        max=self.comboCurva.count()-1
+        i=self.comboCurva.currentIndex()
+
+        if i==max:
+            self.prev.setEnabled(True)
+            self.next.setEnabled(False)
+        elif i==0:
+            self.prev.setEnabled(False)
+            self.next.setEnabled(True)
+        else:
+            self.prev.setEnabled(True)
+            self.next.setEnabled(True)
+
+
+
     def zoomToPoint(self, point):
         #ZOOM
         scale = 250
@@ -554,6 +570,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.btnRelatorio.setEnabled(signal)
         self.btnCancela.setEnabled(signal)
         self.txtFMAX.setEnabled(signal)
+        self.prev.setEnabled(not signal)
+        self.next.setEnabled(not signal)
 
         if self.comboElemento.currentIndex()>0:
             self.Ls.setEnabled(signal)

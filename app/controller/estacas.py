@@ -947,6 +947,7 @@ class Estacas(object):
             lastAz = float(estacas[i][6])
 
         path=self.model.saveGeoPackage(name, features, fields, QgsWkbTypes.MultiCurveZ, 'GPKG')
+        self.view.openLayers()
         refreshCanvas(self.iface)
 
         #CARREGAR NOVA LAYER:

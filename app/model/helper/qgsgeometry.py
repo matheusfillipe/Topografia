@@ -8,7 +8,6 @@ from osgeo import gdal
 
 polyline=qgsGeometryToPolyline
 
-
 def wasInitialized(layer : QgsVectorLayer):
     return sum([1 for f in layer.getFeatures()]) > 0
 
@@ -181,19 +180,6 @@ def polyTransCircle(layer, data, index, layer2, i):
     a2=azi(polyline(l2))
     msgLog("a1: "+str(a1)+"   "+"a2: "+str(a2))
 
-   # if a1<=90 or (a1>=180 and a1<=270):    
-    if a2-a1 >= 0 and a1>=90 or a1<=270:
-        pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, clotY(L**2/(2*data["R"]*data["L"]))*L)
-            for L in xrange(data["L"])]
-        pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000-clotY(L**2/(2*data["R"]*data["L"]))*L)
-            for L in xrange(data["L"])]))
-    else:
-        pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000-clotY(L**2/(2*data["R"]*data["L"]))*L)
-            for L in xrange(data["L"])]
-        pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, clotY(L**2/(2*data["R"]*data["L"]))*L)
-            for L in xrange(data["L"])]))
-
-
     if index == "R":
         if data["C"]:
             corda = 2 * data["R"] * np.sin(np.deg2rad(abs(data["D"]) / 2))
@@ -218,111 +204,13 @@ def polyTransCircle(layer, data, index, layer2, i):
             PI = QgsPoint(qgsGeometryToPolyline(l2)[0])
 
     elif index == "L":
-        if data["C"]:
-            if data["L"] > np.deg2rad(abs(d)) * data["R"] * abs(data["D"] / d):
-                data["D"] = d / abs(d) * abs(abs(d) * data["L"] / (np.deg2rad(abs(d)) * data["R"]))
-            if data["L"] > np.deg2rad(abs(d)) * data["R"]:
-                data["R"] = data["L"] / (np.deg2rad(abs(d)))
-                corda = 2 * data["R"] * np.sin(np.deg2rad(abs(d) / 2))
-                data["T"] = abs(corda / (2 * np.tan(np.deg2rad((abs(d)) / 2))))
-                p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
-                p2 = QgsPoint(l2.interpolate(data["T"]).asPoint())
-                PI = QgsPoint(PI)
-        else:
-            data["R"] = data["L"] / (np.deg2rad(abs(data["D"])))
-            corda = 2 * data["R"] * np.sin(np.deg2rad(abs(data["D"]) / 2))
-            T = abs(corda / (2 * np.tan(np.deg2rad(abs(data["D"]) / 2))))
-            p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
-            l2 = QgsGeometry(l1)
-            dd = diff(p1, qgsGeometryToPolyline(l2)[0])
-            l2.translate(dd.x(), dd.y())
-            dd = diff(l2.interpolate(T).asPoint(), qgsGeometryToPolyline(l2)[0])
-            l2.translate(dd.x(), dd.y())
-            l2.rotate(data["D"], QgsPointXY(qgsGeometryToPolyline(l2)[0]))
-            p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
-            p2 = QgsPoint(l2.interpolate(data["T"]).asPoint())
-            PI = QgsPoint(qgsGeometryToPolyline(l2)[0])
-
-
+        pass
     elif index == "T":
-        if data["C"]:
-            corda = data["T"] * abs(2 * np.tan(np.deg2rad((d) / 2)))
-            data["L"] = np.deg2rad(abs(d)) * data["R"] * abs(data["D"] / d)
-            data["R"] = corda / (2 * np.sin(np.deg2rad(angleInternal / 2)))
-            data["L"] = np.deg2rad(abs(d)) * data["R"] * abs(data["D"] / d)
-            p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
-            p2 = QgsPoint(l2.interpolate(data["T"]).asPoint())
-            PI = QgsPoint(PI)
-            T = data["T"]
-        else:
-            corda = 2 * data["R"] * np.sin(np.deg2rad(abs(data["D"]) / 2))
-            T = abs(corda / (2 * np.tan(np.deg2rad((abs(data["D"])) / 2))))
-            p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
-            l2 = QgsGeometry(l1)
-            dd = diff(p1, qgsGeometryToPolyline(l2)[0])
-            l2.translate(dd.x(), dd.y())
-            dd = diff(l2.interpolate(T).asPoint(), qgsGeometryToPolyline(l2)[0])
-            l2.translate(dd.x(), dd.y())
-            l2.rotate(data["D"], QgsPointXY(qgsGeometryToPolyline(l2)[0]))
-            p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
-            p2 = QgsPoint(l2.interpolate(data["T"]).asPoint())
-            PI = QgsPoint(qgsGeometryToPolyline(l2)[0])
-
-
+        pass
     elif index == "D":
-        if data["C"]:
-            T = data["T"]
-            data["L"] = np.deg2rad(abs(d)) * data["R"] * abs(data["D"] / d)
-            p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
-            p2 = QgsPoint(l2.interpolate(data["T"]).asPoint())
-            PI = QgsPoint(PI)
-            E = abs(T * np.tan(np.deg2rad(d / 4)))
-            l2 = QgsGeometry(l1)
-            dd = diff(PI, qgsGeometryToPolyline(l2)[0])
-            l2.translate(dd.x(), dd.y())
-            l2.rotate(abs((abs(d) - 180) / d * data["D"] + 180 - abs(d)) * d / abs(d) + d, qgsGeometryToPolyline(l2)[0])
-            p = QgsPoint((p1.x() + p2.x()) / 2, (p2.y() + p1.y()) / 2)
-            tmp_line = QgsGeometry.fromPolyline([QgsPoint(PI), p])
-            p = QgsPoint(tmp_line.interpolate(E).asPoint())
-            arc = QgsCircularString()
-            arc.setPoints([p1, p, p2])
-            l3 = QgsGeometry(l2)
-            dd = diff(qgsGeometryToPolyline(l3)[-1], qgsGeometryToPolyline(l3)[0])
-            l3.translate(dd.x(), dd.y())
-            l3.rotate(-90 * d / abs(d), qgsGeometryToPolyline(l3)[0])
-            l2 = unifyGeometry(l2, l3)
-            arc = QgsCircularString()
-            arc.setPoints([p1, p, p2])
-            arc = splitGeometry(l2, createGeometry(arc))
-
-        else:
-            data["L"] = np.deg2rad(abs(data["D"])) * data["R"]
-            corda = 2 * data["R"] * np.sin(np.deg2rad(abs(data["D"]) / 2))
-            T = abs(corda / (2 * np.tan(np.deg2rad((abs(data["D"])) / 2))))
-            p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
-            l2 = QgsGeometry(l1)
-            dd = diff(p1, qgsGeometryToPolyline(l2)[0])
-            l2.translate(dd.x(), dd.y())
-            PI = QgsPoint(l2.interpolate(T).asPoint())
-            dd = diff(PI, qgsGeometryToPolyline(l2)[0])
-            l2.translate(dd.x(), dd.y())
-            l2.rotate(data["D"], qgsGeometryToPolyline(l2)[0])
-            p2 = QgsPoint(l2.interpolate(T).asPoint())
-
+        pass
     elif index == "C":
-        if data["C"]:
-            data["D"] = d
-            data["L"] = np.deg2rad(abs(data["D"])) * data["R"]
-            corda = 2 * data["R"] * np.sin(np.deg2rad(abs(data["D"]) / 2))
-            data["T"] = abs(corda / (2 * np.tan(np.deg2rad((d) / 2))))
-            p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
-            p2 = QgsPoint(l2.interpolate(data["T"]).asPoint())
-            PI = QgsPoint(PI)
-        else:
-            p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
-            p2 = QgsPoint(l2.interpolate(data["T"]).asPoint())
-            PI = QgsPoint(PI)
-
+        pass
     elif index == "S":
         data["C"] = True
         corda = 2 * data["R"] * np.sin(np.deg2rad(abs(data["D"]) / 2))
@@ -341,6 +229,19 @@ def polyTransCircle(layer, data, index, layer2, i):
     feat2.setAttribute('Tipo', 'C')
     feat3.setAttribute('Tipo', 'E')
 
+  #  if ((a2 - a1 >= 0 and (a1 <= 90 or a1 >= 270)) or (a2 - a1 <= 0 and (a1 >= 90 or a1 <= 270))) and not (
+   #         (abs(a1 - a2) > 180 or (a1 < 90 and a2 > 90) or (a1 < 90, a2 < 90)) and not (a2 - a1) < 0):
+
+    pointsT1 = [QgsPoint(clotX(L ** 2 / (2 * data["R"] * data["L"])) * L, clotY(L ** 2 / (2 * data["R"] * data["L"])) * L)
+        for L in xrange(data["L"])]
+    pointsT2 = list(reversed([QgsPoint(clotX(L ** 2 / (2 * data["R"] * data["L"])) * L, 1000 - clotY(L ** 2 / (2 * data["R"] * data["L"])) * L)
+                              for L in xrange(data["L"])]))
+
+    IpointsT1 = [QgsPoint(clotX(L ** 2 / (2 * data["R"] * data["L"])) * L, 1000 - clotY(L ** 2 / (2 * data["R"] * data["L"])) * L)
+                for L in xrange(data["L"])]
+    IpointsT2 = list(reversed([QgsPoint(clotX(L ** 2 / (2 * data["R"] * data["L"])) * L, clotY(L ** 2 / (2 * data["R"] * data["L"])) * L)
+         for L in xrange(data["L"])]))
+
     g1=QgsGeometry.fromPolyline(pointsT1)
     dd = diff(p1, pointsT1[0])
     g1.translate(dd.x(), dd.y())
@@ -349,6 +250,19 @@ def polyTransCircle(layer, data, index, layer2, i):
     dd = diff(p2, pointsT2[-1])
     g2.translate(dd.x(), dd.y())
     g2.rotate(polyline(l2)[0].azimuth(polyline(l2)[-1])+90,polyline(g2)[-1])
+
+    Ig1 = QgsGeometry.fromPolyline(IpointsT1)
+    dd = diff(p1, IpointsT1[0])
+    Ig1.translate(dd.x(), dd.y())
+    Ig1.rotate(polyline(l1)[0].azimuth(polyline(l1)[-1]) - 90, polyline(Ig1)[0])
+    Ig2 = QgsGeometry.fromPolyline(IpointsT2)
+    dd = diff(p2, IpointsT2[-1])
+    Ig2.translate(dd.x(), dd.y())
+    Ig2.rotate(polyline(l2)[0].azimuth(polyline(l2)[-1]) + 90, polyline(Ig2)[-1])
+
+    g1, g2 = [g1, g2] if polyline(g1)[-1].distance(polyline(g2)[0]) \
+                         <= polyline(Ig1)[-1].distance(polyline(Ig2)[0]) else [Ig1, Ig2]
+
     feat1.setGeometry(g1)
     feat3.setGeometry(g2)
 
@@ -548,7 +462,7 @@ def circleArc(layer, data, index, layer2, i):
             data["D"]=d
             data["L"]=np.deg2rad(abs(data["D"]))*data["R"]
             corda=2*data["R"]*np.sin(np.deg2rad(abs(data["D"])/2))
-            data["T"]=abs(corda/(2*np.tan(np.deg2rad((d)/2))))
+            #data["T"]=abs(corda/(2*np.tan(np.deg2rad((d)/2))))
             p1=QgsPoint(l1.interpolate(l1.length()-data["T"]).asPoint())
             p2=QgsPoint(l2.interpolate(data["T"]).asPoint())
             PI=QgsPoint(PI)

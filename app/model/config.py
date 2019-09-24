@@ -48,7 +48,7 @@ class Config(object):
     DIST=20
     RANDOM="__ix35-_-xxx901381asdioADJ398(__"
     TMP_FOLDER="TopografiaPluginTemporaryLayers/"
-    T_SPACING=10
+    T_SPACING=30
     CLASSE_INDEX=4
     crs = 2676
     planoMin = 0.0
@@ -58,8 +58,10 @@ class Config(object):
     montanhosoMin = 20.0
     montanhosoMax = 100.0
     TMP_DIR_PATH = RANDOM
-    T_OFFSET = 3.0
+    T_OFFSET = 6
     interpol=0
+    velproj=100.0
+    emax=0.08
 
     #   DADOS para serem armazenados no projeto do qgis.
     #   Cada string nessa lista é criada como um atributo de Config.instance() que pode ser lida por
@@ -81,9 +83,10 @@ class Config(object):
          "T_OFFSET",
          "FILE_PATH",
           "interpol",
+          "velproj",
+          'emax',
          "TMP_FOLDER",
          "TMP_DIR_PATH"
-
           ]
 
 

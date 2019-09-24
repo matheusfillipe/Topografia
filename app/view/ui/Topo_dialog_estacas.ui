@@ -54,6 +54,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="btnCurva">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Calcular Curvas Horizontais&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="whatsThis">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Cria e gerencia as curvas do traçado horizontal.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>

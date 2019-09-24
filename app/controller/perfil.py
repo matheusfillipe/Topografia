@@ -398,10 +398,14 @@ class CustomPolyLineROI(pg.PolyLineROI):
 
     def __init__(self, *args, **kwds):
         self.wasInitialized=False
+        self.labels=[]
+        self.setPlotWidget(kwds.get('plot', False))
         pg.PolyLineROI.__init__(self,*args,**kwds)
 
+
     def setPlotWidget(self, plotWidget):
-        self.plotWidget = plotWidget
+        if plotWidget:
+            self.plotWidget = plotWidget
 
     def HandleEditDialog(self, i):
         dialog=cvEditDialog(self, i)
@@ -451,9 +455,32 @@ class CustomPolyLineROI(pg.PolyLineROI):
         self.wasInitialized=True
         self.updateHandles()
 
+    def removeLabel(self, i):
+        for text in self.labels[i+1:]:
+            try:
+                self.plotWidget.removeItem(text)
+            except:
+                pass
+
+
+    def updateLabel(self, handle, i):
+        msg="V" + str(i)
+        i=i-1
+        text: pg.TextItem
+        if i>=len(self.labels):
+            text = pg.TextItem(msg)
+        else:
+            text=self.labels[i]
+            text.setText(msg)
+        text.setPos(handle.pos().x(), handle.pos().y())
+        text.setAnchor((0.5, 1))
+        if i>=len(self.labels):
+            self.plotWidget.addItem(text)
+            self.labels.append(text)
+
+
 
     def updateHandles(self):
-
         if self.wasInitialized:
             for i in range(0, len(self.handles)-1):
 
@@ -462,18 +489,24 @@ class CustomPolyLineROI(pg.PolyLineROI):
                 except:
                     pass
 
-            self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
+            handle=self.handles[0]['item']
+            handle.sigEditRequest.connect(lambda: self.HandleEditDialog(0))
             start = -1 if self.closed else 0
+            self.updateLabel(handle, 1)
 
             for i in range(start, len(self.handles)-1):
                 j=i+1
-                self.handles[j]['item'].sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+                handle=self.handles[j]['item']
+                handle.sigEditRequest.connect(functools.partial(self.HandleEditDialog, j))
+                self.updateLabel(handle, j+1)
+
                 try:
                     diag=cvEditDialog(self, j)
                     diag.reset()
                 except:
                     pass
-
+            self.removeLabel(len(self.handles)-1)
+            pg.QtGui.QGuiApplication.processEvents()
             self.wasInitialized=True
 
     def removeCurva(self, handle):
@@ -678,6 +711,7 @@ class ssRoi(CustomPolyLineROI):
                     pass
 
             self.wasInitialized = True
+            self.wasModified.emit()
 
 class brucknerRoi(CustomPolyLineROI):
     wasModified=QtCore.pyqtSignal()
@@ -791,6 +825,7 @@ class brucknerRoi(CustomPolyLineROI):
             self.wasInitialized = True
 
 
+
 class Ui_Perfil(QtWidgets.QDialog):
     
     save = QtCore.pyqtSignal()
@@ -829,11 +864,12 @@ class Ui_Perfil(QtWidgets.QDialog):
         while True:
             try:
                 ponto = []
-                e = self.ref_estaca.tableWidget.item(k,0).text()
-                if e in [None,""]:
-                    break
-                ponto.append(float(self.ref_estaca.tableWidget.item(k,2).text()))
-                ponto.append(float(self.ref_estaca.tableWidget.item(k,5).text()))
+               # e = self.ref_estaca[k][0]
+               # if e in [None,""]:
+               #     break
+
+                ponto.append(float(self.ref_estaca[k][1]))
+                ponto.append(float(self.ref_estaca[k][2]))
                 pontos.append(ponto)
                 #self.comboEstaca1.addItem(_fromUtf8(e))
             except:
@@ -857,9 +893,9 @@ class Ui_Perfil(QtWidgets.QDialog):
                 cota=pt[1]
                 pos=(x,cota)
                 L.append(pos)
-            self.roi = CustomPolyLineROI(L)
+            self.roi = CustomPolyLineROI(L, plot=self.perfilPlot)
         else:
-            self.roi = CustomPolyLineROI([(x[0],w[0]*x[0]+w[1]), (x[len(x)-1],w[0]*x[len(x)-1]+w[1])])
+            self.roi = CustomPolyLineROI([(x[0],w[0]*x[0]+w[1]), (x[len(x)-1],w[0]*x[len(x)-1]+w[1])], plot=self.perfilPlot)
 
         self.roi.perfil=self
         self.roi.wasModified.connect(self.__setAsNotSaved)
@@ -908,7 +944,7 @@ class Ui_Perfil(QtWidgets.QDialog):
                 s = "80"
             else:
                 s = "60"
-            self.lblTipo.setText(u"Plano %s KM/h, Rampa n° %d"%(s,maxIndex))
+            self.lblTipo.setText(u"Plano %s KM/h, Rampa n° %d, Inclinação %s%%"%(s, maxIndex, roundFloat2str(I[maxIndex-1])[:-2]))
             self.velProj=int(s)
 
          #   for k in range(int(self.estaca1txt),int(self.estaca2txt)+1):
@@ -926,7 +962,7 @@ class Ui_Perfil(QtWidgets.QDialog):
                 s = "60"
             else:
                 s = "40"
-            self.lblTipo.setText(u"Ondulado %s KM/h, Rampa n° %d"%(s, maxIndex))
+            self.lblTipo.setText(u"Ondulado %s KM/h, Rampa n° %d, Inclinação %s%%"%(s, maxIndex, roundFloat2str(I[maxIndex-1])[:-2]))
             self.velProj=int(s)
  #           for k in range(int(self.estaca1txt),int(self.estaca2txt)+1):
  #               for j in range(self.ref_estaca.tableWidget.columnCount()):
@@ -942,7 +978,7 @@ class Ui_Perfil(QtWidgets.QDialog):
                 s = "40"
             else:
                 s = "30"
-            self.lblTipo.setText("Montanhoso %s KM/h, Rampa n° %d"%(s, maxIndex))
+            self.lblTipo.setText("Montanhoso %s KM/h, Rampa n° %d, Inclinação %s%%"%(s, maxIndex, roundFloat2str(I[maxIndex-1])[:-2]))
             self.velProj=int(s)
  #           for k in range(int(self.estaca1txt),int(self.estaca2txt)+1):
 #                for j in range(self.ref_estaca.tableWidget.columnCount()):
@@ -1030,7 +1066,7 @@ class Ui_Perfil(QtWidgets.QDialog):
 
         PerfilTrecho.setWindowTitle(_translate("PerfilTrecho", "Perfil do trecho", None))
         self.calcularGreide()
-        self.btnCalcular.setText("Calcular")
+        self.btnCalcular.setText("Calcular rampa máxima")
 
     def resetGeometry(self):
         reset=yesNoDialog(self, message="Realmente deseja excluir esse perfil?")

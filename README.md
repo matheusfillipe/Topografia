@@ -67,11 +67,6 @@ Coloque a estes arquivos dentro da pasta Topograph, no caminho .qgis/plugins/pyt
 
 ...
 
-## Alguns Bugs 
-
-* Memory leak e crash ao extrair pontos cotados de um raster com crs angular
-* Memory leak ao gerar perfil transversal
-
 
 ## Reportar erros ou bugs
 

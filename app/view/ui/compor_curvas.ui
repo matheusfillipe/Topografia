@@ -37,22 +37,27 @@
      </property>
      <item>
       <property name="text">
-       <string>Espiral de Entrada</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
        <string>Circular</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Espiral de Saída</string>
+       <string>Circullar com Transição Simétrica</string>
       </property>
      </item>
      <item>
       <property name="text">
        <string>Tangente</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Espiral de Entrada</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Espiral de Saída</string>
       </property>
      </item>
     </widget>
@@ -94,8 +99,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>524</x>
+     <y>619</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -110,8 +115,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>592</x>
+     <y>619</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>

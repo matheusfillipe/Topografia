@@ -229,7 +229,18 @@ class Estacas(object):
         extractZIP(Config.fileName)
         con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
         est = con.execute(
-            "SELECT estaca,descricao,progressiva,greide FROM VERTICAIS_TABLE WHERE TABLEESTACA_id = ?",
+            "select estaca,descricao,progressiva,greide from verticais_table where tableestaca_id = ?",
+            (int(self.id_filename),)).fetchall()
+        con.close()
+        compactZIP(Config.fileName)
+        return est
+
+    def load_terreno_long(self):
+        if self.id_filename == -1: return None
+        extractZIP(Config.fileName)
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        est = con.execute(
+            "select descricao,progressiva,cota from ESTACA where tableestaca_id = ?",
             (int(self.id_filename),)).fetchall()
         con.close()
         compactZIP(Config.fileName)
@@ -700,15 +711,19 @@ class Estacas(object):
     def saveGeoPackage(self,name:str, poly, fields, type, driver):
         import shutil
         from pathlib import Path
+        import os
 
         extractZIP(Config.fileName)
-        tmp=str(Path(self.tmpFolder()+name+".gpkg"))
+        tmp=str(Path(self.tmpFolder()+"/"+name+".gpkg"))
         path=str(Path(Config.instance().TMP_DIR_PATH+"tmp/data/"+name+".gpkg"))
+        shutil.rmtree(str(path),  ignore_errors=True)
+        shutil.rmtree(str(tmp),  ignore_errors=True)
         writer = QgsVectorFileWriter(path, 'UTF-8', fields, type, QgsProject.instance().crs(), driver)
         for p in poly:
             writer.addFeature(p)
         del writer
         shutil.copy(path, tmp)
+        shutil.copy(tmp, Config.instance().TMP_DIR_PATH+'tmp/data/'+name+".gpkg*")
         compactZIP(Config.fileName)
         return tmp
 

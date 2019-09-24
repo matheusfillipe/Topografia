@@ -26,7 +26,7 @@ from ..model.knn import KNN
 from ..model.utils import *
 from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv, ProgressDialog, \
     EstacaRangeSelect
-from ..view.curvas import Curvas as CurvasView
+from ..view.curvas import Curvas as CurvasView, refreshCanvas
 
 
 class Estacas(object):
@@ -89,6 +89,7 @@ class Estacas(object):
         '''
             ------------------------------------------------
         '''
+
         self.view.btns=[self.view.btnSave, self.view.btnSaveCSV, self.view.btnLayer, self.view.btnEstacas,
         self.view.btnPerfil, self.view.btnCurva,self.view.btnCotaTIFF, self.view.btnCotaPC, self.view.btnCota]
 
@@ -99,7 +100,6 @@ class Estacas(object):
         self.view.btnSaveCSV.clicked.connect(self.saveEstacasCSV)
         self.view.btnLayer.clicked.connect(self.plotar)
         self.view.btnEstacas.clicked.connect(self.recalcular)
-        self.view.btnPerfil.clicked.connect(self.perfilView)
         self.view.btnCurva.clicked.connect(self.curva)
         self.view.btnCotaTIFF.clicked.connect(self.obterCotasTIFF)
         self.view.btnCotaPC.clicked.connect(self.obterCotasPC)
@@ -117,7 +117,7 @@ class Estacas(object):
         self.viewCv.btnCsv.clicked.connect(self.exportCSV)
         self.viewCv.btnClean.clicked.connect(self.cleanTrans)
         self.viewCv.btnRecalcular.clicked.connect(self.recalcularVerticais)
-
+        self.viewCv.btnPerfil.clicked.connect(self.perfilView)
 
     def bruckner(self):
 
@@ -308,10 +308,13 @@ class Estacas(object):
         return X, est, prismoide
 
 
-    def geraCurvas(self, arquivo_id=None):
+    def geraCurvas(self, arquivo_id=None, recalcular=False):
         table=self.preview.tableEstacas
         table : QtWidgets.QTableWidget
 #
+        if recalcular:
+            self.saveEstacasLayer(self.view.get_estacas(), name=self.model.getNameFromId(arquivo_id))
+            return
         if not arquivo_id:
             l=len(table.selectionModel().selectedRows())
         else: #curva para traçado
@@ -476,8 +479,8 @@ class Estacas(object):
         vprogs=[]
         estacas=self.viewCv.getEstacas()
         LH=500
-        self.progressDialog.setLoop(60,LH)
-        for i,v in enumerate(estacas):  # prog=2 em ambos
+        self.progressDialog.setLoop(60, LH)
+        for i, v in enumerate(estacas):  # prog=2 em ambos
            prog=float(v[2])
            if prog in progs:
                 h = horizontais[progs.index(float(v[2]))]
@@ -486,7 +489,7 @@ class Estacas(object):
            else:
                 pt=road.interpolate(prog).asPoint()
                 pt2=road.interpolate(prog+.1).asPoint()
-                verticais.append([v[0], v[1], v[2], pt.y(), pt.x(),v[3], None, azimuth(pt, pt2)])  #Não sei a cota 6
+                verticais.append([v[0], v[1], v[2], pt.y(), pt.x(), v[3], None, azimuth(pt, pt2)])  #Não sei a cota 6
            self.progressDialog.increment()
            vprogs.append(prog)
 
@@ -574,7 +577,8 @@ class Estacas(object):
 
     def perfilView(self):
         tipo, class_project = self.model.tipo()
-        self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename), iface=self)
+        estacas=self.model.load_terreno_long()
+        self.perfil = Ui_Perfil(estacas, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename), iface=self)
         self.perfil.save.connect(self.saveGreide)
         self.perfil.reset.connect(self.cleanGreide)
         self.perfil.showMaximized()
@@ -638,7 +642,7 @@ class Estacas(object):
             self.view.fill_table(tuple(item))
         self.model.id_filename=id
         self.model.save(id)
-        self.geraCurvas(self.model.id_filename)
+        self.geraCurvas(self.model.id_filename, recalcular=True)
 
     def saveEstacas(self):
         if self.model.id_filename == -1: return
@@ -753,10 +757,12 @@ class Estacas(object):
                 pointsList=[]
 
 
-                OFFSET=Config.instance().T_OFFSET
+                NPONTOS=Config.instance().T_OFFSET
+                T_SPACING=Config.instance().T_SPACING
+                SPACING=T_SPACING/(NPONTOS-1)
                 interpol=Config.instance().interpol
-                for yi in range(int(-Config.instance().T_SPACING), int(Config.instance().T_SPACING+1)):
-                    y=yi*OFFSET
+                for yi in range(int(-NPONTOS+1), int(NPONTOS)):
+                    y=yi*SPACING
 
                     yangleE=esign*y*abs(math.sin(perp*math.pi/180))
                     yangleN=nsign*y*abs(math.cos(perp*math.pi/180))
@@ -919,30 +925,43 @@ class Estacas(object):
         #if not path: return None
 
         fields = QgsFields()
-        fields.append(QgsField("id", QVariant.Int))
+        fields.append(QgsField("Tipo", QVariant.String)) # 0 -> sem curva, 1 -> espiral, 2-> circular
         fields.append(QgsField("Descricao", QVariant.String))
-        fields.append(QgsField("type", QVariant.Int)) # 0 -> sem curva, 1 -> espiral, 2-> circular
 
-        poly = QgsFeature()
         points=[]
+        features=[]
+        j=0
         for i, _ in enumerate(estacas):
             point = QgsPointXY(float(estacas[i][4]), float(estacas[i][3]))
-            points.append(point)
-        poly.setGeometry(QgsGeometry.fromPolylineXY(points))
-        path=self.model.saveGeoPackage(name, [poly], fields, QgsWkbTypes.MultiCurveZ, 'GPKG')
+            if i==0:
+                points.append(point)
+            else:
+                if float(estacas[i][6]) != lastAz or i == len(estacas)-1:
+                    points.append(point)
+                    feat=QgsFeature(fields)
+                    feat.setAttributes(["T", "T"])
+                    feat.setGeometry(QgsGeometry.fromPolylineXY(points))
+                    features.append(feat)
+                    j+=1
+                    points=[point]
+            lastAz = float(estacas[i][6])
 
-        layer=self.iface.addVectorLayer(path,name,"ogr")
-        self.iface.digitizeToolBar().show()
-        self.iface.shapeDigitizeToolBar().show()
+        path=self.model.saveGeoPackage(name, features, fields, QgsWkbTypes.MultiCurveZ, 'GPKG')
+        refreshCanvas(self.iface)
 
-        addLineAction = self.iface.digitizeToolBar().actions()[8]
-        toggleEditAction = self.iface.digitizeToolBar().actions()[1]
-        if not addLineAction.isChecked():
-            toggleEditAction.trigger()
-        addLineAction.setChecked(True)
-        addLineAction.trigger()
+        #CARREGAR NOVA LAYER:
+       # layer=self.iface.addVectorLayer(path,name,"ogr")
+       # self.iface.digitizeToolBar().show()
+       # self.iface.shapeDigitizeToolBar().show()
 
-        return layer
+       # addLineAction = self.iface.digitizeToolBar().actions()[8]
+       # toggleEditAction = self.iface.digitizeToolBar().actions()[1]
+       # if not addLineAction.isChecked():
+       #     toggleEditAction.trigger()
+       # addLineAction.setChecked(True)
+       # addLineAction.trigger()
+
+      #  return layer
 
 
     def drawEstacas(self, estacas):
@@ -1301,11 +1320,11 @@ class Estacas(object):
         try:
             self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename))
         except Exception as e:
-            messageDialog(None, title="Erro!", message="Perfil Vertical ainda não foi definido!")
-            msgLog(str(e))
-            return None
+            #messageDialog(None, title="Erro!", message="Perfil Vertical ainda não foi definido!")
+            self.perfilView()
+           # self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename))
 
-        (estaca,descricao,progressiva,cota) = (0, "V1", 0, self.perfil.getVertices()[0][1])
+        (estaca,descricao,progressiva,cota) = (0, "V0", 0, self.perfil.getVertices()[0][1])
         estacas.append((estaca,descricao,progressiva,cota))
         missingCurveDialog=[]
         y=float(cota)
@@ -1318,10 +1337,10 @@ class Estacas(object):
             i1=self.perfil.roi.getSegIncl(i-1,i)
             i2=self.perfil.roi.getSegIncl(i,i+1)
             L=0
-            if self.perfil.cvList[i][1]!="None":
+            if self.perfil.cvList[i][1] != "None":
                 L=float(self.perfil.cvList[i][1])
 
-            pontosCv=CV(i1, i2, L,self.perfil.roi.getHandlePos(i), self.perfil.roi.getHandlePos(i-1))
+            pontosCv=CV(i1, i2, L, self.perfil.roi.getHandlePos(i), self.perfil.roi.getHandlePos(i-1))
             points.append({"cv": pontosCv, "i1": i1/100, "i2": i2/100, "L": L, "i": i})
 
         if len(points)==0:
@@ -1417,8 +1436,6 @@ class Estacas(object):
                 y
              )
              estacas.append((estaca,descricao,progressiva,cota))
-
-
              est+=1
 
         if len(missingCurveDialog) > 0:
@@ -1428,7 +1445,7 @@ class Estacas(object):
         dy=float(self.perfil.getVertices()[-1:][0][1])-y
         y+=dy
 
-        (estaca,descricao,progressiva,cota) = (str(est-1)+' + ' + str(dx),"V2",x,y)
+        (estaca,descricao,progressiva,cota) = (str(est-1)+' + ' + str(dx),"V"+str(c+1),x,y)
         estacas.append((estaca,descricao,progressiva,cota))
 
         self.model.saveVerticais(estacas)

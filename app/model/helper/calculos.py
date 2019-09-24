@@ -51,8 +51,9 @@ def velocidade(i, classeProjeto, tipo):
 
 
 def fmax(velocidade):
-    velocidades = {30: 0.2, 40: 0.18, 50: 0.16, 60: 0.15, 70: 0.15, 80: 0.14, 90: 0.14, 100: 0.13, 110: 0.12, 120: 0.11}
-    return velocidades[velocidade]
+  #  velocidades = {30: 0.2, 40: 0.18, 50: 0.16, 60: 0.15, 70: 0.15, 80: 0.14, 90: 0.14, 100: 0.13, 110: 0.12, 120: 0.11}
+#    return velocidades[velocidade]
+    return .19-velocidade/1600
 
 
 def rmin(velocidade, emax, fmax):
@@ -152,3 +153,9 @@ def ept(epcAtual, dAtual):
 
 def deflexao_intermediaria(g20):
     return g20 / 2
+
+def clotX(theta):
+    return 1-theta**2/10+theta**4/216
+
+def clotY(theta):
+    return theta/3-theta**3/42

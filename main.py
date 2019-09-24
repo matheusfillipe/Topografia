@@ -104,6 +104,7 @@ class TopoGrafia(object):
         tmp_path=pathlib.Path(cfg.instance().TMP_DIR_PATH)
         if not tmp_path.is_dir():
             tmp_path=pathlib.Path(tempfile.gettempdir() + "/" + cfg.TMP_FOLDER)
+            os.remove(str(tmp_path))
             tmp_path.mkdir(parents=True, exist_ok=True)
             cfg.instance().store("TMP_DIR_PATH", str(tmp_path))
 

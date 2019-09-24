@@ -1790,7 +1790,7 @@ class PolyLineROI(ROI):
     ============== =============================================================
     
     """
-    def __init__(self, positions, closed=False, pos=None, **args):
+    def __init__(self, positions, closed=False, pos=None, plot=None, **args):
         
         if pos is None:
             pos = [0,0]

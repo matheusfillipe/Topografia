@@ -166,7 +166,7 @@ def calcI(p1,p2,prog1,prog2):
     return ((p2.z()-p1.z())/(prog2-prog1))*100
 
 
-def azimuth(point1,point2):
+def azimuth(point1, point2):
     # interval 0-180° here
     dx = point2.x() - point1.x()
     dy = point2.y() - point1.y()
@@ -245,16 +245,15 @@ def pointTo(crs,point):
     return pt
 
 
+
 def pointFromWGS84(point):
     p = QgsProject.instance()
     (proj4string,ok) = p.readEntry("SpatialRefSys","ProjectCRSProj4String")
     if not ok:
         return point
-    f=QgsCoordinateReferenceSystem()
-    f.createFromEpsg(4326)
-    t=QgsCoordinateReferenceSystem()
-    t.createFromProj4(proj4string)
-    transformer = QgsCoordinateTransform(f,t)
+    f = QgsCoordinateReferenceSystem("EPSG:4326")
+    t=QgsProject.instance().crs()
+    transformer = QgsCoordinateTransform(f, t, p)
     pt = transformer.transform(point)
     return pt
 
@@ -309,7 +308,7 @@ def getElevation(crs,point):
     return elevation
 
 def msgLog(msg):
-    QgsMessageLog.logMessage(msg, tag="Topografia", level=0)
+    QgsMessageLog.logMessage(str(msg), tag="Topografia", level=0)
 
 def interpolList(l:list,i):
     length=len(l)
@@ -346,7 +345,7 @@ def formatValue(value):
         return str(value)
 
 def roundFloat2str(f:float):
-    return str(round(f,precision))
+    return str(round(float(f),precision))
 
 def longRoundFloat(f:float):
     return round(f,longPrecision)

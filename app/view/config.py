@@ -22,11 +22,6 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         # muda configuração padrão para aparecer prompt ao inves de pegar do projeto.
         settings = QSettings()
         settings.setValue("/Projections/defaultBehaviour", "prompt")
-        super(TopoConfig, self).__init__(parent)
-        self.iface = iface
-        self.setupUi(self)
-        self.setWindowFlags(self.windowFlags() & Qt.WindowContextHelpButtonHint)
-        self.setup()
 
         self.TopoDialogBase: QtWidgets.QDialog
         self.button_box: QtWidgets.QDialogButtonBox
@@ -36,7 +31,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.estacas: QtWidgets.QDoubleSpinBox
         self.groupBox: QtWidgets.QGroupBox
         self.groupBox_2: QtWidgets.QGroupBox
-        self.label: QtWidgets.QLabel
+        self.label = QtWidgets.QLabel()
         self.label_10: QtWidgets.QLabel
         self.label_11: QtWidgets.QLabel
         self.label_12: QtWidgets.QLabel
@@ -54,11 +49,19 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.onduladoMin: QtWidgets.QDoubleSpinBox
         self.planoMax: QtWidgets.QDoubleSpinBox
         self.planoMin: QtWidgets.QDoubleSpinBox
-        self.tableCRS: QtWidgets.QTableWidget
+        self.tableCRS = QtWidgets.QTableWidget()
         self.transversal: QtWidgets.QDoubleSpinBox
-        self.txtCRS: QtWidgets.QLineEdit
+        self.txtCRS = QtWidgets.QLineEdit()
         self.txtCSV: QtWidgets.QLineEdit
         self.offsetSpinBox: QtWidgets.QSpinBox
+        self.velProj : QtWidgets.QSpinBox
+
+
+        super(TopoConfig, self).__init__(parent)
+        self.iface = iface
+        self.setupUi(self)
+        self.setWindowFlags(self.windowFlags() & Qt.WindowContextHelpButtonHint)
+        self.setup()
         
         self.unitsList=['m','Km','mm']
 
@@ -75,7 +78,9 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                                 Config.data[10]: self.montanhosoMin.value,
                                 Config.data[11]: self.montanhosoMax.value,
                                 Config.data[12]: self.offsetSpinBox.value,
-                                Config.data[14]: self.interpol.isChecked
+                                Config.data[14]: self.interpol.isChecked,
+                                Config.data[15]: self.velProj.value,
+                                Config.data[16]: self.emax.value
         }
 
         self.dataAssociationRead = {Config.data[0]: self.setUnits,
@@ -91,13 +96,14 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                                  Config.data[10]: self.montanhosoMin.setValue,
                                  Config.data[11]: self.montanhosoMax.setValue,
                                  Config.data[12]: self.offsetSpinBox.setValue,
-                                 Config.data[14]: self.interpol.setChecked
+                                 Config.data[14]: self.interpol.setChecked,
+                                 Config.data[15]: self.velProj.setValue,
+                                 Config.data[16]: self.emax.setValue
                                 }
 
-        self.transversal.valueChanged.connect(self.updateEspassamentoSpinBox)
-        self.offsetSpinBox.valueChanged.connect(self.updateEspassamentoSpinBox)
         self.dbBuild: QtWidgets.QPushButton
         self.dbBuild.clicked.connect(self.buildDb)
+
 
     def buildDb(self):
         if yesNoDialog(iface=self, message="Tem certeza que deseja reconstruir o banco de dados?"):
@@ -107,8 +113,6 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
             con.close()
             compactZIP(cfg.FILE_PATH)
 
-    def updateEspassamentoSpinBox(self):
-        self.t_espassamento.setValue(self.transversal.value() * self.offsetSpinBox.value())
 
     def show(self):
         for d in self.dataAssociationRead:
@@ -117,7 +121,6 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                 self.dataAssociationRead[d](getattr(cfg, d))
             except:
                 pass
-        self.t_espassamento.setValue(self.transversal.value()*self.offsetSpinBox.value())
         return super(TopoConfig, self).show()
 
     def setUnits(self, s:str):
@@ -143,6 +146,10 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         # self.conf.tableCRS.setRowCount(300)
         self.tableCRS.setHorizontalHeaderLabels((u"ID", u"CRS"))
         self.tableCRS:QtWidgets.QTableWidget
+        self.tableCRS.hide()
+        self.txtCRS.hide()
+        self.label.hide()
+        self.comboMap.hide()
 
     def changeCRS(self, crs):
         if crs == None:

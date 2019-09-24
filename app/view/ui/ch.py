@@ -43,6 +43,11 @@ class CurvasWidget(QtWidgets.QWidget, CWIDGET):
         self.modified="S" #Started
         self.events()
 
+        self.vmax.hide()
+        self.label_2.hide()
+        self.k.hide()
+        self.label.hide()
+
     def fill(self, data, k='',vmax=''):
         T=data["T"]
         raio=data["R"]
@@ -116,13 +121,15 @@ class CurvasWidget(QtWidgets.QWidget, CWIDGET):
 
     def setTipo(self, i=-1):
         if i>=0:
-            if i==0:
+            if i==3:
                 self.tipo="EE"
-            elif i==1:
+            elif i==0:
                 self.tipo="C"
-            elif i==2:
+            elif i==1:
+                self.tipo="EC"
+            elif i==4:
                 self.tipo="ES"
-            elif i==3:
+            elif i==2:
                 self.tipo= "T"
             else:
                 msgLog("Os valores do combobox estão errados!")
@@ -158,10 +165,16 @@ class CurvasCompositorDialog(QtWidgets.QDialog, COMPOSI):
         self.comboBox: QtWidgets.QComboBox
         self.listWidget: QtWidgets.QListWidget
         self.lastWidget=False
-        self.btnAdd.clicked.connect(self.addCurva)
+        self.btnAdd.clicked.connect(lambda: self.addCurva())
 
+        if self.iface.comboElemento.currentIndex() == 0: #Circular simples
+            self.comboBox.setCurrentIndex(0)
+            self.addCurva({'D': 0, 'R': self.iface.txtRUtilizado.value(), 'T': float(self.iface.txtT.text()), 'L': 0, 'C': True})
+        elif self.iface.comboElemento.currentIndex() == 1: #Circular simétrica com transição
+            self.comboBox.setCurrentIndex(1)
+            self.addCurva({'D': float(self.iface.txtDelta.text())-2*float(self.iface.theta.text()), 'R': self.iface.txtRUtilizado.value(), 'T': float(self.iface.txtT.text()), 'L': self.iface.Ls.value(), 'C': True})
 
-    def addCurva(self):
+    def addCurva(self, data=None):
         self.listWidget: QtWidgets.QListWidget
         self.comboBox: QtWidgets.QComboBox
         itemN = QtWidgets.QListWidgetItem()
@@ -169,14 +182,16 @@ class CurvasCompositorDialog(QtWidgets.QDialog, COMPOSI):
         widget.nome.setText(self.comboBox.currentText().upper())
         widget.horizontalLayout.addStretch()
         widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-
-        try:
-            _,_,data=self.lastWidget.read()
-            data["D"]=0
-            data["C"]=False
-            widget.fill(data, k=self.lastWidget.k.text(), vmax=self.lastWidget.vmax.text())
-        except:
-            pass
+        if data==None:
+            try:
+                _,_,data=self.lastWidget.read()
+                data["D"]=0
+                data["C"]=False
+                widget.fill(data, k=self.lastWidget.k.text(), vmax=self.lastWidget.vmax.text())
+            except:
+                pass
+        else:
+            widget.fill(data)
 
         self.listWidget.addItem(itemN)
         self.listWidget.setItemWidget(itemN, widget)

@@ -162,6 +162,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         self.edit = False
         self.dialog = QtWidgets.QDialog(None)
         self.actual_point = None
+        self.btnGerarCurvas.hide()
 
 
     def curvasDialog(self, estacas, layer):
@@ -576,7 +577,7 @@ class EstacasIntersec(QtWidgets.QDialog):
 
 
     def retranslateUi(self, Form):
-        Form.setWindowTitle(_translate("Traçado Horizontal", "Traçado Vertial", None))
+        Form.setWindowTitle(_translate("Traçado Horizontal", "Traçado Vertical", None))
 
 
 class EstacasCv(QtWidgets.QDialog):
@@ -689,6 +690,14 @@ class EstacasCv(QtWidgets.QDialog):
         self.gridLayout.addWidget(self.btnRecalcular, row, column, 1, 1)
         row+=1
 
+        self.btnPerfil = QtWidgets.QPushButton(Form)
+        self.btnPerfil.setText("Gerar Perfil \nLongitudinal")
+        self.btnPerfil.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
+        self.btnPerfil.setWhatsThis("Define o greide")
+        self.btnPerfil.setObjectName(_fromUtf8("btnPerfil"))
+        self.gridLayout.addWidget(self.btnPerfil, row, column, 1, 1)
+        row+=1
+
         self.btnGen = QtWidgets.QPushButton(Form)
         self.btnGen.setText("Tabela de interseção")
         self.btnGen.setGeometry(QtCore.QRect(755, 16, 180, 45))
@@ -791,7 +800,7 @@ class EstacasCv(QtWidgets.QDialog):
                 table.setColumnWidth(columnNum, int(tableSize / numberOfColumns))
 
     def retranslateUi(self, Form):
-        Form.setWindowTitle(_translate("Traçado Horizontal", "Traçado Vertial", None))
+        Form.setWindowTitle(_translate("Traçado Horizontal", "Traçado Vertical", None))
 
     def reject(self):
         self.removePoint()
@@ -859,6 +868,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.curvaLayers=[]
         self.empty=True
         self.location_on_the_screen()
+        self.btnPerfil.hide()
         
     def location_on_the_screen(self):
         screen = QDesktopWidget().screenGeometry()
@@ -1199,6 +1209,9 @@ class rampaDialog(QtWidgets.QDialog):
         cota=QtWidgets.QDoubleSpinBox()
         cota.setMinimum(0.0)
         cota.setMaximum(10000.0)
+        cota2 = QtWidgets.QDoubleSpinBox()
+        cota2.setMinimum(0.0)
+        cota2.setMaximum(10000.0)
         abscissa=QtWidgets.QDoubleSpinBox()
         abscissa.setMaximum(1000000000.0)
         abscissa.setMinimum(0.0)
@@ -1226,25 +1239,26 @@ class rampaDialog(QtWidgets.QDialog):
         b2 = QtWidgets.QPushButton("cancelar", self)
         b2.clicked.connect(lambda: self.cleanClose())
 
-        H1layout.addWidget(InclLbl)
-        H1layout.addWidget(Incl)
-        H1layout.addWidget(posInclLbl)
-        H1layout.addItem(QtWidgets.QSpacerItem(80,20,QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+        H1layout.addWidget(cotaLbl)
+        H1layout.addWidget(cota2)
+        H1layout.addWidget(cota)
+        H1layout.addWidget(poscotaLbl)
+        H1layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
 
         H1layout.addWidget(comprLbl)
         H1layout.addWidget(compr)
         H1layout.addWidget(poscomprLbl)
-        H1layout.addItem(QtWidgets.QSpacerItem(80,20,QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+        H1layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
 
-        H2layout.addWidget(cotaLbl)
-        H2layout.addWidget(cota)
-        H2layout.addWidget(poscotaLbl)
-        H2layout.addItem(QtWidgets.QSpacerItem(80,20,QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+        H2layout.addWidget(InclLbl)
+        H2layout.addWidget(Incl)
+        H2layout.addWidget(posInclLbl)
+        H2layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
 
         H2layout.addWidget(abscissalbl)
         H2layout.addWidget(abscissa)
         H2layout.addWidget(posabscissaLbl)
-        H2layout.addItem(QtWidgets.QSpacerItem(80,20,QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+        H2layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
 
         Vlayout.addWidget(label)
         Vlayout.addLayout(H1layout)
@@ -1262,6 +1276,10 @@ class rampaDialog(QtWidgets.QDialog):
         self.cota=h2.pos().y()
         self.abscissaText=abscissa
         self.abscissa=h2.pos().x()
+        cota2.setValue(round(h1.pos().y(),2))
+        cota2.setDisabled(True)
+        cota2.setWhatsThis("Cota do ponto anterior ao seguimento")
+        cota.setWhatsThis("Cota do ponto adjacente ao seguimento")
 
         Incl.setValue(round(self.Incl,2))
         compr.setValue(round(self.compr,2))
@@ -1415,6 +1433,9 @@ class ssRampaDialog(rampaDialog):
         cota=QtWidgets.QDoubleSpinBox()
         cota.setMinimum(0.0)
         cota.setMaximum(10000.0)
+        cota2 = QtWidgets.QDoubleSpinBox()
+        cota2.setMinimum(0.0)
+        cota2.setMaximum(10000.0)
         abscissa=QtWidgets.QDoubleSpinBox()
         abscissa.setMaximum(1000000000.0)
         abscissa.setMinimum(0.0)
@@ -1442,9 +1463,10 @@ class ssRampaDialog(rampaDialog):
         b2 = QtWidgets.QPushButton("cancelar", self)
         b2.clicked.connect(lambda: self.cleanClose())
 
-        H1layout.addWidget(InclLbl)
-        H1layout.addWidget(Incl)
-        H1layout.addWidget(posInclLbl)
+        H1layout.addWidget(cotaLbl)
+        H1layout.addWidget(cota2)
+        H1layout.addWidget(cota)
+        H1layout.addWidget(poscotaLbl)
         H1layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
 
         H1layout.addWidget(comprLbl)
@@ -1452,9 +1474,9 @@ class ssRampaDialog(rampaDialog):
         H1layout.addWidget(poscomprLbl)
         H1layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
 
-        H2layout.addWidget(cotaLbl)
-        H2layout.addWidget(cota)
-        H2layout.addWidget(poscotaLbl)
+        H2layout.addWidget(InclLbl)
+        H2layout.addWidget(Incl)
+        H2layout.addWidget(posInclLbl)
         H2layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
 
         H2layout.addWidget(abscissalbl)
@@ -1475,9 +1497,13 @@ class ssRampaDialog(rampaDialog):
         self.comprText = compr
         self.compr = np.sqrt((h2.pos().y() - h1.pos().y()) ** 2 + (h2.pos().x() - h1.pos().x()) ** 2)
         self.cotaText = cota
+        cota2.setValue(round(h1.pos().y(),2))
         self.cota = h2.pos().y()
         self.abscissaText = abscissa
         self.abscissa = h2.pos().x()
+        cota2.setDisabled(True)
+        cota2.setWhatsThis("Cota do ponto anterior ao seguimento")
+        cota.setWhatsThis("Cota do ponto adjacente ao seguimento")
 
         Incl.setValue(float(round(self.Incl, 2)))
         compr.setValue(float(round(self.compr, 2)))

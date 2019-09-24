@@ -182,29 +182,16 @@ def polyTransCircle(layer, data, index, layer2, i):
     msgLog("a1: "+str(a1)+"   "+"a2: "+str(a2))
 
    # if a1<=90 or (a1>=180 and a1<=270):    
-    if a2-a1 >= 0:            
-        pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000-clotY(L**2/(2*data["R"]*data["L"]))*L)
-            for L in xrange(data["L"])]
-        pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, clotY(L**2/(2*data["R"]*data["L"]))*L)
-            for L in xrange(data["L"])]))
-    else:
+    if a2-a1 >= 0 and a1>=90 or a1<=270:
         pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, clotY(L**2/(2*data["R"]*data["L"]))*L)
             for L in xrange(data["L"])]
         pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000-clotY(L**2/(2*data["R"]*data["L"]))*L)
             for L in xrange(data["L"])]))
-#    else:
-#        if abs(a2-a1) <= 180:
-#            pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, clotY(L**2/(2*data["R"]*data["L"]))*L)
-#              for L in xrange(data["L"])]
-#            pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000.0-clotY(L**2/(2*data["R"]*data["L"]))*L)
-#              for L in xrange(data["L"])]))
-#        else:
-#            pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000-clotY(L**2/(2*data["R"]*data["L"]))*L)
-#              for L in xrange(data["L"])]
-#            pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000-clotY(L**2/(2*data["R"]*data["L"]))*L)
-#              for L in xrange(data["L"])]))
-
-
+    else:
+        pointsT1=[QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, 1000-clotY(L**2/(2*data["R"]*data["L"]))*L)
+            for L in xrange(data["L"])]
+        pointsT2=list(reversed([QgsPoint(clotX(L**2/(2*data["R"]*data["L"]))*L, clotY(L**2/(2*data["R"]*data["L"]))*L)
+            for L in xrange(data["L"])]))
 
 
     if index == "R":
@@ -365,9 +352,9 @@ def polyTransCircle(layer, data, index, layer2, i):
     feat1.setGeometry(g1)
     feat3.setGeometry(g2)
 
+    p = QgsPoint((p1.x() + p2.x()) / 2, (p2.y() + p1.y()) / 2)
     p1=QgsPoint(polyline(g1)[-1])
     p2=QgsPoint(polyline(g2)[0])
-    p=QgsPoint((p1.x()+p2.x())/2, (p2.y()+p1.y())/2)
     tmp_line=QgsGeometry.fromPolyline([QgsPoint(PI),p])
     theta=data["L"]/(2*data["R"])
     ys=clotY(theta)*data["L"]

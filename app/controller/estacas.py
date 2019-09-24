@@ -684,6 +684,7 @@ class Estacas(object):
         self.view.showMinimized()
         curvaView.accepted.connect(self.raiseView)
         curvaView.rejected.connect(self.raiseView)
+        curvaView.show()
         curvaView.exec_()
 
     def raiseView(self):

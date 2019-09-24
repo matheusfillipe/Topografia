@@ -310,27 +310,27 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
              for tipo, index, state in self.c.readData():
                 i+=1
                 if tipo=="C":
-                    data=circleArc2(layer, state, index, self.layer, self.comboCurva.currentIndex()+1)
+                    data=circleArc2(layer, state, index, self.layer, self.nextIndex())
                     k=0
                     vmax="120 km/h"
 
                 elif tipo=="EC":
-                    data = polyTransCircle(layer, state, index, self.layer, self.comboCurva.currentIndex() + 1)
+                    data = polyTransCircle(layer, state, index, self.layer, self.nextIndex())
                     k = 0
                     vmax = "120 km/h"
 
                 elif tipo=="EE":
-                    data=inSpiral2(layer, state, index, self.layer, self.comboCurva.currentIndex()+1)
+                    data=inSpiral2(layer, state, index, self.layer, self.nextIndex())
                     k=0
                     vmax="120 km/h"
 
                 elif tipo=="ES":
-                    data=outSpiral2(layer, state, index, self.layer, self.comboCurva.currentIndex()+1)
+                    data=outSpiral2(layer, state, index, self.layer, self.nextIndex())
                     k=0
                     vmax="120 km/h"
 
                 elif tipo=="T":
-                    data=tangent2(layer, state, index, self.layer, self.comboCurva.currentIndex()+1)
+                    data=tangent2(layer, state, index, self.layer, self.nextIndex())
                     k=0
                     vmax="120 km/h"
                 else:
@@ -345,27 +345,27 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             for tipo, index, state in self.c.readData():
                 i+=1
                 if tipo=="C":
-                    data=circleArc(layer, state, index, self.layer, self.comboCurva.currentIndex()+1)
+                    data=circleArc(layer, state, index, self.layer, self.nextIndex())
                     k=0
                     vmax="120 km/h"
 
                 elif tipo=="EC":
-                    data = polyTransCircle(layer, state, index, self.layer, self.comboCurva.currentIndex() + 1)
+                    data = polyTransCircle(layer, state, index, self.layer, self.nextIndex())
                     k = 0
                     vmax = "120 km/h"
 
                 elif tipo=="EE":
-                    data=inSpiral(layer, state, index, self.layer, self.comboCurva.currentIndex()+1)
+                    data=inSpiral(layer, state, index, self.layer, self.nextIndex())
                     k=0
                     vmax="120 km/h"
 
                 elif tipo=="ES":
-                    data=outSpiral(layer, state, index, self.layer, self.comboCurva.currentIndex()+1)
+                    data=outSpiral(layer, state, index, self.layer, self.nextIndex())
                     k=0
                     vmax="120 km/h"
 
                 elif tipo=="T":
-                    data=tangent(layer, state, index, self.layer, self.comboCurva.currentIndex()+1)
+                    data=tangent(layer, state, index, self.layer, self.nextIndex())
                     k=0
                     vmax="120 km/h"
                 else:
@@ -457,7 +457,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
                     self.txtEsteFinal.setText(roundFloat2str(PF.x()))
                     self.txtNomeFinal.setText(nomes[1]+"T"+self.comboCurva.currentText()[-1])
                 else:
-                    features.append(feat)
+                    f.setGeometry(feat.geometry())
+                    features.append(f)
 
         self.layer.dataProvider().deleteFeatures([f.id() for f in self.layer.getFeatures()])
         self.layer.dataProvider().addFeatures(features)
@@ -517,7 +518,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         else:
             self.prev.setEnabled(True)
             self.next.setEnabled(True)
-
 
 
     def zoomToPoint(self, point):
@@ -581,10 +581,26 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         return True
 
     def currentIndex(self):
-        return self.comboCurva.currentIndex()
+        i=self.comboCurva.currentIndex()
+        f=0
+        n=0
+        for feat1, feat2 in zip(featuresList(self.layer), featuresList(self.layer)[1:]):
+            if n == i:
+                return max(f, 0)
+            if getTipo(feat2)=="T":
+                n+=1
+            f+=1
+        return max(f-1,0)
+
 
     def nextIndex(self):
-        return self.comboCurva.currentIndex()+1
+        i=self.currentIndex()+1
+        fl = featuresList(self.layer)
+        feat = fl[i]
+        while getTipo(feat) != "T":
+            i += 1
+            feat = fl[i]
+        return i
 
     def calcularCurva(self, new=False):
         self.curvas = self.model.list_curvas()

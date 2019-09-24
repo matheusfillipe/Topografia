@@ -430,7 +430,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
 
     def setPoints(self, points, closed=None):
         self.wasInitialized=False   
-        QgsMessageLog.logMessage("Iniciando pontos do perfil", "Topografia", level=0)
+        QgsMessageLog.logMessage("Iniciando pontos do perfil", "GeoRoad", level=0)
         if closed is not None:
             self.closed = closed
         self.clearPoints()
@@ -668,7 +668,7 @@ class ssRoi(CustomPolyLineROI):
 
     def setPoints(self, points, closed=None):
         self.wasInitialized = False
-        QgsMessageLog.logMessage("Iniciando pontos do perfil transversal", "Topografia", level=0)
+        QgsMessageLog.logMessage("Iniciando pontos do perfil transversal", "GeoRoad", level=0)
         if closed is not None:
             self.closed = closed
         self.clearPoints()
@@ -770,7 +770,7 @@ class brucknerRoi(CustomPolyLineROI):
 
     def setPoints(self, points, closed=None):
         self.wasInitialized = False
-        QgsMessageLog.logMessage("Iniciando pontos do diagrama de bruckner", "Topografia", level=0)
+        QgsMessageLog.logMessage("Iniciando pontos do diagrama de bruckner", "GeoRoad", level=0)
         if closed is not None:
             self.closed = closed
         self.clearPoints()

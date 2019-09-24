@@ -41,13 +41,13 @@ class Config(object):
     # Valore padrão
 
     FILE_PATH=""
-    PLUGIN_NAME="Topografia"
+    PLUGIN_NAME="GeoRoad"
     fileName = ''
     UNITS = 'm'
     CSV_DELIMITER = ';'
     DIST=20
     RANDOM="__ix35-_-xxx901381asdioADJ398(__"
-    TMP_FOLDER="TopografiaPluginTemporaryLayers/"
+    TMP_FOLDER="GeoRoadPluginTemporaryLayers/"
     T_SPACING=30
     CLASSE_INDEX=4
     crs = 2676

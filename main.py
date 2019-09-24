@@ -117,7 +117,7 @@ class TopoGrafia(object):
         # Declare instance attributes
         self.actionCounter=0
         self.actions = []
-        self.menu = self.tr(u'&Topografia')
+        self.menu = self.tr(u'&GeoRoad')
 
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'TopoGrafia')
@@ -300,7 +300,7 @@ class TopoGrafia(object):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
             self.iface.removePluginMenu(
-                self.tr(u'&Topografia'),
+                self.tr(u'&GeoRoad'),
                 action)
             self.iface.removeToolBarIcon(action)
         # remove the toolbar

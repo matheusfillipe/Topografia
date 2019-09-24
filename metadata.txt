@@ -8,7 +8,7 @@
 # Mandatory items:
 
 [general]
-name=Topografia
+name=GeoRoad
 qgisMinimumVersion=3.0
 description=Geometric Road Design
 version=0.72

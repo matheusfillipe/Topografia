@@ -22,7 +22,7 @@
  This script initializes the plugin, making it known to QGIS.
 """
 def name(): 
-    return "Topografia" 
+    return "GeoRoad"
 def description():
     return "Utilitario desenvolvido pela UFV para facilitar a vida do profissional de topográfia."
 def version(): 

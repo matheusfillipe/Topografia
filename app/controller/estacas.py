@@ -471,7 +471,7 @@ class Estacas(object):
 
         road=QgsGeometry.fromPolyline(points)
 
-        QgsMessageLog.logMessage("Iniciando comparação", "Topografia", level=0)
+        QgsMessageLog.logMessage("Iniciando comparação", "GeoRoad", level=0)
         msgLog("Organizando: " + str(time.time() - startTime) + " seconds")
 
         verticais=[]
@@ -542,7 +542,7 @@ class Estacas(object):
         self.model.saveIntersect(table)
 
         msgLog("Verticais: "+ str(time.time()-startTime)+" seconds")
-        QgsMessageLog.logMessage("Fim comparação", "Topografia", level=0)
+        QgsMessageLog.logMessage("Fim comparação", "GeoRoad", level=0)
         return table
 
 

@@ -308,7 +308,7 @@ def getElevation(crs,point):
     return elevation
 
 def msgLog(msg):
-    QgsMessageLog.logMessage(str(msg), tag="Topografia", level=0)
+    QgsMessageLog.logMessage(str(msg), tag="GeoRoad", level=0)
 
 def interpolList(l:list,i):
     length=len(l)

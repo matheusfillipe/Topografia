@@ -45,7 +45,7 @@ Vertical data can be set and edited with a pyqtgraph interface. The cross sectio
 
 #### Instalação: Pelo QGIS plugin manager 
 
-Abra o gerenciador de plugins em "Plugins -> Gerenciar e instalar plugins", aguarde a atualização, clique na opção Todos (All), Digite "Topografia", clique em instalar. 
+Abra o gerenciador de plugins em "Plugins -> Gerenciar e instalar plugins", aguarde a atualização, clique na opção Todos (All), Digite "GeoRoad", clique em instalar. 
 
 [Qgis: Install plugins online(English)](https://docs.qgis.org/3.4/en/docs/training_manual/qgis_plugins/fetching_plugins.html)
 

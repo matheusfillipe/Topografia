@@ -25,7 +25,7 @@ def nongui(fun):
 #    """Decorator running the function in non-gui thread while
 #    processing the gui events."""
 #    from qgis._core import QgsTask, QgsApplication, QgsMessageLog, Qgis
-#    MESSAGE_CATEGORY = 'Topografia'
+#    MESSAGE_CATEGORY = 'GeoRoad'
 #
 #    def workdone(exception, result=None):
 #        if exception is None:
@@ -41,7 +41,7 @@ def nongui(fun):
 #            raise exception
 #
 #    def wrap(*args, **kwargs):
-#        task=QgsTask.fromFunction(u'Topografia Task', wrap,
+#        task=QgsTask.fromFunction(u'GeoRoad Task', wrap,
 #                             onfinished=workdone)
 #        QgsApplication.taskManager().addTask(task)
 #

@@ -1654,7 +1654,7 @@ class cvEdit(QtWidgets.QDialog, VERTICE_EDIT_DIALOG):
         super(cvEdit, self).__init__(None)
         self.iface = iface
         self.setupUi(self)
-      #  self.setFixedSize(self.size())
+        self.setFixedSize(self.size())
 
     def removeCv(self):
         self.groupBox_2.setFlat(True)

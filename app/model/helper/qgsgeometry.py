@@ -26,16 +26,52 @@ def tangentFeaturesFromPointList(layer: QgsVectorLayer, list:list):
                 layer.dataProvider().addFeatures([feat])
                 layer.updateExtents()
                 anterior=p
+            
 
-def getTangentesGeometry(layer, i):
+def perp( a ) :
+    b = np.empty_like(a)
+    b[0] = -a[1]
+    b[1] = a[0]
+    return b
+
+# line segment a given by endpoints a1, a2
+# line segment b given by endpoints b1, b2
+# return 
+def seg_intersect(a1,a2, b1,b2) :
+    a1=np.array([a1.x(), a1.y()])
+    a2=np.array([a2.x(), a2.y()])
+    b1=np.array([b1.x(), b1.y()])
+    b2=np.array([b2.x(), b2.y()])
+    da = a2-a1
+    db = b2-b1
+    dp = a1-b1
+    dap = perp(da)
+    denom = np.dot( dap, db)
+    num = np.dot( dap, dp )
+    pi=(num / denom.astype(float))*db + b1
+    return QgsPoint(pi[0], pi[1])
+
+
+def getTangentesGeometry(layer, i, j=0):
     layer: QgsVectorLayer
     G=[f.geometry() for f in layer.getFeatures()]
-    if i >len(G)-1:
-        G=[G[-1], None]
-    elif i==0:
-        G=[None, G[0]]
+    if j==0:
+        if i >len(G)-1:
+            G=[G[-1], None]
+        elif i==0:
+            G=[None, G[0]]
+        else:
+            G=[G[i-1],G[i]]
     else:
-        G=[G[i-1],G[i]]
+        l1:QgsGeometry
+        l2:QgsGeometry
+        l1=G[i]
+        l2=G[j]
+        g1=qgsGeometryToPolyline(l1)
+        g2=qgsGeometryToPolyline(l2)
+        pi=QgsPoint(seg_intersect(g1[0],g1[-1],g2[0],g2[-1]))
+        G=[QgsGeometry.fromPolyline([QgsPoint(g1[0]),pi]), QgsGeometry.fromPolyline([pi,QgsPoint(g2[-1])])]
+
     return G
 
 def deflection(layer2, i):
@@ -138,25 +174,20 @@ def xrange(n):
 def polyCircle(layer, data, index, layer2, i):
     pass
 
-def polyTransCircle(layer, data, index, layer2, i):
+def polyTransCircle(layer, data, index, layer2, i, ic):
 
     LsMax=data["R"]*abs(data["D"])*np.pi/180
-    LsMin=0   
-
+    LsMin=0
 
     fcount=featureCount(layer)
     if fcount>0:
-        fant=[f for f in layer.getFeatures()][fcount-1]
-        l1=fant.geometry()
-        l2=QgsGeometry(l1)
-        dd=diff(qgsGeometryToPolyline(fant.geometry())[-1],qgsGeometryToPolyline(fant.geometry())[0])
-        l2.translate(dd.x(),dd.y())
-        PI=qgsGeometryToPolyline(fant.geometry())[-1]
-        d=0
+        l1, l2=getTangentesGeometry(layer2, ic, i)
+        d=deflection(layer2, i)
+        PI=qgsGeometryToPolyline(l1)[-1]
         data["Disable"].append("C")
 
     else:
-        l1, l2=getTangentesGeometry(layer2, i)
+        l1, l2=getTangentesGeometry(layer2, ic, i)
         d=deflection(layer2, i)
         PI=qgsGeometryToPolyline(l1)[-1]
         if l1 is None:
@@ -289,17 +320,14 @@ def polyTransCircle(layer, data, index, layer2, i):
 
     return data
 
-def circleArc(layer, data, index, layer2, i):
+def circleArc(layer, data, index, layer2, i, ic):
     fcount=featureCount(layer)
     if fcount>0:
-        fant=[f for f in layer.getFeatures()][fcount-1]
-        l1=fant.geometry()
-        l2=QgsGeometry(l1)
-        dd=diff(qgsGeometryToPolyline(fant.geometry())[-1],qgsGeometryToPolyline(fant.geometry())[0])
-        l2.translate(dd.x(),dd.y())
-        PI=qgsGeometryToPolyline(fant.geometry())[-1]
+        l1, l2=getTangentesGeometry(layer2, ic, i)
+        d=deflection(layer2, i)
+        PI=qgsGeometryToPolyline(l1)[-1]
     else:
-        l1, l2=getTangentesGeometry(layer2, i)
+        l1, l2=getTangentesGeometry(layer2, ic, i)
         d=deflection(layer2, i)
         PI=qgsGeometryToPolyline(l1)[-1]
         if l1 is None:

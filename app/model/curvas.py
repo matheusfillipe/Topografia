@@ -7,7 +7,7 @@ from builtins import range
 from builtins import str
 
 from ..model.config import extractZIP, Config, compactZIP
-
+from ..model.sqlitedb import DB
 
 class Curvas(object):
     def __init__(self, id_filename):
@@ -187,7 +187,7 @@ class Curvas(object):
         compactZIP(Config.fileName)
         return True
 
-    def new(self, tipo, estaca1_id, estaca2_id, velocidade, rutilizado, emax, paramCurva):
+    def new(self, tipo, estaca1_id, estaca2_id, velocidade, rutilizado, emax, paramCurva, dados):
         '''Verifico se há curva para o traçado'''
         extractZIP(Config.fileName)
         con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
@@ -220,9 +220,11 @@ class Curvas(object):
                 paramCurva['ept']))
             con.commit()
         con.close()
+        db=DB(Config.instance().TMP_DIR_PATH+"tmp/data/data.db", "CURVAS_DADOS", list(dados.keys()))
+        db.salvarDado(dados)
         compactZIP(Config.fileName)
 
-    def edit(self, id_curva, tipo, estaca1_id, estaca2_id, velocidade, rutilizado, emax, paramCurva):
+    def edit(self, id_curva, tipo, estaca1_id, estaca2_id, velocidade, rutilizado, emax, paramCurva, dados):
         '''Verifico se há curva para o traçado'''
         extractZIP(Config.fileName)
         con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
@@ -262,4 +264,16 @@ class Curvas(object):
                     paramCurva['ept'], id_curva))
             con.commit()
         con.close()
+        db=DB(Config.instance().TMP_DIR_PATH+"tmp/data/data.db", "CURVAS_DADOS", list(dados.keys()))
+        id=db.acharDadoExato('curva', dados['curva'])[-1]
+        db.update(id,dados)
         compactZIP(Config.fileName)
+
+    def getId(self, name, dados):
+        extractZIP(Config.fileName)
+        from ..model.sqlitedb import DB
+        db = DB(Config.instance().TMP_DIR_PATH + "tmp/data/data.db", "CURVAS_DADOS", list(dados.keys()))
+        id = db.acharDadoExato("curva", name)
+        dados = db.getDado(id[-1]) if id else dados
+        compactZIP(Config.fileName)
+        return id, dados

@@ -149,6 +149,16 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.buttons=[self.btnAjuda, self.btnApagar, self.btnCalcular, self.btnCancela, self.btnClose, self.btnEditar,
 
                                self.btnInsere, self.btnNew, self.btnRelatorio ]
+        self.dados = {
+            'tipo': self.comboElemento.currentIndex(),
+            'curva': self.comboCurva.currentText(),
+            'vel': self.txtVelocidade.value(),
+            'emax': self.txtEMAX.value(),
+            'ls': self.Ls.value(),
+            'R': self.txtRUtilizado.value(),
+            'fmax': self.txtFMAX.value(),
+            'D': self.txtD.value()
+        }
 
 
         self.curvas = [self.tr(str(curva[0])) for curva in self.curvas]
@@ -315,7 +325,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
                     vmax="120 km/h"
 
                 elif tipo=="EC":
-                    data = polyTransCircle(layer, state, index, self.layer, self.nextIndex())
+                    data = polyTransCircle(layer, state, index, self.layer, self.nextIndex(), self.currentIndex())
                     k = 0
                     vmax = "120 km/h"
 
@@ -345,12 +355,12 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             for tipo, index, state in self.c.readData():
                 i+=1
                 if tipo=="C":
-                    data=circleArc(layer, state, index, self.layer, self.nextIndex())
+                    data=circleArc(layer, state, index, self.layer, self.nextIndex(), self.currentIndex())
                     k=0
                     vmax="120 km/h"
 
                 elif tipo=="EC":
-                    data = polyTransCircle(layer, state, index, self.layer, self.nextIndex())
+                    data = polyTransCircle(layer, state, index, self.layer, self.nextIndex(), self.currentIndex())
                     k = 0
                     vmax = "120 km/h"
 
@@ -427,6 +437,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             nomes=[]
             #Delete all features of self.layer and add layer geometry in between
             for i,feat in enumerate(self.layer.getFeatures()):
+                if i>self.currentIndex() and i<self.nextIndex():
+                    continue
                 f = QgsFeature(self.layer.fields())
                 attr=feat.attributes()
                 attr[0]=len(features)+1
@@ -485,6 +497,14 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         estacas = self.model.gera_estacas(dist)
         self.model.save_CSV(filename, estacas)
 
+    def clearAll(self):
+        texts=["txtNomeInicial", "txtNomeInicial", "txtEsteInicial", "txtNomeFinal", "txtNorthFinal", "txtEsteFinal",
+               "txtI", "txtDelta", "txtRMIN", "txtEPI", "txtEPC", "txtT", "theta", "txtG20", "txtEPT", "lsmin",
+               "lsmax", "xs", "ys"
+               ]
+        for txt in texts:
+            getattr(self, txt).setText("")
+        
 
     def mudancaCurva(self, pos):
         self.comboCurva : QtWidgets.QComboBox
@@ -492,19 +512,40 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             self.zoomToPoint(self.PIs[1:-1][self.comboCurva.currentIndex()])
         except:
             pass
-        self.curvas = self.model.list_curvas()
 
-        if len(self.curvas)>pos+1: #curva já existe no db?
-            self.curva = list(self.curvas[pos])
-            curvas_inicial_id = self.curva[5]
-            curvas_final_id = self.curva[6]
-            self.mudancaEstacaInicial(self.estacas_id.index(curvas_inicial_id))
-            self.mudancaEstacaFinal(self.estacas_id.index(curvas_final_id))
-            self.txtVelocidade.setValue(int(self.curva[2]))
-            self.txtRUtilizado.setValue(float(self.curva[3]))
-            self.txtEMAX.setValue(float(self.curva[4]))
-        else:  #Curva ainda não cadastrada no db
-            pass
+        self.curvas = self.model.list_curvas()
+        self.clearAll()
+
+#        if len(self.curvas)>pos+1: #curva já existe no db?
+#            self.curva = list(self.curvas[pos])
+#            curvas_inicial_id = self.curva[5]
+#            curvas_final_id = self.curva[6]
+#            self.mudancaEstacaInicial(self.estacas_id.index(curvas_inicial_id))
+#            self.mudancaEstacaFinal(self.estacas_id.index(curvas_final_id))
+#            self.txtVelocidade.setValue(int(self.curva[2]))
+#            self.txtRUtilizado.setValue(float(self.curva[3]))
+#            self.txtEMAX.setValue(float(self.curva[4]))
+#        else:  #Curva ainda não cadastrada no db
+#            pass
+
+        id, self.dados=self.model.getId(self.comboCurva.currentText(), self.dados)
+        if id:
+            self.comboElemento.setCurrentIndex(self.dados['tipo'])
+            self.comboCurva.setCurrentText(self.dados['curva'])
+            self.txtVelocidade.setValue(self.dados['vel'])
+            self.txtEMAX.setValue(self.dados['emax'])
+            self.Ls.setValue(self.dados['ls'])
+            self.txtRUtilizado.setValue(self.dados['R'])
+            self.txtFMAX.setValue(self.dados['fmax'])
+            self.txtD.setValue(self.dados['D'])
+            self.editando=True
+            self.btnNew.setEnabled(False)
+            self.btnEditar.setEnabled(True)
+            self.calcularCurva()
+        else:
+            self.btnNew.setEnabled(True)
+            self.btnEditar.setEnabled(False)
+            self.editando=False
 
         max=self.comboCurva.count()-1
         i=self.comboCurva.currentIndex()
@@ -590,8 +631,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             if getTipo(feat2)=="T":
                 n+=1
             f+=1
-        return max(f-1,0)
-
+        return max(f-1, 0)
 
     def nextIndex(self):
         i=self.currentIndex()+1
@@ -680,6 +720,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             'ept': ept_val
         }
 
+
         self.txtI.setText("%f" % i)
         self.txtI.setEnabled(False)
         self.txtT.setText("%f" % t_val)
@@ -692,6 +733,17 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.txtEPI.setText("%f" % epi_val)
         self.txtEPT.setText("%f" % ept_val)
         self.txtEPC.setText("%f" % epc_val)
+
+        self.dados = {
+            'tipo': self.comboElemento.currentIndex(),
+            'curva': self.comboCurva.currentText(),
+            'vel': self.txtVelocidade.value(),
+            'emax': self.txtEMAX.value(),
+            'ls': self.Ls.value(),
+            'R': self.txtRUtilizado.value(),
+            'fmax': self.txtFMAX.value(),
+            'D': self.txtD.value()
+        }
 
     def insert(self):
 
@@ -706,12 +758,11 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             self.editando = False
             id_curva = int(self.curva[0])
             #TODO make it save and edit!!!
-       #     model.edit(id_curva, int(self.tipo_curva), estaca_inicial_id, estaca_final_id, velocidade, raio_utilizado,
-        #               e_max, self.param)
+            model.edit(id_curva, int(self.tipo_curva), estaca_inicial_id, estaca_final_id, velocidade, raio_utilizado,
+                       e_max, self.param, self.dados)
         else:
-            pass
-        #    model.new(int(self.tipo_curva), estaca_inicial_id, estaca_final_id, velocidade, raio_utilizado, e_max,
-        #              self.param)
+            model.new(int(self.tipo_curva), estaca_inicial_id, estaca_final_id, velocidade, raio_utilizado, e_max,
+                      self.param, self.dados)
         self.update()
 
     # noinspection PyMethodMayBeStatic

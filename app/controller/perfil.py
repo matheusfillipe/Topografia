@@ -129,7 +129,7 @@ class cvEditDialog(cvEdit):
     def __init__(self,roi, i):
         super(cvEditDialog, self).__init__(None)
 #        self.addCurveBtn.clicked.connect(self.raiseCurveGroupeBox)
-        self.setupUi(self)
+       # self.setupUi(self)
         self.isBeingModified=False
         self.i=i
         self.initialHandlesPos = []

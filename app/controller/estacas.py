@@ -117,7 +117,7 @@ class Estacas(object):
         self.viewCv.btnCsv.clicked.connect(self.exportCSV)
         self.viewCv.btnClean.clicked.connect(self.cleanTrans)
         self.viewCv.btnRecalcular.clicked.connect(self.recalcularVerticais)
-        self.viewCv.btnPerfil.clicked.connect(self.perfilView)
+        self.view.btnPerfil.clicked.connect(self.perfilView)
 
     def bruckner(self):
 

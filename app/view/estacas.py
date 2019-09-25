@@ -868,7 +868,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.curvaLayers=[]
         self.empty=True
         self.location_on_the_screen()
-        self.btnPerfil.hide()
+        #self.btnPerfil.hide()
         
     def location_on_the_screen(self):
         screen = QDesktopWidget().screenGeometry()
@@ -1654,7 +1654,7 @@ class cvEdit(QtWidgets.QDialog, VERTICE_EDIT_DIALOG):
         super(cvEdit, self).__init__(None)
         self.iface = iface
         self.setupUi(self)
-        self.setFixedSize(self.size())
+      #  self.setFixedSize(self.size())
 
     def removeCv(self):
         self.groupBox_2.setFlat(True)

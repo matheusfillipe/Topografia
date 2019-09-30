@@ -127,6 +127,12 @@ class CopySelectedCellsAction(QtWidgets.QAction):
             sys_clip = QtWidgets.QApplication.clipboard()
             sys_clip.setText(clipboard)
 
+class reversedSpinBox(QtWidgets.QSpinBox):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def stepBy(self, steps: int):
+        super().stepBy(-steps)
 
 class Dialog(QtWidgets.QDialog):
     def __init__(self):
@@ -589,6 +595,59 @@ class EstacasCv(QtWidgets.QDialog):
         self.setupUi(self)
         self.location_on_the_screen()
 
+
+        self.spinBox: QtWidgets.QSpinBox
+        self.spinBox.hide()
+        self.comboBox: QtWidgets.QComboBox
+        self.comboBox.currentTextChanged.connect(self.search)
+        self.spinBox.valueChanged.connect(self.changeSearchResult)
+        self.searchResults=[]
+
+    def changeSearchResult(self, i):
+        if i==0 or i==len(self.searchResults)+1:
+            self.spinBox.valueChanged.disconnect()
+            self.spinBox.setValue(i+1 if i==0 else i-1)
+            self.spinBox.valueChanged.connect(self.changeSearchResult)
+            return
+
+        if len(self.searchResults)>0:
+            columnIndexes = list(set(index.column()
+                                     for index in self.tableWidget.selectionModel().selectedIndexes()))
+            row=self.searchResults[i-1]
+
+            if len(columnIndexes)==0:
+                self.tableWidget.setRangeSelected(
+                QTableWidgetSelectionRange(row, 0, row, self.tableWidget.columnCount()-1), True)
+                self.tableWidget.setCurrentCell(row,0)
+            else:
+                for i in columnIndexes:
+                    self.tableWidget.setRangeSelected(
+                        QTableWidgetSelectionRange(row, i, row, i), True)
+                self.tableWidget.setCurrentCell(row, columnIndexes[0])
+
+    def search(self, txt):
+        self.searchResults=[]
+        columnIndexes = list(set(index.column()
+                                 for index in self.tableWidget.selectionModel().selectedIndexes()))
+        def searchRange(estaca, columnIndexes):
+            if len(columnIndexes)>0:
+                estaca=[estaca[i] for i in columnIndexes]
+            return "* ".join(estaca)
+
+        for i, estaca in enumerate(self.get_estacas()):
+            if txt.upper() in searchRange(estaca, columnIndexes).upper():
+                self.searchResults.append(i)
+        lres=len(self.searchResults)
+        if lres>1:
+            self.spinBox.show()
+            self.spinBox.setMaximum(lres+1)
+        else:
+            self.spinBox.hide()
+        self.changeSearchResult(1)
+        self.spinBox.setValue(1)
+
+
+
     def location_on_the_screen(self):
         screen = QDesktopWidget().screenGeometry()
         widget = self.geometry()
@@ -599,6 +658,7 @@ class EstacasCv(QtWidgets.QDialog):
     def clear(self):
         self.tableWidget.setRowCount(0)
         self.tableWidget.clearContents()
+        self.comboBox.clear()
 
     def setIntersect(self):
         if hasattr(self, "mode") and self.mode=="T":
@@ -637,15 +697,22 @@ class EstacasCv(QtWidgets.QDialog):
         filename = QtWidgets.QFileDialog.getSaveFileName()
         return filename
 
+
     def fill_table(self, estaca, f=False):
+        self.comboBox.currentTextChanged.disconnect(self.search)
         self.tableWidget.insertRow(self.tableWidget.rowCount())
         k = self.tableWidget.rowCount() - 1
-        j=0
+        j = 0
         for value in list(estaca):
             cell_item = QtWidgets.QTableWidgetItem(u"%s" % formatValue(value))
             cell_item.setFlags(cell_item.flags() ^ Qt.ItemIsEditable)
-            self.tableWidget.setItem(k,j,cell_item)
-            j+=1
+            self.tableWidget.setItem(k, j, cell_item)
+            j += 1
+
+        if len(estaca[1]) != 0 and not (estaca[1] in [self.comboBox.itemText(i)
+                                                      for i in range(self.comboBox.count())]):
+            self.comboBox.addItem(estaca[1])
+        self.comboBox.currentTextChanged.connect(self.search)
 
     def get_estacas(self):
         estacas = []
@@ -746,6 +813,25 @@ class EstacasCv(QtWidgets.QDialog):
         self.gridLayout.addWidget(self.btnClean, row, column, 1, 1)
         row+=3
 
+        self.labelProcurar = QtWidgets.QLabel(Form)
+        self.labelProcurar.setText("Procurar: ")
+        self.labelProcurar.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
+        self.labelProcurar.setObjectName(_fromUtf8("labelProcurar"))
+        self.gridLayout.addWidget(self.labelProcurar, row, column, 1, 1)
+        row+=1
+
+        self.hor=QtWidgets.QHBoxLayout(Form)
+        self.hor.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
+        self.hor.setObjectName(_fromUtf8("hor"))
+        self.comboBox=QtWidgets.QComboBox(Form)
+        self.comboBox.setEditable(True)
+        self.spinBox=reversedSpinBox(Form)
+        self.spinBox.setMinimum(0)
+        self.hor.addWidget(self.comboBox)
+        self.hor.addWidget(self.spinBox)
+        self.gridLayout.addLayout(self.hor, row, column, 1, 1)
+        row+=1
+
         self.labelComp = QtWidgets.QLabel(Form)
         self.labelComp.setText("Comprimento total: ")
         self.labelComp.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
@@ -804,14 +890,17 @@ class EstacasCv(QtWidgets.QDialog):
 
     def reject(self):
         self.removePoint()
+        self.comboBox.clear()
         return super(EstacasCv, self).reject()
 
     def close(self):
         self.removePoint()
+        self.comboBox.clear()
         return super(EstacasCv, self).close()
 
     def accept(self):
         self.removePoint()
+        self.comboBox.clear()
         return super(EstacasCv, self).accept()
 
     def removePoint(self):
@@ -869,7 +958,64 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.empty=True
         self.location_on_the_screen()
         #self.btnPerfil.hide()
-        
+
+        self.spinBox: QtWidgets.QSpinBox
+        self.horizontalLayout: QtWidgets.QHBoxLayout
+        sp=reversedSpinBox()
+        self.horizontalLayout.addWidget(sp)
+        self.spinBox=sp
+        self.spinBox.setMinimum(0)
+        self.spinBox.hide()
+        self.comboBox: QtWidgets.QComboBox
+        self.comboBox.currentTextChanged.connect(self.search)
+        self.spinBox.valueChanged.connect(self.changeSearchResult)
+        self.searchResults = []
+
+    def changeSearchResult(self, i):
+        if i == 0 or i == len(self.searchResults) + 1:
+            self.spinBox.valueChanged.disconnect()
+            self.spinBox.setValue(i + 1 if i == 0 else i - 1)
+            self.spinBox.valueChanged.connect(self.changeSearchResult)
+            return
+
+        if len(self.searchResults) > 0:
+            columnIndexes = list(set(index.column()
+                                     for index in self.tableWidget.selectionModel().selectedIndexes()))
+            row = self.searchResults[i - 1]
+
+            if len(columnIndexes) == 0:
+                self.tableWidget.setRangeSelected(
+                    QTableWidgetSelectionRange(row, 0, row, self.tableWidget.columnCount() - 1), True)
+                self.tableWidget.setCurrentCell(row, 0)
+            else:
+                for i in columnIndexes:
+                    self.tableWidget.setRangeSelected(
+                        QTableWidgetSelectionRange(row, i, row, i), True)
+                self.tableWidget.setCurrentCell(row, columnIndexes[0])
+
+    def search(self, txt):
+        self.searchResults = []
+        columnIndexes = list(set(index.column()
+                                 for index in self.tableWidget.selectionModel().selectedIndexes()))
+
+        def searchRange(estaca, columnIndexes):
+            if len(columnIndexes) > 0:
+                estaca = [estaca[i] for i in columnIndexes]
+            return "* ".join(estaca)
+
+        for i, estaca in enumerate(self.get_estacas()):
+            if txt.upper() in searchRange(estaca, columnIndexes).upper():
+                self.searchResults.append(i)
+        lres = len(self.searchResults)
+        if lres > 1:
+            self.spinBox.show()
+            self.spinBox.setMaximum(lres + 1)
+        else:
+            self.spinBox.hide()
+        self.changeSearchResult(1)
+        self.spinBox.setValue(1)
+
+
     def location_on_the_screen(self):
         screen = QDesktopWidget().screenGeometry()
         widget = self.geometry()
@@ -880,6 +1026,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
     def clear(self):
         self.tableWidget.setRowCount(0)
         self.tableWidget.clearContents()
+        self.comboBox.clear()
 
     def saveEstacasCSV(self):
         filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save Worksheet",filter="Arquivo CSV (*.csv)")
@@ -887,6 +1034,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
 
 
     def fill_table(self, estaca,f=False):
+        self.comboBox.currentTextChanged.disconnect(self.search)
         self.tableWidget.insertRow(self.tableWidget.rowCount())
         k = self.tableWidget.rowCount() - 1
         j=0
@@ -895,6 +1043,11 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
             cell_item.setFlags(cell_item.flags() ^ Qt.ItemIsEditable)
             self.tableWidget.setItem(k,j,cell_item)
             j+=1
+
+        if len(estaca[1])!=0 and not (estaca[1] in [self.comboBox.itemText(i)
+                                                    for i in range(self.comboBox.count())]):
+            self.comboBox.addItem(estaca[1])
+        self.comboBox.currentTextChanged.connect(self.search)
 
     def get_estacas(self):
         estacas = []

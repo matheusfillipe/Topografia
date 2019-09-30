@@ -265,7 +265,8 @@ class Curvas(object):
             con.commit()
         con.close()
         db=DB(Config.instance().TMP_DIR_PATH+"tmp/data/data.db", "CURVAS_DADOS", list(dados.keys()))
-        id=db.acharDadoExato('curva', dados['curva'])[-1]
+        ids=db.acharDadoExato('file', self.id_filename)
+        id=[db.getDadoComId(i)['id'] for i in ids if db.getDadoComId(i)['curva']==dados["curva"]][-1]
         db.update(id,dados)
         compactZIP(Config.fileName)
 
@@ -273,7 +274,8 @@ class Curvas(object):
         extractZIP(Config.fileName)
         from ..model.sqlitedb import DB
         db = DB(Config.instance().TMP_DIR_PATH + "tmp/data/data.db", "CURVAS_DADOS", list(dados.keys()))
-        id = db.acharDadoExato("curva", name)
+        ids = db.acharDadoExato("file", self.id_filename)
+        id = [db.getDadoComId(i)['id'] for i in ids if db.getDadoComId(i)['curva']==name]
         dados = db.getDado(id[-1]) if id else dados
         compactZIP(Config.fileName)
         return id, dados

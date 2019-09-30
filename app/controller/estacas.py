@@ -632,6 +632,7 @@ class Estacas(object):
 
 
     def recalcular(self):
+        self.view.comboBox.clear()
         id=self.model.id_filename
         dados = self.preview.new(True)
         if dados is None: return
@@ -912,12 +913,7 @@ class Estacas(object):
 
 
     def newEstacasLayer(self, name):
-        fields = QgsFields()
-        fields.append(QgsField("Tipo", QVariant.String)) # C, T, E (Circular, tangente, Espiral ... startswith)
-        fields.append(QgsField("Descricao", QVariant.String))
-
-        #TODO add argument if existing project and change path declaration
-
+        fields=layerFields()
         self.model.saveGeoPackage(name, [], fields, QgsWkbTypes.MultiCurveZ, 'GPKG')
 
     def saveEstacasLayer(self, estacas, name=None):
@@ -925,10 +921,7 @@ class Estacas(object):
         #path = QtWidgets.QFileDialog.getSaveFileName(self.iface.mainWindow(), "Caminho para salvar o traçado com as curvas", filter="Geopackage (*.gpkg)")[0]
         #if not path: return None
 
-        fields = QgsFields()
-        fields.append(QgsField("Tipo", QVariant.String)) # 0 -> sem curva, 1 -> espiral, 2-> circular
-        fields.append(QgsField("Descricao", QVariant.String))
-
+        fields=layerFields()
         points=[]
         features=[]
         j=0
@@ -1490,6 +1483,7 @@ class Estacas(object):
         self.preview.checkButtons()
         self.view.clear()
         self.view.clearLayers()
+        refreshCanvas(self.iface)
 
     def updateTables(self):
         try:

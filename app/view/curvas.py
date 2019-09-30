@@ -72,21 +72,19 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.estacaFinal = self.estacas[0] if self.estacas else 0
         self.setupUi(self)
 
-
         self.Dialog: QtWidgets.QDialog
         self.btnAjuda: QtWidgets.QPushButton
         self.btnApagar: QtWidgets.QPushButton
-        self.btnCalcular: QtWidgets.QPushButton
+
         self.btnCancela: QtWidgets.QPushButton
-        self.btnClose: QtWidgets.QPushButton
+
         self.btnEditar: QtWidgets.QPushButton
         self.btnInsere: QtWidgets.QPushButton
         self.btnNew: QtWidgets.QPushButton
         self.btnRelatorio: QtWidgets.QPushButton
         self.comboCurva: QtWidgets.QComboBox
         self.comboElemento: QtWidgets.QComboBox
-        self.comboEstacaFinal: QtWidgets.QComboBox
-        self.comboEstacaInicial: QtWidgets.QComboBox
+
         self.gDadosCurva: QtWidgets.QGroupBox
         self.groupBox: QtWidgets.QGroupBox
         self.groupBox_2: QtWidgets.QGroupBox
@@ -122,41 +120,39 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.layoutWidget: QtWidgets.QWidget
         self.txtD: QtWidgets.QLineEdit
         self.txtDelta: QtWidgets.QLineEdit
-        self.txtDist: QtWidgets.QLineEdit
+
         self.txtEMAX: QtWidgets.QDoubleSpinBox
-        self.txtEPC: QtWidgets.QLineEdit
-        self.txtEPI: QtWidgets.QLineEdit
-        self.txtEPT: QtWidgets.QLineEdit
-        self.txtEsteFinal: QtWidgets.QLineEdit
-        self.txtEsteInicial: QtWidgets.QLineEdit
-        self.txtFMAX: QtWidgets.QDoubleSpinBox
+
+        self.btnAjuda.hide()
+
+        self.txtFMAX: QtWidgets.QTextEdit
         self.txtG20: QtWidgets.QLineEdit
         self.txtI: QtWidgets.QLineEdit
-        self.txtNomeFinal: QtWidgets.QLineEdit
-        self.txtNomeInicial: QtWidgets.QLineEdit
-        self.txtNorthFinal: QtWidgets.QLineEdit
-        self.txtNorthInicial: QtWidgets.QLineEdit
+
+
+
         self.txtRMIN: QtWidgets.QLineEdit
         self.txtRUtilizado: QtWidgets.QDoubleSpinBox
         self.txtT: QtWidgets.QLineEdit
         self.txtVelocidade: QtWidgets.QSpinBox
         self.deflexao: QtWidgets.QLineEdit
         
-        self.txtDist.setText(str(Config.instance().DIST))
+
         self.whatsThisAction=QtWidgets.QWhatsThis.createAction(self)
         self.btnAjuda.clicked.connect(self.whatsThisAction.trigger)
 
-        self.buttons=[self.btnAjuda, self.btnApagar, self.btnCalcular, self.btnCancela, self.btnClose, self.btnEditar,
+        self.buttons=[self.btnAjuda, self.btnApagar, self.btnCancela, self.btnEditar,
 
                                self.btnInsere, self.btnNew, self.btnRelatorio ]
         self.dados = {
+            'file': self.model.id_filename,
             'tipo': self.comboElemento.currentIndex(),
             'curva': self.comboCurva.currentText(),
             'vel': self.txtVelocidade.value(),
             'emax': self.txtEMAX.value(),
             'ls': self.Ls.value(),
             'R': self.txtRUtilizado.value(),
-            'fmax': self.txtFMAX.value(),
+            'fmax': 0 if self.txtFMAX.text()=="" else float(self.txtFMAX.text()),
             'D': self.txtD.value()
         }
 
@@ -170,20 +166,16 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.location_on_the_screen()
         
         
-        self.comboEstacaInicial.hide()
-        self.comboEstacaFinal.hide()
         self.label_5.hide()
         self.label_3.hide()
-        self.label_24.hide()
-        self.txtDist.hide()
-#        self.txtI.hide()
-        self.btnClose.hide()
-        self.btnCalcular.hide()
+        self.txtI.hide()
+        self.label_11.hide()
+
         self.nextCurva()
         self.previousCurva()
 
         [w.valueChanged.connect(lambda: self.calcularCurva(False))
-         for w in [self.txtVelocidade, self.txtRUtilizado, self.txtEMAX, self.Ls, self.txtD, self.txtFMAX]]
+         for w in [self.txtVelocidade, self.txtRUtilizado, self.txtEMAX, self.Ls, self.txtD]]
         
 
     def location_on_the_screen(self):
@@ -211,8 +203,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
     def update(self):
         self.curvas = self.model.list_curvas()
         estacas = self.estacas
-        self.comboEstacaInicial.addItems([self.tr(estaca[1]) for estaca in self.estacas])
-        self.comboEstacaFinal.addItems([self.tr(estaca[1]) for estaca in self.estacas])
+
+
         self.comboCurva.clear()
 #        self.comboCurva.addItems([self.tr(str(curva[0])) for curva in self.curvas])
         self.fill_comboCurva()
@@ -220,14 +212,13 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
     def eventos(self):
         self.comboCurva.currentIndexChanged.connect(self.mudancaCurva)
         self.comboElemento.currentIndexChanged.connect(self.mudancaTipo)
-        self.comboEstacaInicial.currentIndexChanged.connect(self.mudancaEstacaInicial)
-        self.comboEstacaFinal.currentIndexChanged.connect(self.mudancaEstacaFinal)
+
+
         self.btnNew.clicked.connect(self.new)
         self.btnInsere.clicked.connect(self.insert)
         self.btnApagar.clicked.connect(self.apagar)
         self.btnRelatorio.clicked.connect(self.relatorio)
         self.btnEditar.clicked.connect(self.editar)
-        self.btnCalcular.clicked.connect(self.calcular)
         self.mudancaCurva(0)
 
     def apagar(self):
@@ -299,9 +290,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             layer.renderer().symbol().setWidth(.5)
             layer.renderer().symbol().setColor(QtGui.QColor("#0f16d0"))
             layer.triggerRepaint()
-            fields = []
-            fields.append(QgsField("Tipo", QVariant.String))  # C, T, E (Circular, tangente, Espiral ... startswith)
-            fields.append(QgsField("Descricao", QVariant.String))
+            fields=layerFields()
             layer.dataProvider().addAttributes(fields)
             layer.updateFields()
             QgsProject.instance().addMapLayer(layer, False)
@@ -447,8 +436,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
                     PI=QgsPoint(featureToPolyline(curvaFeats[0])[0])
                     f.setGeometry(QgsGeometry.fromPolyline([QgsPoint(featureToPolyline(feat)[0]), PI ]))
                     features.append(f)
-                    self.txtNorthInicial.setText(roundFloat2str(PI.y()))
-                    self.txtEsteInicial.setText(roundFloat2str(PI.x()))
 
                     for i,cf in enumerate(curvaFeats):
                         f=QgsFeature(self.layer.fields())
@@ -459,15 +446,12 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
                         features.append(f)
                         if i==0: nomes.append(str(attr[1]))
                     nomes.append(str(attr[1]))
-                    self.txtNomeInicial.setText("T"+nomes[0]+self.comboCurva.currentText()[-1])
+
 
                 elif i == self.nextIndex():
                     PF=QgsPoint(featureToPolyline(curvaFeats[-1])[-1])
                     f.setGeometry(QgsGeometry.fromPolyline([PF, QgsPoint(featureToPolyline(feat)[-1])]))
                     features.append(f)
-                    self.txtNorthFinal.setText(roundFloat2str(PF.y()))
-                    self.txtEsteFinal.setText(roundFloat2str(PF.x()))
-                    self.txtNomeFinal.setText(nomes[1]+"T"+self.comboCurva.currentText()[-1])
                 else:
                     f.setGeometry(feat.geometry())
                     features.append(f)
@@ -493,13 +477,12 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
     def calcular(self):
         filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo CSV (*.csv)")[0]
-        dist = int(self.txtDist.text())
+
         estacas = self.model.gera_estacas(dist)
         self.model.save_CSV(filename, estacas)
 
     def clearAll(self):
-        texts=["txtNomeInicial", "txtNomeInicial", "txtEsteInicial", "txtNomeFinal", "txtNorthFinal", "txtEsteFinal",
-               "txtI", "txtDelta", "txtRMIN", "txtEPI", "txtEPC", "txtT", "theta", "txtG20", "txtEPT", "lsmin",
+        texts=["txtI", "txtDelta", "txtRMIN", "txtT", "theta", "txtG20", "lsmin",
                "lsmax", "xs", "ys"
                ]
         for txt in texts:
@@ -509,7 +492,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
     def mudancaCurva(self, pos):
         self.comboCurva : QtWidgets.QComboBox
         try:
-            self.zoomToPoint(self.PIs[1:-1][self.comboCurva.currentIndex()])
+            self.zoomToPoint(self.currentIndex())#self.PIs[1:-1][self.comboCurva.currentIndex()])
         except:
             pass
 
@@ -536,7 +519,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             self.txtEMAX.setValue(self.dados['emax'])
             self.Ls.setValue(self.dados['ls'])
             self.txtRUtilizado.setValue(self.dados['R'])
-            self.txtFMAX.setValue(self.dados['fmax'])
+            self.txtFMAX.setText(roundFloat2str(self.dados['fmax']))
             self.txtD.setValue(self.dados['D'])
             self.editando=True
             self.btnNew.setEnabled(False)
@@ -573,19 +556,12 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.tipo_curva = pos
 
     def mudancaEstacaInicial(self, pos):
-        self.comboEstacaInicial.setCurrentIndex(pos)
+
         self.estacaInicial = self.estacas[pos]
-        self.txtNomeInicial.setText(self.estacaInicial[DESCRICAO])
-        self.txtNorthInicial.setText(self.estacaInicial[NORTH])
-        self.txtEsteInicial.setText(self.estacaInicial[ESTE])
+
         self.calcularCurva()
 
     def mudancaEstacaFinal(self, pos):
-        self.comboEstacaFinal.setCurrentIndex(pos)
-        self.estacaFinal = self.estacas[pos]
-        self.txtNomeFinal.setText(self.estacaFinal[DESCRICAO])
-        self.txtNorthFinal.setText(self.estacaFinal[NORTH])
-        self.txtEsteFinal.setText(self.estacaFinal[ESTE])
         self.calcularCurva()
 
     def desabilitarControles(self):
@@ -603,8 +579,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.btnRelatorio.setEnabled(not (signal))
         self.btnInsere.setEnabled(signal)
         self.comboElemento.setEnabled(not signal)
-        self.comboEstacaInicial.setEnabled(signal)
-        self.comboEstacaFinal.setEnabled(signal)
+
+
         self.txtVelocidade.setEnabled(signal)
         self.txtEMAX.setEnabled(signal)
         self.txtRUtilizado.setEnabled(signal)
@@ -659,13 +635,13 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         v = Config.instance().velproj if new else self.txtVelocidade.value()
         #velocidade(float(i), self.classe, self.tipo)
         e_max = Config.instance().emax if new else float(self.txtEMAX.value())
-        f_max = fmax(int(v)) if new else self.txtFMAX.value()
+        f_max = fmax(int(v)) if new else 0 if self.txtFMAX.text()=="" else float(self.txtFMAX.text())
 
         delta_val = delta(float(azi(featureToPolyline(featuresList(self.layer)[self.currentIndex()]))),
                           float(azi(featureToPolyline(featuresList(self.layer)[self.nextIndex()]))))
 
         if new:
-            rutilizado=rmin(int(v), e_max, f_max) if self.comboElemento.currentIndex() == 0 else 500
+            rutilizado=rmin(int(v), e_max, f_max)
             self.txtRUtilizado.setValue(math.ceil(rutilizado/50)*50)
             self.txtVelocidade.setValue(v)
             self.txtEMAX.setValue(e_max)
@@ -689,7 +665,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             theta=lutilizado/(2*rutilizado)
             self.theta.setText(roundFloat2str(np.rad2deg(theta)))
             self.lsmax.setText(roundFloat2str(lsmax))
-            self.lsmin.setText(roundFloat2str(lsmin))
+            self.lsmin.setText(roundFloat2str(0.036*v**3/rutilizado))
             self.txtD.setEnabled(True)
 
             #d_val=self.txtD.value()
@@ -698,9 +674,15 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             k=xs-rutilizado*np.sin(theta)
             p=ys-rutilizado*(1-np.cos(theta))
             t_val=k+(rutilizado+p)*np.tan(np.deg2rad(delta_val)/2)
+            self.txtTT.setText(roundFloat2str(t_val))
+            self.txtp.setText(roundFloat2str(p))
+            self.txtk.setText(roundFloat2str(k))
+            self.txtPhi.setText(roundFloat2str(delta_val-2*np.rad2deg(theta)))
+            self.lsminv.setText(roundFloat2str(.556*v))
             self.xs.setText(roundFloat2str(xs))
             self.ys.setText(roundFloat2str(ys))
             d_val=rutilizado*(delta_val-2*np.rad2deg(theta))*np.pi/180
+            self.groupBox_3.show()
 
         else:
             self.theta.setText(roundFloat2str(np.rad2deg(0)))
@@ -709,6 +691,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             self.xs.setText(roundFloat2str(0))
             self.ys.setText(roundFloat2str(0))
             self.Ls.setValue(0)
+            self.groupBox_3.hide()
             self.txtD.setEnabled(False)
 
         self.param = {
@@ -726,22 +709,20 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.txtT.setText("%f" % t_val)
         self.txtD.setValue(float(d_val))
         self.txtG20.setText("%f" % g20_val)
-        self.txtFMAX.setValue(f_max)
+        self.txtFMAX.setText(roundFloat2str(f_max))
         self.txtRMIN.setText("%f" % rmin(int(v), e_max, f_max))
         self.txtVelocidade.setValue(int(v))
         self.txtDelta.setText("%f" % delta_val)
-        self.txtEPI.setText("%f" % epi_val)
-        self.txtEPT.setText("%f" % ept_val)
-        self.txtEPC.setText("%f" % epc_val)
 
         self.dados = {
+            'file': self.model.id_filename,
             'tipo': self.comboElemento.currentIndex(),
             'curva': self.comboCurva.currentText(),
             'vel': self.txtVelocidade.value(),
             'emax': self.txtEMAX.value(),
             'ls': self.Ls.value(),
             'R': self.txtRUtilizado.value(),
-            'fmax': self.txtFMAX.value(),
+            'fmax': float(self.txtFMAX.text()),
             'D': self.txtD.value()
         }
 
@@ -763,7 +744,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         else:
             model.new(int(self.tipo_curva), estaca_inicial_id, estaca_final_id, velocidade, raio_utilizado, e_max,
                       self.param, self.dados)
-        self.update()
+#        self.update()
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):

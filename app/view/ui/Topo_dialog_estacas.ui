@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>965</width>
-    <height>575</height>
+    <height>610</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -122,19 +122,8 @@
      </item>
     </layout>
    </item>
-   <item row="0" column="0" rowspan="5">
+   <item row="0" column="0" rowspan="9">
     <widget class="QTableWidget" name="tableWidget"/>
-   </item>
-   <item row="1" column="1">
-    <widget class="QPushButton" name="btnCotaTIFF">
-     <property name="whatsThis">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Extrair cotas de um arquivo raster de imagem tiff&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Obter Cotas
-via GeoTIFF</string>
-     </property>
-    </widget>
    </item>
    <item row="2" column="1">
     <widget class="QPushButton" name="btnCotaPC">
@@ -151,6 +140,60 @@ via DXF</string>
 via Google</string>
      </property>
     </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QPushButton" name="btnCotaTIFF">
+     <property name="whatsThis">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Extrair cotas de um arquivo raster de imagem tiff&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Obter Cotas
+via GeoTIFF</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <spacer name="verticalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="5" column="1">
+    <widget class="QLabel" name="label">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Procurar por uma estaca ou descriçao. Digite uma estaca ou selecione um ponto.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="whatsThis">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Procurar por uma estaca ou descriçao. Digite uma estaca ou selecione um ponto.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Procurar:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="1">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QComboBox" name="comboBox">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Procurar por uma estaca ou descriçao. O texto aqui inserido será buscado na coluna selecionada da tabela.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="whatsThis">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Procurar por uma estaca ou descriçao. Digite uma estaca ou selecione um ponto.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="editable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

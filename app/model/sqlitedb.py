@@ -26,9 +26,20 @@ class DB():
 
     def checkIfExistsIfNotCreate(self):				
             self.connect()
-            self.cursor.execute("CREATE TABLE IF NOT EXISTS " + self.tableName + 
-                    " (id INTEGER primary key AUTOINCREMENT,"+ str(self.dataNameList)[1:-1] +")")
+            try:
+                self.cursor.execute("SELECT * FROM "+self.tableName)
+                col_name_list = [tuple[0] for tuple in self.cursor.description]
+            except:
+                col_name_list=[]
             self.close()
+            col_name_list.remove('id')
+            if not sorted(col_name_list)==sorted(self.dataNameList):
+                self.apagarTabela()
+                self.connect()
+                self.cursor.execute("CREATE TABLE IF NOT EXISTS " + self.tableName +
+                    " (id INTEGER primary key AUTOINCREMENT,"+ str(self.dataNameList)[1:-1] +")")
+                self.close()
+
     
     def connect(self):
             self.connection = sqlite3.connect(self.filepath)

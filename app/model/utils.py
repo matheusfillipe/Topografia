@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from PyQt5.QtCore import QVariant
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QDialog, QLabel
 from future import standard_library
@@ -279,33 +280,46 @@ def addGoogleXYZTiles(iface, QSettings):
 
 
 def getElevation(crs,point):
-    epsg4326 = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId)
-    mycrs = QgsCoordinateReferenceSystem(int(crs), 0)
-    reprojectgeographic = QgsCoordinateTransform(mycrs, epsg4326, QgsCoordinateTransformContext())
-    pt = reprojectgeographic.transform(QgsPointXY(point))
-    conn = http.client.HTTPConnection("maps.googleapis.com")
-   # QgsMessageLog.instance().logMessage(
-    #    "http://maps.googleapis.com/maps/api/elevation/json?locations=" + str(pt[1]) + "," + str(
-     #       pt[0]) + "&sensor=false", "Elevation")
+   # epsg4326 = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId)
+   # mycrs = QgsCoordinateReferenceSystem(int(crs), 0)
+   # reprojectgeographic = QgsCoordinateTransform(mycrs, epsg4326, QgsCoordinateTransformContext())
+   # pt = reprojectgeographic.transform(QgsPointXY(point))
+   # conn = http.client.HTTPConnection("maps.googleapis.com")
+   ## QgsMessageLog.instance().logMessage(
+   # #    "http://maps.googleapis.com/maps/api/elevation/json?locations=" + str(pt[1]) + "," + str(
+   #  #       pt[0]) + "&sensor=false", "Elevation")
 
-    try:
-        conn.request("GET", "/maps/api/elevation/json?locations=" + str(pt[1]) + "," + str(pt[0]) + "&sensor=false")
-        response = conn.getresponse()
-        jsonresult = response.read()
-        elevation = 0.0
-        results = json.loads(jsonresult).get('results')
-        # fix_print_with_import
-        print(results)
-        if 0 < len(results):
-            elevation = float(round(results[0].get('elevation'),4))
+   # try:
+   #     conn.request("GET", "/maps/api/elevation/json?locations=" + str(pt[1]) + "," + str(pt[0]) + "&sensor=false")
+   #     response = conn.getresponse()
+   #     jsonresult = response.read()
+   #     elevation = 0.0
+   #     results = json.loads(jsonresult).get('results')
+   #     # fix_print_with_import
+   #     print(results)
+   #     if 0 < len(results):
+   #         elevation = float(round(results[0].get('elevation'),4))
 
 
-    except Exception as e:
-        msgLog(e.message)
-        qDebug(e.message)
-        elevation=0.0
+   # except Exception as e:
+   #     msgLog(e.message)
+   #     qDebug(e.message)
+   #     elevation=0.0
 
-    return elevation
+   # return elevation
+   return 0
+
+
+def layerFields():
+    fields = QgsFields()
+    fields.append(QgsField("Tipo", QVariant.String))  # C, T, E (Circular, tangente, Espiral ... startswith)
+    fields.append(QgsField("Descricao", QVariant.String))
+    fields.append(QgsField("Raio", QVariant.Double))
+    fields.append(QgsField("Angulo de Deflexao (Delta)", QVariant.Double))
+    fields.append(QgsField("Tangente Externa (T)", QVariant.Double))
+    fields.append(QgsField("Desenvolvimento (D)", QVariant.Double))
+    return fields
+
 
 def msgLog(msg):
     QgsMessageLog.logMessage(str(msg), tag="GeoRoad", level=0)

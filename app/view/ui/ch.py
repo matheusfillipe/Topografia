@@ -169,7 +169,7 @@ class CurvasCompositorDialog(QtWidgets.QDialog, COMPOSI):
 
         if self.iface.comboElemento.currentIndex() == 0: #Circular simples
             self.comboBox.setCurrentIndex(0)
-            self.addCurva({'D': 0, 'R': self.iface.txtRUtilizado.value(), 'T': float(self.iface.txtT.text()), 'L': 0, 'C': True})
+            self.addCurva({'D': float(self.iface.txtDelta.text()), 'R': self.iface.txtRUtilizado.value(), 'T': float(self.iface.txtT.text()), 'L': 0, 'C': True})
         elif self.iface.comboElemento.currentIndex() == 1: #Circular simétrica com transição
             self.comboBox.setCurrentIndex(1)
             self.addCurva({'D': float(self.iface.txtDelta.text())-2*float(self.iface.theta.text()), 'R': self.iface.txtRUtilizado.value(), 'T': float(self.iface.txtT.text()), 'L': self.iface.Ls.value(), 'C': True})
@@ -192,6 +192,9 @@ class CurvasCompositorDialog(QtWidgets.QDialog, COMPOSI):
                 pass
         else:
             widget.fill(data)
+            self.comboBox.hide()
+            self.btnAdd.hide()
+            #self.horizontalSpacer.hide()
 
         self.listWidget.addItem(itemN)
         self.listWidget.setItemWidget(itemN, widget)

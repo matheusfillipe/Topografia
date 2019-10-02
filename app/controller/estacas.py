@@ -679,7 +679,7 @@ class Estacas(object):
 
     def curva(self):
         curvas = self.model.getCurvas(self.model.id_filename)
-        vertices = [[v[1], QgsPoint(float(v[4]), float(v[3]))] for v in self.model.loadFilename() if v[1]!='']
+        vertices = [[v[1], QgsPoint(float(v[4]), float(v[3]))] for v in self.model.loadFilename() if v[1]!=""]
         if len(self.view.curvaLayers)==0:
             self.geraCurvas(self.model.id_filename)
         curvaView = CurvasView(self.view, self.iface, self.model.id_filename,curvas, vertices,self.model.tipo())

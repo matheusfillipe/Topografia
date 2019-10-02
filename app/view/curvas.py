@@ -194,9 +194,12 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.PIs=[]
         self.layer=self.view.curvaLayers[0]
         items=[]
+        i=0
         for c, vert in enumerate(self.vertices):
-            items.append("PI"+str(c))
-            self.PIs.append(vert[1])
+            if int(vert[0].strip()[-1])>i-1:
+                items.append("PI"+str(i))
+                self.PIs.append(vert[1])
+                i+=1
         items=items[1:-1]
         self.comboCurva.addItems(items)
         if not wasInitialized(self.layer):

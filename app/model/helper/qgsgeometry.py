@@ -215,6 +215,7 @@ def polyTransCircle(layer, data, index, layer2, i, ic):
     data["C"] = True
     corda = 2 * data["R"] * np.sin(np.deg2rad(abs(data["D"]) / 2))
 
+
     p1 = QgsPoint(l1.interpolate(l1.length() - data["T"]).asPoint())
     p2 = QgsPoint(l2.interpolate(data["T"]).asPoint())
     PI = QgsPoint(PI)

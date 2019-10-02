@@ -970,6 +970,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.comboBox.currentTextChanged.connect(self.search)
         self.spinBox.valueChanged.connect(self.changeSearchResult)
         self.searchResults = []
+        self.btnDuplicar.hide()
 
     def changeSearchResult(self, i):
         if i == 0 or i == len(self.searchResults) + 1:

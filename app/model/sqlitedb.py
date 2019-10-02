@@ -29,10 +29,10 @@ class DB():
             try:
                 self.cursor.execute("SELECT * FROM "+self.tableName)
                 col_name_list = [tuple[0] for tuple in self.cursor.description]
+                col_name_list.remove('id')
             except:
                 col_name_list=[]
             self.close()
-            col_name_list.remove('id')
             if not sorted(col_name_list)==sorted(self.dataNameList):
                 self.apagarTabela()
                 self.connect()
@@ -185,6 +185,7 @@ class DB():
    
     def apagarDado(self, id):
             self.connect()
+            id=str(id)
             self.cursor.execute("DELETE FROM "+ self.tableName +" WHERE ID = ?", (id,))		
             self.close()			
 

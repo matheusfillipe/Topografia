@@ -178,92 +178,23 @@ class Curvas(object):
             for r in estacas:
                 writer.writerow(r)
 
-    def delete_curva(self, id_curva):
+    def delete_curva(self, id, dados):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
-        con.execute("DELETE FROM CURVA WHERE id=?", (id_curva,))
-        con.commit()
-        con.close()
+        db=DB(Config.instance().TMP_DIR_PATH+"tmp/data/data.db", "CURVAS_DADOS", list(dados.keys()))
+        db.apagarDado(id)
         compactZIP(Config.fileName)
         return True
 
-    def new(self, tipo, estaca1_id, estaca2_id, velocidade, rutilizado, emax, paramCurva, dados):
+    def new(self, dados):
         '''Verifico se há curva para o traçado'''
         extractZIP(Config.fileName)
-        con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
-        curvaTracado = con.execute(
-            "SELECT id FROM TABLECURVA WHERE TABLEESTACA_id = ?",
-            (int(self.id_filename),)).fetchall()
-        if curvaTracado is None or len(curvaTracado) == 0:
-            # insiro a curvaTracado
-            con.execute("INSERT INTO TABLECURVA (TABLEESTACA_id) VALUES (?)", (int(self.id_filename),))
-            con.commit()
-        curvaTracado = con.execute(
-            "SELECT id FROM TABLECURVA WHERE TABLEESTACA_id = ?",
-            (int(self.id_filename),)).fetchall()[0]
-        estaca1 = con.execute(
-            "SELECT estaca,descricao,progressiva,norte,este,cota,azimute FROM ESTACA WHERE id = ?",
-            (int(estaca1_id),)).fetchall()
-        estaca2 = con.execute(
-            "SELECT estaca,descricao,progressiva,norte,este,cota,azimute FROM ESTACA WHERE id = ?",
-            (int(estaca2_id),)).fetchall()
-
-        con.execute(
-            "INSERT INTO CURVA (TABLECURVA_id,estaca_inicial_id,estaca_final_id,tipo,velocidade,raio_utilizado,emax) values (?,?,?,?,?,?,?)",
-            (curvaTracado[0], estaca1_id, estaca2_id, tipo, velocidade, rutilizado, emax))
-        con.commit()
-        id_curva = con.execute("SELECT last_insert_rowid()").fetchall()[0]
-
-        if tipo == 0:
-            con.execute("INSERT INTO CURVA_SIMPLES (CURVA_id,g20,t,d,epi,epc,ept) VALUES (?,?,?,?,?,?,?)", (
-                id_curva[0], paramCurva['g20'], paramCurva['t'], paramCurva['d'], paramCurva['epi'], paramCurva['epc'],
-                paramCurva['ept']))
-            con.commit()
-        con.close()
         db=DB(Config.instance().TMP_DIR_PATH+"tmp/data/data.db", "CURVAS_DADOS", list(dados.keys()))
         db.salvarDado(dados)
         compactZIP(Config.fileName)
 
-    def edit(self, id_curva, tipo, estaca1_id, estaca2_id, velocidade, rutilizado, emax, paramCurva, dados):
+    def edit(self, dados):
         '''Verifico se há curva para o traçado'''
         extractZIP(Config.fileName)
-        con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
-        curvaTracado = con.execute(
-            "SELECT id FROM TABLECURVA WHERE TABLEESTACA_id = ?",
-            (int(self.id_filename),)).fetchall()
-        if curvaTracado is None or len(curvaTracado) == 0:
-            # insiro a curvaTracado
-            con.execute("INSERT INTO TABLECURVA (TABLEESTACA_id) VALUES (?)", (int(self.id_filename),))
-            con.commit()
-        curvaTracado = con.execute(
-            "SELECT id FROM TABLECURVA WHERE TABLEESTACA_id = ?",
-            (int(self.id_filename),)).fetchall()[0]
-        estaca1 = con.execute(
-            "SELECT estaca,descricao,progressiva,norte,este,cota,azimute FROM ESTACA WHERE id = ?",
-            (int(estaca1_id),)).fetchall()
-        estaca2 = con.execute(
-            "SELECT estaca,descricao,progressiva,norte,este,cota,azimute FROM ESTACA WHERE id = ?",
-            (int(estaca2_id),)).fetchall()
-
-        con.execute(
-            "UPDATE CURVA SET TABLECURVA_id=?,estaca_inicial_id=?,estaca_final_id=?,tipo=?,velocidade=?,raio_utilizado=?,emax=? WHERE id = ?",
-            (curvaTracado[0], estaca1_id, estaca2_id, tipo, velocidade, rutilizado, emax, id_curva))
-        con.commit()
-        #id_curva = con.execute("SELECT last_insert_rowid()").fetchall()[0]
-
-        if tipo == 0:
-            # verifica se tem uma curva simples cadastrada com o id.
-            res = con.execute("SELECT * FROM CURVA_SIMPLES WHERE CURVA_id = %d"%(id_curva,)).fetchall()
-            if len(res) == 0:
-                con.execute("INSERT INTO CURVA_SIMPLES (CURVA_id,g20,t,d,epi,epc,ept) VALUES (?,?,?,?,?,?,?)", (
-                    id_curva, paramCurva['g20'], paramCurva['t'], paramCurva['d'], paramCurva['epi'], paramCurva['epc'],
-                    paramCurva['ept']))
-            else:
-                con.execute("UPDATE CURVA_SIMPLES SET g20=?,t=?,d=?,epi=?,epc=?,ept=? WHERE CURVA_id=?", (
-                    paramCurva['g20'], paramCurva['t'], paramCurva['d'], paramCurva['epi'], paramCurva['epc'],
-                    paramCurva['ept'], id_curva))
-            con.commit()
-        con.close()
         db=DB(Config.instance().TMP_DIR_PATH+"tmp/data/data.db", "CURVAS_DADOS", list(dados.keys()))
         ids=db.acharDadoExato('file', self.id_filename)
         id=[db.getDadoComId(i)['id'] for i in ids if db.getDadoComId(i)['curva']==dados["curva"]][-1]
@@ -275,7 +206,7 @@ class Curvas(object):
         from ..model.sqlitedb import DB
         db = DB(Config.instance().TMP_DIR_PATH + "tmp/data/data.db", "CURVAS_DADOS", list(dados.keys()))
         ids = db.acharDadoExato("file", self.id_filename)
-        id = [db.getDadoComId(i)['id'] for i in ids if db.getDadoComId(i)['curva']==name]
+        id = [db.getDadoComId(i)['id'] for i in ids if db.getDado(i)['curva']==name]
         dados = db.getDado(id[-1]) if id else dados
         compactZIP(Config.fileName)
         return id, dados

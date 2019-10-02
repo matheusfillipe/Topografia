@@ -35,7 +35,7 @@
       <item row="0" column="3">
        <widget class="QDoubleSpinBox" name="txtVelocidade">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
@@ -141,7 +141,7 @@
       <item row="0" column="5">
        <widget class="QDoubleSpinBox" name="txtRUtilizado">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
@@ -186,7 +186,7 @@
       <item row="1" column="3">
        <widget class="QDoubleSpinBox" name="txtEMAX">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
@@ -356,7 +356,7 @@
       <item row="0" column="3">
        <widget class="QDoubleSpinBox" name="txtD">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
@@ -499,16 +499,9 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="btnNew">
-       <property name="text">
-        <string>Novo</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QPushButton" name="btnRelatorio">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="text">
         <string>Desenhar</string>
@@ -518,17 +511,10 @@
      <item>
       <widget class="QPushButton" name="btnInsere">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="text">
-        <string>Inserir</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="btnEditar">
-       <property name="text">
-        <string>Editar</string>
+        <string>Salvar</string>
        </property>
       </widget>
      </item>
@@ -548,7 +534,7 @@
      <item>
       <widget class="QPushButton" name="btnCancela">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="text">
         <string>Cancelar</string>
@@ -567,6 +553,16 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="generateAll">
+       <property name="toolTip">
+        <string>Gerar todas as curvas automaticamente.Esta operação pode Demorar.</string>
+       </property>
+       <property name="text">
+        <string>Gerar Todas</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
@@ -713,7 +709,7 @@
       <item row="0" column="9">
        <widget class="QDoubleSpinBox" name="Ls">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
@@ -903,6 +899,38 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>txtRUtilizado</tabstop>
+  <tabstop>txtD</tabstop>
+  <tabstop>Ls</tabstop>
+  <tabstop>btnRelatorio</tabstop>
+  <tabstop>btnInsere</tabstop>
+  <tabstop>txtVelocidade</tabstop>
+  <tabstop>txtEMAX</tabstop>
+  <tabstop>btnApagar</tabstop>
+  <tabstop>txtG20</tabstop>
+  <tabstop>txtT</tabstop>
+  <tabstop>lsmin</tabstop>
+  <tabstop>theta</tabstop>
+  <tabstop>lsmax</tabstop>
+  <tabstop>txtI</tabstop>
+  <tabstop>lsminv</tabstop>
+  <tabstop>xs</tabstop>
+  <tabstop>ys</tabstop>
+  <tabstop>txtPhi</tabstop>
+  <tabstop>txtk</tabstop>
+  <tabstop>txtp</tabstop>
+  <tabstop>txtTT</tabstop>
+  <tabstop>comboCurva</tabstop>
+  <tabstop>comboElemento</tabstop>
+  <tabstop>prev</tabstop>
+  <tabstop>next</tabstop>
+  <tabstop>btnAjuda</tabstop>
+  <tabstop>txtRMIN</tabstop>
+  <tabstop>txtFMAX</tabstop>
+  <tabstop>txtDelta</tabstop>
+  <tabstop>btnCancela</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

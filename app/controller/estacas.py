@@ -383,20 +383,21 @@ class Estacas(object):
             return None
         self.openEstaca()
         estacas = self.view.get_estacas()
-
-        if not hasattr(self,"perfil"):
-            tipo, class_project = self.model.tipo()
-            self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename),
-                                    self.model.getCv(self.model.id_filename), iface=self)
-        table = deepcopy(self.perfil.getVertices())
-        cvData=deepcopy(self.perfil.getCurvas())
+        try:
+            if not hasattr(self,"perfil"):
+                tipo, class_project = self.model.tipo()
+                self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename),
+                                        self.model.getCv(self.model.id_filename), iface=self)
+            table = deepcopy(self.perfil.getVertices())
+            cvData=deepcopy(self.perfil.getCurvas())
+            self.model.table = table
+            self.model.cvData=cvData
+            self.model.saveGreide(self.model.id_filename)
+        except:
+            pass
 
         self.model=self.model.saveEstacas(filename, estacas)
-        self.model.table = table
-        self.model.cvData=cvData
-        self.model.saveGreide(self.model.id_filename)
         self.update()
-
         self.view.clear()
         estacas = self.model.loadFilename()
         self.estacasHorizontalList=[]
@@ -687,6 +688,8 @@ class Estacas(object):
         curvaView.rejected.connect(self.raiseView)
         curvaView.show()
         curvaView.exec_()
+        if hasattr(curvaView, "c"):
+            curvaView.c.rejected.emit()
 
     def raiseView(self):
         self.view.setWindowState(self.view.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)

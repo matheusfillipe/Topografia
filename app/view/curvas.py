@@ -196,7 +196,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         items=[]
         i=0
         for c, vert in enumerate(self.vertices):
-            if int(vert[0].strip()[-1])>i-1:
+            digits=int("".join([s for s in vert[0] if s.isdigit()]))
+            if digits>i-1:
                 items.append("PI"+str(i))
                 self.PIs.append(vert[1])
                 i+=1
@@ -226,9 +227,16 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
     def genAll(self):
         self.comboCurva.setCurrentIndex(0)
         while self.next.isEnabled():
-            self.insert()
+            try:
+                self.insert()
+            except:
+                pass
             self.nextCurva()
-        self.insert()
+
+        try:
+            self.insert()
+        except:
+            pass
 
     def apagar(self):
         if self.curva_id:
@@ -257,16 +265,17 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
                     f.setGeometry(feat.geometry())
                     features.append(f)
 
-        self.layer.dataProvider().deleteFeatures([f.id() for f in self.layer.getFeatures()])
-        self.layer.dataProvider().addFeatures(features)
-        self.layer.updateExtents()
+            self.layer.dataProvider().deleteFeatures([f.id() for f in self.layer.getFeatures()])
+            self.layer.dataProvider().addFeatures(features)
+            self.layer.updateExtents()
+            self.curva_id=False
 
         try:
             QgsProject.instance().removeMapLayer(self.c.layer.id())
         except:
             pass
         refreshCanvas(self.iface, self.layer)
-        self.show()
+
 
     def draw(self):
          # TODO Sistema dinamico de criar curvas arbritárias:
@@ -511,8 +520,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         except:
             pass
         refreshCanvas(self.iface, self.layer)
-        self.show()
-
 
     def resetCurva(self):
         try:
@@ -520,7 +527,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         except:
             pass
         refreshCanvas(self.iface, self.layer)
-        self.show()
+
 
 
     def clearAll(self):
@@ -539,8 +546,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.comboCurva : QtWidgets.QComboBox
         try:
             self.zoomToPoint(self.PIs[1:-1][self.comboCurva.currentIndex()])
-        except:
-            pass
+        except Exception as e:
+            msgLog(str(traceback.format_exception(None, e, e.__traceback__)))
 
         self.curvas = self.model.list_curvas()
         self.clearAll()
@@ -751,6 +758,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             'fmax': float(self.txtFMAX.text()),
             'D': self.txtD.value()
         }
+        self.nextIndex()
 
     def insert(self):
         if not hasattr(self,"c"):
@@ -765,7 +773,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             id_curva = self.comboCurva.currentIndex()+1
             model.edit(self.dados)
         else:
-            model.new(self.dados)
+            self.curva_id=model.new(self.dados)
        # self.update()
 
     # noinspection PyMethodMayBeStatic

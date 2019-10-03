@@ -189,8 +189,9 @@ class Curvas(object):
         '''Verifico se há curva para o traçado'''
         extractZIP(Config.fileName)
         db=DB(Config.instance().TMP_DIR_PATH+"tmp/data/data.db", "CURVAS_DADOS", list(dados.keys()))
-        db.salvarDado(dados)
+        id=db.salvarDado(dados)
         compactZIP(Config.fileName)
+        return id
 
     def edit(self, dados):
         '''Verifico se há curva para o traçado'''
@@ -210,3 +211,15 @@ class Curvas(object):
         dados = db.getDado(id[-1]) if id else dados
         compactZIP(Config.fileName)
         return id, dados
+
+    def duplicate(self, newName):
+        dados = ['file', 'tipo', 'curva', 'vel', 'emax', 'ls', 'R', 'fmax', 'D']
+        extractZIP(Config.fileName)
+        db=DB(Config.instance().TMP_DIR_PATH+"tmp/data/data.db", "CURVAS_DADOS", dados)
+        ids=db.acharDadoExato('file', self.id_filename)
+        dados=[db.getDado(i) for i in ids]
+        for dado in dados:
+            dado['file']=newName
+        [db.salvarDado(dado)for dado in dados]
+        compactZIP(Config.fileName)
+

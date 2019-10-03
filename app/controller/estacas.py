@@ -24,6 +24,7 @@ from ..controller.perfil import Ui_Perfil, cv as CV, Ui_sessaoTipo, Ui_Bruckner
 from ..model.estacas import Estacas as EstacasModel
 from ..model.knn import KNN
 from ..model.utils import *
+from ..model.curvas import Curvas
 from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv, ProgressDialog, \
     EstacaRangeSelect
 from ..view.curvas import Curvas as CurvasView, refreshCanvas
@@ -383,6 +384,8 @@ class Estacas(object):
             return None
         self.openEstaca()
         estacas = self.view.get_estacas()
+        curvaModel=Curvas(self.model.id_filename)
+        curvaModel.duplicate(filename)
         try:
             if not hasattr(self,"perfil"):
                 tipo, class_project = self.model.tipo()
@@ -682,14 +685,17 @@ class Estacas(object):
         vertices = [[v[1], QgsPoint(float(v[4]), float(v[3]))] for v in self.model.loadFilename() if v[1]!=""]
         if len(self.view.curvaLayers)==0:
             self.geraCurvas(self.model.id_filename)
-        curvaView = CurvasView(self.view, self.iface, self.model.id_filename,curvas, vertices,self.model.tipo())
-        self.view.showMinimized()
-        curvaView.accepted.connect(self.raiseView)
-        curvaView.rejected.connect(self.raiseView)
-        curvaView.show()
-        curvaView.exec_()
-        if hasattr(curvaView, "c"):
-            curvaView.c.rejected.emit()
+        if len(vertices)==0:
+            messageDialog("Erro!", msg="Você deve calcular uma tabela de tangentes primeiro!")
+            return
+        else:
+            curvaView = CurvasView(self.view, self.iface, self.model.id_filename,curvas, vertices,self.model.tipo())
+            self.view.showMinimized()
+            curvaView.accepted.connect(self.raiseView)
+            curvaView.rejected.connect(self.raiseView)
+            curvaView.show()
+            if hasattr(curvaView, "c"):
+                curvaView.c.rejected.emit()
 
     def raiseView(self):
         self.view.setWindowState(self.view.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)

@@ -967,10 +967,15 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.spinBox.setMinimum(0)
         self.spinBox.hide()
         self.comboBox: QtWidgets.QComboBox
+        self.comboBox.currentIndexChanged.connect(lambda:
+            self.tableWidget.setRangeSelected(
+                QTableWidgetSelectionRange(0, 0, 0, self.tableWidget.columnCount() - 1), True)
+            )
         self.comboBox.currentTextChanged.connect(self.search)
         self.spinBox.valueChanged.connect(self.changeSearchResult)
         self.searchResults = []
         self.btnDuplicar.hide()
+
 
     def changeSearchResult(self, i):
         if i == 0 or i == len(self.searchResults) + 1:

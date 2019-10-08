@@ -6,6 +6,7 @@ from copy import deepcopy
 
 from qgis.core import QgsProject, QgsFields, QgsField, QgsPoint
 
+from ..view.estacas import ProgressDialog
 from ..view.ui.ch import CurvasCompositorDialog, EMPTY_DATA
 from ..model.utils import msgLog, PointTool
 
@@ -137,12 +138,13 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.txtVelocidade: QtWidgets.QSpinBox
         self.deflexao: QtWidgets.QLineEdit
         
-
+        self.shortcut1 = QtWidgets.QShortcut(QtGui.QKeySequence.MoveToNextChar, self)
+        self.shortcut2 = QtWidgets.QShortcut(QtGui.QKeySequence.MoveToPreviousChar, self)
         self.whatsThisAction=QtWidgets.QWhatsThis.createAction(self)
         self.btnAjuda.clicked.connect(self.whatsThisAction.trigger)
 
         self.buttons=[self.btnAjuda, self.btnApagar, self.btnCancela,
-                               self.btnInsere, self.btnRelatorio ]
+                               self.btnInsere, self.btnRelatorio]
 
         self.dados = {
             'file': self.model.id_filename,
@@ -162,20 +164,23 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.curvaFailed=False
         self.editando = False
 
-        self.update()
+
         self.eventos()
+        self.update()
         self.location_on_the_screen()
         
         self.label_5.hide()
         self.label_3.hide()
         self.txtI.hide()
         self.label_11.hide()
-
+        self.progressDialog=ProgressDialog(iface)
 
         self.nextCurva()
         self.previousCurva()
 
     def createLayer(self):
+        if hasattr(self,"c"):
+            self.c.rejected.emit()
         self.c = CurvasCompositorDialog(self)
         self.c.accepted.connect(self.saveCurva)
         self.c.rejected.connect(self.resetCurva)
@@ -189,7 +194,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.move(x, y)
 
     def fill_comboCurva(self):
-        c=0
         self.comboCurva.clear()
         self.PIs=[]
         self.layer=self.view.curvaLayers[0]
@@ -210,7 +214,9 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
     def update(self):
         self.nextIndex()
-
+        self.calcularCurva()
+        if hasattr(self, "c"):
+            self.c.rejected.emit()
 
 
     def eventos(self):
@@ -221,12 +227,51 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.btnRelatorio.clicked.connect(self.draw)
         self.btnCancela.clicked.connect(self.mudancaCurva)
         self.generateAll.clicked.connect(self.genAll)
+        self.btnErase.clicked.connect(self.eraseAll)
         [w.valueChanged.connect(lambda: self.calcularCurva(False))
          for w in [self.txtVelocidade, self.txtRUtilizado, self.txtEMAX, self.Ls, self.txtD]]
+        self.shortcut1.activated.connect(self.nextCurva)
+        self.shortcut2.activated.connect(self.previousCurva)
 
-    def genAll(self):
+    def uneventos(self):
+        self.comboCurva.currentIndexChanged.disconnect()
+        self.comboElemento.currentIndexChanged.disconnect()
+        self.btnInsere.clicked.disconnect()
+        self.btnApagar.clicked.disconnect()
+        self.btnRelatorio.clicked.disconnect()
+        self.btnCancela.clicked.disconnect()
+        self.generateAll.clicked.disconnect()
+        self.btnErase.clicked.disconnect()
+        [w.valueChanged.disconnect()
+         for w in [self.txtVelocidade, self.txtRUtilizado, self.txtEMAX, self.Ls, self.txtD]]
+        self.shortcut1.activated.disconnect()
+        self.shortcut2.activated.disconnect()
+
+    def eraseAll(self):
+        self.progressDialog.show()
+        self.progressDialog.setLoop(100,self.comboCurva.count())
         self.comboCurva.setCurrentIndex(0)
         while self.next.isEnabled():
+            self.progressDialog.increment()
+            try:
+                self.apagar()
+            except:
+                pass
+            self.nextCurva()
+
+        try:
+            self.apagar()
+        except:
+            pass
+        self.progressDialog.close()
+        self.progressDialog.setValue(0)
+
+    def genAll(self):
+        self.progressDialog.show()
+        self.progressDialog.setLoop(100,self.comboCurva.count())
+        self.comboCurva.setCurrentIndex(0)
+        while self.next.isEnabled():
+            self.progressDialog.increment()
             try:
                 self.insert()
             except:
@@ -237,6 +282,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             self.insert()
         except:
             pass
+        self.progressDialog.close()
+        self.progressDialog.setValue(0)
 
     def apagar(self):
         if self.curva_id:
@@ -354,7 +401,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         data=None
 
         try:
-
             if hasattr(self,"justStarted") and self.justStarted:
                  for tipo, index, state in self.c.readData():
                     i+=1
@@ -464,9 +510,12 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.layer: QgsVectorLayer
         self.comboCurva : QtWidgets.QComboBox
         self.draw()
+        if self.curvaFailed:
+            return
+
         curvaFeats=featuresList(self.c.layer)
         features = []
-        if hasattr(self,"justStarted") and self.justStarted:
+        if hasattr(self, "justStarted") and self.justStarted:
             i=0
             for f, tipo in zip(curvaFeats, self.c.dados):
                 feat=QgsFeature(self.layer.fields())
@@ -539,6 +588,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         
 
     def mudancaCurva(self, pos):
+        self.uneventos()
         if hasattr(self, "c") and hasattr(self.c, "layer"):
             self.c.rejected.emit()
 
@@ -555,6 +605,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.curva_id, self.dados=self.model.getId(self.comboCurva.currentText(), self.dados)
         if self.curva_id:
             self.comboElemento.setCurrentIndex(self.dados['tipo'])
+            self.comboElemento.currentIndexChanged.connect(self.mudancaTipo)
             self.comboCurva.setCurrentText(self.dados['curva'])
             self.txtVelocidade.setValue(self.dados['vel'])
             self.txtEMAX.setValue(self.dados['emax'])
@@ -563,7 +614,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             self.txtFMAX.setText(roundFloat2str(self.dados['fmax']))
             self.txtD.setValue(self.dados['D'])
             self.editando=True
-
             self.calcularCurva()
         else:
             self.editando=False
@@ -581,6 +631,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         else:
             self.prev.setEnabled(True)
             self.next.setEnabled(True)
+        self.eventos()
 
 
     def zoomToPoint(self, point):
@@ -763,18 +814,20 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
     def insert(self):
         if not hasattr(self,"c"):
             self.createLayer()
+        self.c.accepted.emit()
         if self.curvaFailed:
             self.curvaFailed=False
+            if hasattr(self,"c"):
+                self.c.rejected.emit()
             return
-        self.c.accepted.emit()
+
         model = CurvasModel(self.id_filename)
         if self.editando:
-            self.editando = False
-            id_curva = self.comboCurva.currentIndex()+1
             model.edit(self.dados)
         else:
             self.curva_id=model.new(self.dados)
-       # self.update()
+            self.editando=True
+        self.update()
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):

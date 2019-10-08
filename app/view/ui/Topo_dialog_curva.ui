@@ -40,6 +40,9 @@
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
+        <property name="minimum">
+         <double>0.010000000000000</double>
+        </property>
         <property name="maximum">
          <double>400.000000000000000</double>
         </property>
@@ -146,6 +149,9 @@
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
+        <property name="minimum">
+         <double>0.010000000000000</double>
+        </property>
         <property name="maximum">
          <double>10000.000000000000000</double>
         </property>
@@ -190,6 +196,9 @@
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
+        </property>
+        <property name="minimum">
+         <double>0.000000000000000</double>
         </property>
         <property name="maximum">
          <double>1.000000000000000</double>
@@ -360,6 +369,9 @@
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
+        </property>
+        <property name="minimum">
+         <double>0.010000000000000</double>
         </property>
         <property name="maximum">
          <double>5000.000000000000000</double>
@@ -557,10 +569,20 @@
      <item>
       <widget class="QPushButton" name="generateAll">
        <property name="toolTip">
-        <string>Gerar todas as curvas automaticamente.Esta operação pode Demorar.</string>
+        <string>Gerar todas as curvas automaticamente. Esta operação pode Demorar.</string>
        </property>
        <property name="text">
         <string>Gerar Todas</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnErase">
+       <property name="toolTip">
+        <string>Apagar todas as curvas.</string>
+       </property>
+       <property name="text">
+        <string>Apagar Todas</string>
        </property>
       </widget>
      </item>
@@ -713,6 +735,9 @@
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
+        </property>
+        <property name="minimum">
+         <double>0.010000000000000</double>
         </property>
         <property name="maximum">
          <double>4000.000000000000000</double>

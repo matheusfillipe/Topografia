@@ -210,7 +210,7 @@ class Curvas(object):
         id = [db.getDadoComId(i)['id'] for i in ids if db.getDado(i)['curva']==name]
         dados = db.getDado(id[-1]) if id else dados
         compactZIP(Config.fileName)
-        return id, dados
+        return id[-1] if id else False, dados
 
     def duplicate(self, newName):
         dados = ['file', 'tipo', 'curva', 'vel', 'emax', 'ls', 'R', 'fmax', 'D']

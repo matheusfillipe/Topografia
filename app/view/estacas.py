@@ -2071,6 +2071,7 @@ class ProgressDialog():#QtWidgets.QProgressDialog):  #, PROGRESS_DIALOG):
         :return:
         """
         self.progressBar: QtWidgets.QProgressBar
+        self.progressBar.show()
         self.value+=self.stepValue
         self.setValue(int(min(self.value, self.ceiling)))
       #  msgLog("Progress bar"+str(self.progressBar.value()))

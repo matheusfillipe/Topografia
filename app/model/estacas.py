@@ -306,6 +306,7 @@ class Estacas(object):
         con.execute("DELETE FROM ESTACA WHERE TABLEESTACA_id=?", (idEstacaTable,))
         con.commit()
         for linha in self.table:
+            linha=list(linha)
             linha.append(int(idEstacaTable))
             lt = tuple(linha)
             con.execute(
@@ -325,6 +326,7 @@ class Estacas(object):
         con.execute("DELETE FROM GREIDE WHERE TABLEESTACA_id = ?", (idEstacaTable,))
         con.commit()
         for linha in self.table:
+            linha=list(linha)
             linha.append(int(idEstacaTable))
 
             lt = tuple(linha)

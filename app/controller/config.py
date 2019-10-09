@@ -69,17 +69,17 @@ class Config(object):
         filename = u"{0}".format(self.conf.new_file()[0])
         if filename in ["",None]:
             return
-        if filename.endswith(".lzip"):
+        if filename.endswith(".zip"):
             ModelConfig.instance().store("FILE_PATH", filename)
         else:
-            ModelConfig.instance().store("FILE_PATH", filename+".lzip")
+            ModelConfig.instance().store("FILE_PATH", filename+".zip")
         self.model.newfile(filename)
 
     def openfile(self, filename=None):
         if filename is None:
             filename = u"{0}".format(self.conf.open_file()[0])
-            if filename in ["",None] or not(filename.endswith('lzip')):
-                self.conf.error('SELECIONE UM ARQUIVO lzip PARA SER ABERTO\n'+filename+' invalido!')
+            if filename in ["",None] or not(filename.endswith('zip')):
+                self.conf.error('SELECIONE UM ARQUIVO zip PARA SER ABERTO\n'+filename+' invalido!')
                 return
 
         ModelConfig.instance().store("FILE_PATH", filename)

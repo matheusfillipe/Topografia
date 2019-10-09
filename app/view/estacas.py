@@ -130,6 +130,7 @@ class CopySelectedCellsAction(QtWidgets.QAction):
 class reversedSpinBox(QtWidgets.QSpinBox):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.lineEdit().setReadOnly(True)
 
     def stepBy(self, steps: int):
         super().stepBy(-steps)
@@ -587,11 +588,13 @@ class EstacasIntersec(QtWidgets.QDialog):
 
 
 class EstacasCv(QtWidgets.QDialog):
+    layerUpdated=pyqtSignal()
 
-    def __init__(self,iface):
+    def __init__(self,iface, parent):
         super(EstacasCv, self).__init__(None)
         self.mode="N"
         self.iface = iface
+        self.parent = parent
         self.setupUi(self)
         self.location_on_the_screen()
 
@@ -602,6 +605,7 @@ class EstacasCv(QtWidgets.QDialog):
         self.comboBox.currentTextChanged.connect(self.search)
         self.spinBox.valueChanged.connect(self.changeSearchResult)
         self.searchResults=[]
+        self.curvaLayers=[]
 
     def changeSearchResult(self, i):
         if i==0 or i==len(self.searchResults)+1:
@@ -764,6 +768,7 @@ class EstacasCv(QtWidgets.QDialog):
         self.btnPerfil.setObjectName(_fromUtf8("btnPerfil"))
         self.gridLayout.addWidget(self.btnPerfil, row, column, 1, 1)
         row+=1
+        self.btnPerfil.hide()
 
         self.btnGen = QtWidgets.QPushButton(Form)
         self.btnGen.setText("Tabela de interseção")
@@ -888,7 +893,55 @@ class EstacasCv(QtWidgets.QDialog):
     def retranslateUi(self, Form):
         Form.setWindowTitle(_translate("Traçado Horizontal", "Traçado Vertical", None))
 
+
+
+    def openLayers(self):
+        self.closeLayers()
+        self.parent.model.iface = self.iface
+        l = self.parent.model.getSavedLayers(self.windowTitle().split(":")[0])
+        if l:
+            l.setName("Curvas: " + l.name())
+            l.startEditing()
+            self.curvaLayers.append(l)
+            l.layerModified.connect(lambda: self.add_row(l))
+            self.parent.iface.setActiveLayer(l)
+
+            l.renderer().symbol().setWidth(.5)
+            l.renderer().symbol().setColor(QtGui.QColor("#be0c21"))
+            l.triggerRepaint()
+
+            if len([a for a in l.getFeatures()]):
+                self.parent.iface.mapCanvas().setExtent(l.extent())
+
+    def add_row(self, l):
+        self.layer = l
+        self.layerUpdated.emit()
+
+    def closeLayers(self):
+        for l in self.curvaLayers:
+            lyr = l
+            try:
+                l.commitChanges()
+                l.endEditCommand()
+                path = l.dataProvider().dataSourceUri()
+                QgsProject.instance().removeMapLayer(l.id())
+                self.parent.model.saveLayer(path)
+            except Exception as e:
+                try:
+                    from ..model.utils import msgLog
+                    msgLog("Erro: " + str(e) + "  ao remover layer " + lyr.name())
+                except:
+                    pass
+        self.curvaLayers = []
+
+
     def reject(self):
+        try:
+            self.closeLayers()
+            self.setWindowTitle(": Horizontal")
+        except:
+            pass
+
         self.removePoint()
         self.comboBox.clear()
         return super(EstacasCv, self).reject()
@@ -899,6 +952,12 @@ class EstacasCv(QtWidgets.QDialog):
         return super(EstacasCv, self).close()
 
     def accept(self):
+        try:
+            self.closeLayers()
+            self.setWindowTitle(": Horizontal")
+        except:
+            pass
+
         self.removePoint()
         self.comboBox.clear()
         return super(EstacasCv, self).accept()
@@ -941,6 +1000,15 @@ class EstacasCv(QtWidgets.QDialog):
         root.addMapLayer(layer, False)
         QgsProject.instance().layerTreeRoot().insertLayer(0, layer)
         self.point=layer
+
+    def exec_(self):
+        self.point=False
+        self.setCopy()
+        self.stretchTable()
+        name=self.parent.model.getNameFromId(self.parent.model.id_filename)
+        self.setWindowTitle(name + ": Vertical")
+        self.openLayers()
+        return super().exec_()
 
 
 
@@ -1813,6 +1881,7 @@ class cvEdit(QtWidgets.QDialog, VERTICE_EDIT_DIALOG):
         super(cvEdit, self).__init__(None)
         self.iface = iface
         self.setupUi(self)
+
        # self.setFixedSize(self.size())
 
     def removeCv(self):

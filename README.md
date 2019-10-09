@@ -80,7 +80,7 @@ Caso você queira reportar algum erro não se esqueça de:
 
 4. Diga o que aconteceu e o que você esperava acontecer.
 
-5. Envie seu arquivo de projeto (lzip e qgis) e layers.
+5. Envie seu arquivo de projeto (zip e qgis) e layers.
 
 ## QGIS
 

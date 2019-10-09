@@ -42,7 +42,7 @@ class Estacas(object):
         self.model.iface=iface
         self.preview = EstacasUI(iface)
         self.view = EstacasView(iface, self)
-        self.viewCv = EstacasCv(iface)
+        self.viewCv = EstacasCv(iface, self)
         self.progressDialog=ProgressDialog(iface)
 
         self.events()
@@ -378,27 +378,36 @@ class Estacas(object):
         self.duplicarEstaca(False)
 
     def duplicarEstaca(self, trans=True):
+        import traceback
         if self.model.id_filename == -1: return
         filename=self.fileName(suggestion="Cópia de " + self.model.getNameFromId(self.model.id_filename))
         if not filename:
             return None
         self.openEstaca()
-        estacas = self.view.get_estacas()
-        curvaModel=Curvas(self.model.id_filename)
-        curvaModel.duplicate(filename)
+
+        try:
+            self.view.openLayers()
+            curvaModel = Curvas(self.model.id_filename)
+            curvaModel.duplicate(filename, self.view.curvaLayers[0].source())
+        except Exception as e:
+            msgLog("Falha ao duplicar curvas: ")
+            msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
         try:
             if not hasattr(self,"perfil"):
                 tipo, class_project = self.model.tipo()
-                self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename),
+                estacas = self.model.load_terreno_long()
+                self.perfil = Ui_Perfil(estacas, tipo, class_project, self.model.getGreide(self.model.id_filename),
                                         self.model.getCv(self.model.id_filename), iface=self)
             table = deepcopy(self.perfil.getVertices())
             cvData=deepcopy(self.perfil.getCurvas())
             self.model.table = table
             self.model.cvData=cvData
             self.model.saveGreide(self.model.id_filename)
-        except:
-            pass
+        except Exception as e:
+            msgLog("Falha ao duplicar Greide: ")
+            msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
 
+        estacas = self.view.get_estacas()
         self.model=self.model.saveEstacas(filename, estacas)
         self.update()
         self.view.clear()
@@ -1318,16 +1327,20 @@ class Estacas(object):
         self.openEstaca()
         self.viewCv.clear()
         self.viewCv.setWindowTitle(str(self.model.getNameFromId(self.model.id_filename))+": Verticais")
-        estacas=[]
-        tipo, class_project = self.model.tipo()
-
         try:
-            self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename))
+            tipo, class_project = self.model.tipo()
+            estacas = self.model.load_terreno_long()
+            self.perfil = Ui_Perfil(estacas, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename), iface=self)
         except Exception as e:
-            #messageDialog(None, title="Erro!", message="Perfil Vertical ainda não foi definido!")
-            self.perfilView()
+            import traceback
+            messageDialog(None, title="Erro!", message="Perfil Vertical ainda não foi definido!")
+            msgLog("Falha ao identificar Greide")
+            msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
+            return
+           # self.perfilView()
            # self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename))
 
+        estacas=[]
         (estaca,descricao,progressiva,cota) = (0, "V0", 0, self.perfil.getVertices()[0][1])
         estacas.append((estaca,descricao,progressiva,cota))
         missingCurveDialog=[]

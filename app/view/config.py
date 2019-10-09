@@ -167,7 +167,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         return filename
 
     def open_file(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Project files (*.lzip)")
+        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Project files (*.zip)")
         return filename
 
     def error(self, msg):

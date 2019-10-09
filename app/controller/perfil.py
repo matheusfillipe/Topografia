@@ -60,6 +60,7 @@ class CustomViewBox(pg.ViewBox):
           else:
               pg.ViewBox.mouseDragEvent(self, ev)
 
+PREC = 5 #draw precision in meters
 
 class cv():
     
@@ -90,16 +91,16 @@ class cv():
 
             x=[]
 
-            for n in range(0,int(L/20)+1):
-                x.append(n*20)
+            for n in range(0,int(L/PREC)+1):
+                x.append(n*PREC)
 
             x=np.array(x)
             y=(-G/(2*L))*x*x+i1*x+ypcv
 
 
             x=[]
-            for n in range(0,int(L/20)+1):
-                x.append(n*20+xpcv)        
+            for n in range(0,int(L/PREC)+1):
+                x.append(n*PREC+xpcv)
 
 
             self.xpcv=xpcv
@@ -186,6 +187,18 @@ class cvEditDialog(cvEdit):
 #       self.helpBtn.clicked.connect(self.displayHelp)
         self.viewCurveBtn.clicked.connect(self.viewCurva)
 
+        self.shortcut1 = QtWidgets.QShortcut(QtGui.QKeySequence.MoveToNextChar, self)
+        self.shortcut2 = QtWidgets.QShortcut(QtGui.QKeySequence.MoveToPreviousChar, self)
+        self.shortcut1.activated.connect(self.nextVertex)
+        self.shortcut2.activated.connect(self.previousVertex)
+
+    def nextVertex(self):
+        if self.nextBtn.isEnabled():
+            self.next()
+
+    def previousVertex(self):
+        if self.previousBtn.isEnabled():
+            self.previous()
 
     def viewCurva(self):
         center=self.getHandlePos(self.i)
@@ -334,11 +347,13 @@ class cvEditDialog(cvEdit):
 
         self.roi.update()
 
-
-        if self.getHandlePos(self.i).x()+self.Lutilizado/2 > self.getHandlePos(self.i+1).x()-self.roi.handles[self.i+1]['item'].curve.L/2 or self.getHandlePos(self.i).x()-self.Lutilizado/2 < self.getHandlePos(self.i-1).x()+self.roi.handles[self.i-1]['item'].curve.L/2:
-            self.uiAlertaLb.setText("Alerta: Sobreposição de curvas!")
-        else:
-            self.uiAlertaLb.setText("")
+        try:
+            if self.getHandlePos(self.i).x()+self.Lutilizado/2 > self.getHandlePos(self.i+1).x()-self.roi.handles[self.i+1]['item'].curve.L/2 or self.getHandlePos(self.i).x()-self.Lutilizado/2 < self.getHandlePos(self.i-1).x()+self.roi.handles[self.i-1]['item'].curve.L/2:
+                self.uiAlertaLb.setText("Alerta: Sobreposição de curvas!")
+            else:
+                self.uiAlertaLb.setText("")
+        except:
+            pass
 
 
     def updateVerticesCb(self):
@@ -381,6 +396,7 @@ class cvEditDialog(cvEdit):
         c.move(self.x(),self.y())
         c.show()
         c.exec_()
+
 
     def next(self):
         self.verticeCb.setCurrentIndex(self.i+1)
@@ -1542,7 +1558,8 @@ class Ui_sessaoTipo(Ui_Perfil):
     def updateAreaLabels(self):
 
         self.areaLb.setText("Area: " + str(round(self.prismoide.getFace(self.current).getArea(),4))+"m²")
-        self.progressivaLb.setText("E: " + str(int(self.progressiva[self.current]/20))+" + "+str(round((self.progressiva[self.current]/20-int(self.progressiva[self.current]/20))*20,4)))
+        dist=Config.instance().DIST
+        self.progressivaLb.setText("E: " + str(int(self.progressiva[self.current]/dist))+" + "+str(round((self.progressiva[self.current]/dist-int(self.progressiva[self.current]/dist))*dist,4)))
         act,aat = self.prismoide.getAreasCtAt(self.current)
         self.areaCtLb.setText("Corte: " + str(round(act,4))+"m²")
         self.areaAtLb.setText("Aterro: " + str(round(aat,4))+"m²")

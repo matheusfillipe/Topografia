@@ -260,10 +260,10 @@ class Config(object):
 
     def newfile(self, filename):
         self.filename = filename
-        if self.filename.endswith('lzip'):
+        if self.filename.endswith('zip'):
             zip_arch_path = u"%s" % filename
         else:
-            zip_arch_path = u"%s.lzip" % filename
+            zip_arch_path = u"%s.zip" % filename
         self.filename = zip_arch_path
         Config.fileName = self.filename
         f = open(zip_arch_path, 'w')

@@ -386,12 +386,15 @@ class Estacas(object):
         if not filename:
             return None
         self.openEstaca()
+        estacas = self.view.get_estacas()
+        id_filename=self.model.id_filename
+        self.model = self.model.saveEstacas(filename, estacas)
 
         try:
             self.view.openLayers()
             source=self.view.curvaLayers[0].source()
-            curvaModel = Curvas(self.model.id_filename)
-            curvaModel.duplicate(filename, source)
+            curvaModel = Curvas(id_filename)
+            curvaModel.duplicate(filename, self.model.ultimo, source)
         except Exception as e:
             msgLog("---------------------------------\n\nFalha ao duplicar curvas: ")
             msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
@@ -399,36 +402,34 @@ class Estacas(object):
         try:
             tipo, class_project = self.model.tipo()
             estacas = self.model.load_terreno_long()
-            self.perfil = Ui_Perfil(estacas, tipo, class_project, self.model.getGreide(self.model.id_filename),
-                                    self.model.getCv(self.model.id_filename), iface=self)
+            self.perfil = Ui_Perfil(estacas, tipo, class_project, self.model.getGreide(id_filename),
+                                    self.model.getCv(id_filename), iface=self)
             table = deepcopy(self.perfil.getVertices())
             cvData=deepcopy(self.perfil.getCurvas())
             self.model.table = table
             self.model.cvData=cvData
-            self.model.saveGreide(self.model.id_filename)
+            self.model.saveGreide(id_filename)
         except Exception as e:
             msgLog("Falha ao duplicar Greide: ")
             msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
 
-        estacas = self.view.get_estacas()
-        self.model=self.model.saveEstacas(filename, estacas)
-        self.update()
-        self.view.clear()
-        estacas = self.model.loadFilename()
-        self.estacasHorizontalList=[]
-        for e in estacas:
-            self.view.fill_table(tuple(e), True)
-            self.estacasHorizontalList.append(tuple(e))
-        self.nextView=self.view
-        self.view.setCopy()
-        self.updateTables()
-        #self.geraCurvas(self.model.id_filename)
+       #self.geraCurvas(self.model.id_filename)
 
         if trans:
             prog, est, prism = self.model.getTrans(self.model.id_filename)
             if prog:
                 self.trans=Ui_sessaoTipo(self.iface, est[1], self.estacasHorizontalList, prog, est[0], prism=prism)
                 self.saveTrans()
+        self.update()
+        self.view.clear()
+        estacas = self.model.loadFilename()
+        self.estacasHorizontalList = []
+        for e in estacas:
+            self.view.fill_table(tuple(e), True)
+            self.estacasHorizontalList.append(tuple(e))
+        self.nextView = self.view
+        self.view.setCopy()
+        self.updateTables()
 
         self.view.closeLayers()
         self.viewCv.closeLayers()

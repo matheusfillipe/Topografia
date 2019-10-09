@@ -212,14 +212,14 @@ class Curvas(object):
         compactZIP(Config.fileName)
         return id[-1] if id else False, dados
 
-    def duplicate(self, newName, path):
+    def duplicate(self, newName, new_id, path):
         dados = ['file', 'tipo', 'curva', 'vel', 'emax', 'ls', 'R', 'fmax', 'D']
         extractZIP(Config.fileName)
         db=DB(Config.instance().TMP_DIR_PATH+"tmp/data/data.db", "CURVAS_DADOS", dados)
         ids=db.acharDadoExato('file', self.id_filename)
         dados=[db.getDado(i) for i in ids]
         for i,_ in enumerate(dados):
-            dados[i]['file']=newName
+            dados[i]['file']=new_id
         [db.salvarDado(dado)for dado in dados]
 
         from pathlib import Path
@@ -229,3 +229,10 @@ class Curvas(object):
             shutil.copy(str(p), Config.instance().TMP_DIR_PATH + "tmp/data/"+newName+"".join(p.suffixes))
         compactZIP(Config.fileName)
 
+    def erase(self, id_filename):
+        dados = ['file', 'tipo', 'curva', 'vel', 'emax', 'ls', 'R', 'fmax', 'D']
+        extractZIP(Config.fileName)
+        db=DB(Config.instance().TMP_DIR_PATH+"tmp/data/data.db", "CURVAS_DADOS", dados)
+        ids=db.acharDadoExato('file', id_filename)
+        [db.apagarDado(id) for id in ids]
+        compactZIP(Config.fileName)

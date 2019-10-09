@@ -169,8 +169,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.update()
         self.location_on_the_screen()
         
-        self.label_5.hide()
-        self.label_3.hide()
         self.txtI.hide()
         self.label_11.hide()
         self.progressDialog=ProgressDialog(iface)

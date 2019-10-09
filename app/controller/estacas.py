@@ -52,6 +52,8 @@ class Estacas(object):
         self.points = []
 
         self.nextView=self.view
+        msgLog("RELOADED")
+
 
     def mudancaCelula(self,item):
         if item.column() > 1:
@@ -387,17 +389,18 @@ class Estacas(object):
 
         try:
             self.view.openLayers()
+            source=self.view.curvaLayers[0].source()
             curvaModel = Curvas(self.model.id_filename)
-            curvaModel.duplicate(filename, self.view.curvaLayers[0].source())
+            curvaModel.duplicate(filename, source)
         except Exception as e:
-            msgLog("Falha ao duplicar curvas: ")
+            msgLog("---------------------------------\n\nFalha ao duplicar curvas: ")
             msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
+
         try:
-            if not hasattr(self,"perfil"):
-                tipo, class_project = self.model.tipo()
-                estacas = self.model.load_terreno_long()
-                self.perfil = Ui_Perfil(estacas, tipo, class_project, self.model.getGreide(self.model.id_filename),
-                                        self.model.getCv(self.model.id_filename), iface=self)
+            tipo, class_project = self.model.tipo()
+            estacas = self.model.load_terreno_long()
+            self.perfil = Ui_Perfil(estacas, tipo, class_project, self.model.getGreide(self.model.id_filename),
+                                    self.model.getCv(self.model.id_filename), iface=self)
             table = deepcopy(self.perfil.getVertices())
             cvData=deepcopy(self.perfil.getCurvas())
             self.model.table = table
@@ -419,13 +422,16 @@ class Estacas(object):
         self.nextView=self.view
         self.view.setCopy()
         self.updateTables()
-        self.geraCurvas(self.model.id_filename)
+        #self.geraCurvas(self.model.id_filename)
 
         if trans:
             prog, est, prism = self.model.getTrans(self.model.id_filename)
             if prog:
                 self.trans=Ui_sessaoTipo(self.iface, est[1], self.estacasHorizontalList, prog, est[0], prism=prism)
                 self.saveTrans()
+
+        self.view.closeLayers()
+        self.viewCv.closeLayers()
 
     def cleanTrans(self):
         if yesNoDialog(None, message="Tem certeza que quer excluir os dados transversais?"):

@@ -731,7 +731,7 @@ class Estacas(object):
             messageDialog("Erro!", msg="Você deve calcular uma tabela de tangentes primeiro!")
             return
         else:
-            curvaView = CurvasView(self.view, self.iface, self.model.id_filename,curvas, vertices,self.model.tipo())
+            curvaView = CurvasView(None, self.iface, self.model.id_filename,curvas, vertices,self.model.tipo())
             curvaView.accepted.connect(self.raiseView)
             curvaView.rejected.connect(self.raiseView)
             curvaView.btnRecalcular.clicked.connect(self.recalcularCurvas)

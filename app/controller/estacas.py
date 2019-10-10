@@ -5,6 +5,7 @@ import webbrowser
 from copy import deepcopy
 
 from PyQt5.QtCore import QVariant, QFile
+from PyQt5.QtWidgets import QTableWidgetSelectionRange
 
 from ..controller.threading import nongui
 
@@ -735,9 +736,14 @@ class Estacas(object):
 
     def viewCurvaZoom(self):
         desc = "TS" if self.curvaView.comboElemento.currentIndex()>0 else "TC"
+        items=[self.view.comboBox.itemText(i) for i in range(self.view.comboBox.count())]
         desc += "".join([str(c) for c in self.curvaView.comboCurva.currentText() if c.isdigit()])
         self.raiseView()
-        self.view.comboBox.setCurrentText(desc)
+        if desc in items:
+            row=0
+            self.view.tableWidget.setRangeSelected(QTableWidgetSelectionRange(row, 1, row, 1), True)
+            self.view.tableWidget.setCurrentCell(row, 1)
+            self.view.comboBox.setCurrentIndex(items.index(desc))
 
     def raiseView(self):
         self.view.setWindowState(self.view.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)

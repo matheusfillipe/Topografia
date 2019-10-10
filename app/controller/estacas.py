@@ -31,7 +31,7 @@ from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv, Progres
 from ..view.curvas import Curvas as CurvasView, refreshCanvas
 
 
-DIALOGS_TO_CLOSE_ON_LOOP=["curvaView", "perfil"]
+DIALOGS_TO_CLOSE_ON_LOOP=["curvaView"]
 
 class Estacas(object):
     def __init__(self, iface):
@@ -89,7 +89,7 @@ class Estacas(object):
         self.preview.tableEstacas.itemSelectionChanged.connect(self.itemClickTableEstacas)
         self.preview.btnOpenCv.clicked.connect(self.openCv)
         self.preview.deleted.connect(self.deleteEstaca)
-        self.preview.btnDuplicar.clicked.connect(self.duplicarEstaca)
+        self.preview.btnDuplicar.clicked.connect(lambda: self.duplicarEstaca())
         self.preview.btnGerarCurvas.clicked.connect(self.geraCurvas)
 
         '''
@@ -392,11 +392,16 @@ class Estacas(object):
         estacas = self.view.get_estacas()
         id_filename=self.model.id_filename
         self.model = self.model.saveEstacas(filename, estacas)
+        self.model.id_filename=self.model.ultimo
 
         try:
             self.view.openLayers()
+            l=self.view.curvaLayers[0]
             source=self.view.curvaLayers[0].source()
             curvaModel = Curvas(id_filename)
+            l.commitChanges()
+            l.endEditCommand()
+            QgsProject.instance().removeMapLayer(l.id())
             curvaModel.duplicate(filename, self.model.ultimo, source)
         except Exception as e:
             msgLog("---------------------------------\n\nFalha ao duplicar curvas: ")
@@ -411,7 +416,7 @@ class Estacas(object):
             cvData=deepcopy(self.perfil.getCurvas())
             self.model.table = table
             self.model.cvData=cvData
-            self.model.saveGreide(id_filename)
+            self.model.saveGreide(self.model.ultimo)
         except Exception as e:
             msgLog("Falha ao duplicar Greide: ")
             msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
@@ -419,10 +424,15 @@ class Estacas(object):
        #self.geraCurvas(self.model.id_filename)
 
         if trans:
-            prog, est, prism = self.model.getTrans(self.model.id_filename)
-            if prog:
-                self.trans=Ui_sessaoTipo(self.iface, est[1], self.estacasHorizontalList, prog, est[0], prism=prism)
-                self.saveTrans()
+            try:
+                prog, est, prism = self.model.getTrans(self.model.id_filename)
+                if prog:
+                    self.trans=Ui_sessaoTipo(self.iface, est[1], self.estacasHorizontalList, prog, est[0], prism=prism)
+                    self.saveTrans()
+            except Exception as e:
+                msgLog("Falha ao duplicar Transversais: ")
+                msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
+
         self.update()
         self.view.clear()
         estacas = self.model.loadFilename()

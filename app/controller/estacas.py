@@ -738,7 +738,8 @@ class Estacas(object):
             curvaView.btnTable.clicked.connect(self.viewCurvaZoom)
             self.curvaView=curvaView
             self.view.showMinimized()
-            curvaView.show()
+            self.curvaView.show()
+            self.raiseWindow(self.curvaView)
 
     def recalcularCurvas(self):
         self.recalcular(True)
@@ -756,10 +757,13 @@ class Estacas(object):
             self.view.comboBox.setCurrentIndex(items.index(desc))
 
     def raiseView(self):
-        self.view.setWindowState(self.view.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
-        self.view.activateWindow()
+        self.raiseWindow(self.view)
         if hasattr(self.curvaView, "c"):
             self.curvaView.c.rejected.emit()
+
+    def raiseWindow(self, view):
+        view.setWindowState(view.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+        view.activateWindow()
 
     def plotTransLayer(self, index):
         self.progressDialog.show()

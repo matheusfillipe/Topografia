@@ -28,6 +28,7 @@ class Estacas(object):
         self.xList = []
         self.ultimo = ultimo
         self.id_filename = id_filename
+        self.ask=True
 
     def get_features(self):
         linhas = []
@@ -200,9 +201,11 @@ class Estacas(object):
         compactZIP(Config.fileName)
         return dataTopo, class_project
 
-    def recalcular(self, distancia, estaca, layer):
+    def recalcular(self, distancia, estaca, layer, ask=True):
         self.__init__(distancia, estaca, layer, self.filename, list(), self.ultimo, self.id_filename)
+        self.ask=ask
         self.table = self.create_estacas()
+        self.ask=False
         return self.table
 
     def loadFilename(self):
@@ -562,7 +565,7 @@ class Estacas(object):
         if not self.distancia or self.distancia<=0:
             self.distancia=Config.instance().DIST
 
-        if hasattr(self, "iface") and sum(1 for f in self.layer.getFeatures())>1 and not isCalc:
+        if hasattr(self, "iface") and sum(1 for f in self.layer.getFeatures())>1 and not isCalc and self.ask:
             selectFeatureDialog=SelectFeatureDialog(self.iface, self.layer)
             ok = selectFeatureDialog.exec_()
             result=selectFeatureDialog.result

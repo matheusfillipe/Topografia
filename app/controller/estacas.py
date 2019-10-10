@@ -30,6 +30,8 @@ from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv, Progres
 from ..view.curvas import Curvas as CurvasView, refreshCanvas
 
 
+DIALOGS_TO_CLOSE_ON_LOOP=["curvaView", "perfil"]
+
 class Estacas(object):
     def __init__(self, iface):
 
@@ -651,19 +653,30 @@ class Estacas(object):
         self.model.saveTrans(self.model.id_filename, self.trans.prismoide.getPrismoide())
 
 
-    def recalcular(self):
+    def recalcular(self, curva=False):
         self.view.comboBox.clear()
         id=self.model.id_filename
-        dados = self.preview.new(True)
+        if not curva:
+            dados = self.preview.new(True)
+        else:
+            dados = self.preview.new(True, layerName=self.view.curvaLayers[0].name(), ask=False)
+
         if dados is None: return
         _, layer, dist, estaca = dados
-        table = self.model.recalcular(dist, estaca, layer)
+        layer = layer if not curva else self.view.curvaLayers[0]
+
+        table = self.model.recalcular(dist, estaca, layer, ask=not curva)
         self.view.clear()
         for item in table:
             self.view.fill_table(tuple(item))
         self.model.id_filename=id
         self.model.save(id)
         self.geraCurvas(self.model.id_filename, recalcular=True)
+
+        if not curva and len(self.view.curvaLayers)>0 and yesNoDialog(message="Foram detectadas curvas horizontais no traçado, deseja sobreescrever?"):
+            curvas=Curvas(id_filename=self.model.id_filename)
+            curvas.erase()
+            self.model.removeGeoPackage(self.model.getNameFromId(self.model.id_filename))
 
     def saveEstacas(self):
         if self.model.id_filename == -1: return
@@ -692,6 +705,8 @@ class Estacas(object):
                 self.model.deleteEstaca(id)
         else:
             self.model.deleteEstaca(self.model.id_filename)
+        curvaModel=Curvas(id_filename=self.model.id_filename)
+        curvaModel.erase()
         self.update()
         self.model.id_filename = -1
         self.click = False
@@ -709,14 +724,25 @@ class Estacas(object):
             self.view.showMinimized()
             curvaView.accepted.connect(self.raiseView)
             curvaView.rejected.connect(self.raiseView)
+            curvaView.btnRecalcular.clicked.connect(self.recalcularCurvas)
+            curvaView.btnTable.clicked.connect(self.viewCurvaZoom)
+            self.curvaView=curvaView
             curvaView.show()
-            if hasattr(curvaView, "c"):
-                curvaView.c.rejected.emit()
+
+    def recalcularCurvas(self):
+        self.recalcular(True)
+
+    def viewCurvaZoom(self):
+        desc = "TS" if self.curvaView.comboElemento.currentIndex()>0 else "TC"
+        desc += "".join([str(c) for c in self.curvaView.comboCurva.currentText() if c.isdigit()])
+        self.raiseView()
+        self.view.comboBox.setCurrentText(desc)
 
     def raiseView(self):
         self.view.setWindowState(self.view.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
         self.view.activateWindow()
-
+        if hasattr(self.curvaView, "c"):
+            self.curvaView.c.rejected.emit()
 
     def plotTransLayer(self, index):
         self.progressDialog.show()
@@ -1555,10 +1581,6 @@ class Estacas(object):
                 lastFinalResult=finalResult
                 lastResult=result
 
-
-
-
-
-
-
-           
+            for d in DIALOGS_TO_CLOSE_ON_LOOP:
+                if hasattr(self, d):
+                    getattr(self, d).close()

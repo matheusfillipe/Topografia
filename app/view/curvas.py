@@ -163,7 +163,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.fill_comboCurva()
         self.curvaFailed=False
         self.editando = False
-
+        self.dChanged=False
 
         self.eventos()
         self.update()
@@ -211,11 +211,9 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
 
     def update(self):
-        self.nextIndex()
         self.calcularCurva()
         if hasattr(self, "c"):
             self.c.rejected.emit()
-
 
     def eventos(self):
         self.comboCurva.currentIndexChanged.connect(self.mudancaCurva)
@@ -226,10 +224,14 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.btnCancela.clicked.connect(self.mudancaCurva)
         self.generateAll.clicked.connect(self.genAll)
         self.btnErase.clicked.connect(self.eraseAll)
+        self.txtD.valueChanged.connect(self.changeD)
         [w.valueChanged.connect(lambda: self.calcularCurva(False))
          for w in [self.txtVelocidade, self.txtRUtilizado, self.txtEMAX, self.Ls, self.txtD]]
         self.shortcut1.activated.connect(self.nextCurva)
         self.shortcut2.activated.connect(self.previousCurva)
+
+    def changeD(self):
+        self.dChanged=True
 
     def uneventos(self):
         self.comboCurva.currentIndexChanged.disconnect()
@@ -573,9 +575,10 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             QgsProject.instance().removeMapLayer(self.c.layer.id())
         except:
             pass
-        refreshCanvas(self.iface, self.layer)
-
-
+        try:
+            refreshCanvas(self.iface, self.layer)
+        except:
+            pass
 
     def clearAll(self):
         texts=["txtI", "txtDelta", "txtRMIN", "txtT", "theta", "txtG20", "lsmin",
@@ -688,8 +691,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
         if self.comboElemento.currentIndex()>0:
             self.Ls.setEnabled(signal)
-            self.txtD.setEnabled(signal)
-
 
         return True
 
@@ -732,18 +733,39 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
         if new:
             rutilizado=rmin(int(v), e_max, f_max)
-            self.txtRUtilizado.setValue(math.ceil(rutilizado/50)*50)
+            if self.comboElemento.currentIndex() == 0:
+                d_val = d_curva_simples(rutilizado, delta_val)
+                dist=Config.instance().DIST
+                d_val=d_val+dist-d_val%dist
+                rutilizado = r_curva_simples(d_val, delta_val)
+                lutilizado=0
+            else:
+                d_val = d_curva_simples(rutilizado, delta_val)
+                dist=Config.instance().DIST
+                d_val=d_val+dist-d_val%dist
+                rutilizado = r_curva_simples(d_val, delta_val)
+                lutilizado = l_utilizado(rutilizado,v,delta_val)
+                lutilizado = lutilizado + dist - lutilizado % dist
+
+            self.txtRUtilizado.setValue(rutilizado)
             self.txtVelocidade.setValue(v)
             self.txtEMAX.setValue(e_max)
-            lutilizado=(max(0.036*v**3/rutilizado, 0.556*v)+rutilizado*delta_val*np.pi/180)/2
             self.Ls.setValue(lutilizado)
+            self.txtD.setValue(roundFloat(d_val))
         else:
             lutilizado = float(self.Ls.value())
-            rutilizado = float(self.txtRUtilizado.value())
+            if not self.dChanged:
+                rutilizado = float(self.txtRUtilizado.value())
+                d_val = d_curva_simples(rutilizado, delta_val)
+                self.txtD.setValue(roundFloat(d_val))
+            else:
+                d_val=self.txtD.value()
+                rutilizado=r_curva_simples(d_val, delta_val)
+                self.txtRUtilizado.setValue(rutilizado)
+            self.dChanged=False
 
         g20_val = g20(rutilizado)
         t_val = t(rutilizado, delta_val)
-        d_val = d_curva_simples(rutilizado, delta_val)
 
         if self.comboElemento.currentIndex() > 0:
             # d_val, theta, lsmin, lsmax, sc, cs
@@ -779,7 +801,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             self.ys.setText(roundFloat2str(0))
             self.Ls.setValue(0)
             self.groupBox_3.hide()
-            self.txtD.setEnabled(False)
 
         self.param = {
             'g20': g20_val,
@@ -789,7 +810,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.txtI.setText("%f" % i)
         self.txtI.setEnabled(False)
         self.txtT.setText("%f" % t_val)
-        self.txtD.setValue(float(d_val))
         self.txtG20.setText("%f" % g20_val)
         self.txtFMAX.setText(roundFloat2str(f_max))
         self.txtRMIN.setText("%f" % rmin(int(v), e_max, f_max))
@@ -808,6 +828,9 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             'D': self.txtD.value()
         }
         self.nextIndex()
+        self.btnRecalcular.setEnabled(self.editando)
+        self.btnTable.setEnabled(self.editando)
+
 
     def insert(self):
         if not hasattr(self,"c"):

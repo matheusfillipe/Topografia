@@ -229,10 +229,10 @@ class Curvas(object):
             shutil.copy(str(p), Config.instance().TMP_DIR_PATH + "tmp/data/"+newName+"".join(p.suffixes))
         compactZIP(Config.fileName)
 
-    def erase(self, id_filename):
+    def erase(self):
         dados = ['file', 'tipo', 'curva', 'vel', 'emax', 'ls', 'R', 'fmax', 'D']
         extractZIP(Config.fileName)
         db=DB(Config.instance().TMP_DIR_PATH+"tmp/data/data.db", "CURVAS_DADOS", dados)
-        ids=db.acharDadoExato('file', id_filename)
+        ids=db.acharDadoExato('file', self.id_filename)
         [db.apagarDado(id) for id in ids]
         compactZIP(Config.fileName)

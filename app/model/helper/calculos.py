@@ -96,10 +96,14 @@ def fi(delta, theta):
 def d(rutilizado, fi):
     return rutilizado * fi
 
-
 def d_curva_simples(rutilizado, delta):
     return (math.pi * rutilizado * delta) / 180
 
+def r_curva_simples(d, delta):
+    return 180 * d /(math.pi * delta)
+
+def l_utilizado(rutilizado, v, delta_val):
+    return (max(0.036*v**3/rutilizado, 0.556*v)+rutilizado*delta_val*math.pi/180)/2
 
 def k(xs, rutilizado, theta):
     return xs - rutilizado * math.sin(theta)

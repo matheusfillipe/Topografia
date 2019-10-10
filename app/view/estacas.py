@@ -200,17 +200,22 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
             return None
         return filename, fileDB
 
-    def new(self,recalcular=False,layerName=None,filename=None, lastIndex=0):
+    def new(self,recalcular=False,layerName=None,filename=None, lastIndex=0, ask=True):
         mapCanvas = self.iface.mapCanvas()
         itens = []
         for i in range(mapCanvas.layerCount() - 1, -1, -1):
             try:
                 layer = mapCanvas.layer(i)
-                layerName = layer.name()
-                itens.append(layerName)
+                name = layer.name()
+                itens.append(name)
             except:
                 pass
-        if len(itens) == 0: return None
+
+        if len(itens) == 0:
+            from ..model.utils import messageDialog
+            messageDialog(message="Nenhuma layer visível foi encontrada no projeto, por favor adicione alguma.")
+            return None
+
         if not filename:
             if not recalcular:
                 filename=""
@@ -229,7 +234,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
             else:
                 filename = ''
 
-        if layerName is None:
+        if layerName is not None:
             layerList = QgsProject .instance().mapLayersByName(layerName)
             layer = None
             if layerList:
@@ -254,13 +259,20 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
                 layer = None
                 if layerList:
                     layer = layerList[0]
-
-        dist, ok = QtWidgets.QInputDialog.getDouble(None, "Distancia", u"Distancia entre estacas:", Config.instance().DIST, 1,
+        if ask:
+            dist, ok = QtWidgets.QInputDialog.getDouble(None, "Distancia", u"Distancia entre estacas:", Config.instance().DIST, 1,
                                                 10000, 2)
+        else:
+            ok=True
+            dist=Config.instance().DIST
         if not ok or dist<=0:
             return None
-        estaca, ok = QtWidgets.QInputDialog.getInt(None, "Estaca Inicial", u"Estaca Inicial:", 0, 0, 10000000, 2)
 
+        if ask:
+            estaca, ok = QtWidgets.QInputDialog.getInt(None, "Estaca Inicial", u"Estaca Inicial:", 0, 0, 10000000, 2)
+        else:
+            ok=True
+            estaca=0
         if not ok:
             return None
         return filename, layer, dist, estaca

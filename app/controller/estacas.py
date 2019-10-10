@@ -731,6 +731,7 @@ class Estacas(object):
 
     def recalcularCurvas(self):
         self.recalcular(True)
+        self.curvaView.layer=self.view.curvaLayers[0]
 
     def viewCurvaZoom(self):
         desc = "TS" if self.curvaView.comboElemento.currentIndex()>0 else "TC"

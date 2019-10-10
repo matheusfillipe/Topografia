@@ -828,7 +828,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             'D': self.txtD.value()
         }
         self.nextIndex()
-        self.btnRecalcular.setEnabled(self.editando)
         self.btnTable.setEnabled(self.editando)
 
 

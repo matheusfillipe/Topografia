@@ -637,7 +637,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
     def zoomToPoint(self, point):
         #ZOOM
-        scale = 250
+        scale = 400
         x,y=point.x(), point.y()
         rect = QgsRectangle(x - scale, y - scale, x + scale, y + scale)
         self.iface.mapCanvas().setExtent(rect)

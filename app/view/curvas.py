@@ -791,7 +791,9 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             self.xs.setText(roundFloat2str(xs))
             self.ys.setText(roundFloat2str(ys))
             d_val=rutilizado*(delta_val-2*np.rad2deg(theta))*np.pi/180
+            self.txtDls.setText(roundFloat2str(theta*rutilizado))
             self.groupBox_3.show()
+            self.groupBox_2.hide()
 
         else:
             self.theta.setText(roundFloat2str(np.rad2deg(0)))
@@ -801,6 +803,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             self.ys.setText(roundFloat2str(0))
             self.Ls.setValue(0)
             self.groupBox_3.hide()
+            self.groupBox_2.show()
 
         self.param = {
             'g20': g20_val,

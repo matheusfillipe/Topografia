@@ -732,12 +732,12 @@ class Estacas(object):
             return
         else:
             curvaView = CurvasView(self.view, self.iface, self.model.id_filename,curvas, vertices,self.model.tipo())
-            self.view.showMinimized()
             curvaView.accepted.connect(self.raiseView)
             curvaView.rejected.connect(self.raiseView)
             curvaView.btnRecalcular.clicked.connect(self.recalcularCurvas)
             curvaView.btnTable.clicked.connect(self.viewCurvaZoom)
             self.curvaView=curvaView
+            self.view.showMinimized()
             curvaView.show()
 
     def recalcularCurvas(self):

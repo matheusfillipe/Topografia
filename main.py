@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- TopoGrafia
+ GeoRoad
                                  A QGIS plugin
  TOPO
                               -------------------
@@ -77,7 +77,7 @@ class TopoGrafia(object):
         locale_path = os.path.join(
             self.plugin_dir,
             'i18n',
-            'TopoGrafia_{}.qm'.format(locale))
+            'GeoRoad_{}.qm'.format(locale))
 
 
         #DEBUG CLIENT
@@ -120,8 +120,8 @@ class TopoGrafia(object):
         self.menu = self.tr(u'&GeoRoad')
 
         # TODO: We are going to let the user set this up in a future iteration
-        self.toolbar = self.iface.addToolBar(u'TopoGrafia')
-        self.toolbar.setObjectName(u'TopoGrafia')
+        self.toolbar = self.iface.addToolBar(u'GeoRoad')
+        self.toolbar.setObjectName(u'GeoRoad')
         # -----------------------------------------------
         #instancia do controller de config
         self.conf = Config(iface)
@@ -158,7 +158,7 @@ class TopoGrafia(object):
         :rtype: QString
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate('TopoGrafia', message)
+        return QCoreApplication.translate('GeoRoad', message)
 
     def add_action(
             self,

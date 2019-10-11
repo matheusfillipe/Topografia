@@ -739,6 +739,7 @@ class Estacas(object):
             return
         else:
             curvaView = CurvasView(self.view, self.iface, self.model.id_filename,curvas, vertices,self.model.tipo())
+            curvaView.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowCloseButtonHint)
             curvaView.accepted.connect(self.raiseView)
             curvaView.rejected.connect(self.raiseView)
             curvaView.btnRecalcular.clicked.connect(self.recalcularCurvas)

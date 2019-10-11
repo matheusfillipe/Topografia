@@ -176,6 +176,12 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         self.nextCurva()
         self.previousCurva()
 
+    def hideEvent(self, event: QtGui.QHideEvent):
+        if not event.spontaneous():
+            event.ignore()
+        else:
+            super(Curvas, self).hideEvent(event)
+
     def createLayer(self):
         if hasattr(self,"c"):
             self.c.rejected.emit()

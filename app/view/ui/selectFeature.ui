@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
+    <width>998</width>
     <height>480</height>
    </rect>
   </property>
@@ -24,6 +24,19 @@
      </property>
     </widget>
    </item>
+   <item row="4" column="0">
+    <widget class="QCheckBox" name="checkBox">
+     <property name="whatsThis">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Colocar todas as linhas na ordem em que foram criadas&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Conectar todas as linhas</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
    <item row="2" column="0">
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
@@ -38,19 +51,6 @@
        </widget>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QCheckBox" name="checkBox">
-     <property name="whatsThis">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Colocar todas as linhas na ordem em que foram criadas&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Conectar todas as linhas</string>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
     </widget>
    </item>
   </layout>

@@ -379,6 +379,12 @@ class Estacas(object):
             first = False
         return filename
 
+    def finishEdit(self):
+        l = self.view.curvaLayers[0]
+        l.commitChanges()
+        l.endEditCommand()
+        QgsProject.instance().removeMapLayer(l.id())
+
     def duplicarEstacaHorizontal(self):
         self.duplicarEstaca(False)
 
@@ -396,8 +402,8 @@ class Estacas(object):
 
         try:
             self.view.openLayers()
-            l=self.view.curvaLayers[0]
-            source=self.view.curvaLayers[0].source()
+            l = self.view.curvaLayers[0]
+            source = self.view.curvaLayers[0].source()
             curvaModel = Curvas(id_filename)
             l.commitChanges()
             l.endEditCommand()
@@ -682,7 +688,8 @@ class Estacas(object):
             self.view.fill_table(tuple(item))
         self.model.id_filename=id
         self.model.save(id)
-        self.geraCurvas(self.model.id_filename, recalcular=True)
+        if not curva:
+            self.geraCurvas(self.model.id_filename, recalcular=True)
 
         if not curva and len(self.view.curvaLayers)>0 and yesNoDialog(message="Foram detectadas curvas horizontais no traçado, deseja sobreescrever?"):
             curvas=Curvas(id_filename=self.model.id_filename)
@@ -997,15 +1004,23 @@ class Estacas(object):
         points=[]
         features=[]
         j=0
-        for i, _ in enumerate(estacas):
+        desc="T"
+        for i,_ in enumerate(estacas):
             point = QgsPointXY(float(estacas[i][4]), float(estacas[i][3]))
+            ed=estacas[i][1]
+            if ed.startswith("P") or ed.startswith("CT") or ed.startswith("ST"):
+                desc="T"
+            elif ed.startswith("TS") or ed.startswith("CS"):
+                desc="S"
+            elif ed.startswith("SC") or ed.startswith("TC"):
+                desc="C"
             if i==0:
                 points.append(point)
             else:
                 if float(estacas[i][6]) != lastAz or i == len(estacas)-1:
                     points.append(point)
                     feat=QgsFeature(fields)
-                    feat.setAttributes(["T", "T"])
+                    feat.setAttributes([desc, "Recalculado"])
                     feat.setGeometry(QgsGeometry.fromPolylineXY(points))
                     features.append(feat)
                     j+=1

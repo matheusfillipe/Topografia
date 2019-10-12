@@ -671,6 +671,7 @@ class Estacas(object):
 
 
     def recalcular(self, curva=False):
+        msgLog("Recalculando")
         self.view.comboBox.clear()
         id=self.model.id_filename
         if not curva:
@@ -681,7 +682,7 @@ class Estacas(object):
         if dados is None: return
         _, layer, dist, estaca = dados
         layer = layer if not curva else self.view.curvaLayers[0]
-
+        msgLog("Usando Layer "+layer.name())
         table = self.model.recalcular(dist, estaca, layer, ask=not curva)
         self.view.clear()
         for item in table:
@@ -690,8 +691,10 @@ class Estacas(object):
         self.model.save(id)
         if not curva:
             self.geraCurvas(self.model.id_filename, recalcular=True)
+            msgLog("Calculando traçado para o Desenho")
 
         if not curva and len(self.view.curvaLayers)>0 and yesNoDialog(message="Foram detectadas curvas horizontais no traçado, deseja sobreescrever?"):
+            msgLog("Removendo layer e curvas")
             curvas=Curvas(id_filename=self.model.id_filename)
             curvas.erase()
             self.model.removeGeoPackage(self.model.getNameFromId(self.model.id_filename))

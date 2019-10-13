@@ -749,6 +749,7 @@ class Estacas(object):
             curvaView.btnTable.clicked.connect(self.viewCurvaZoom)
             self.curvaView=curvaView
             self.view.showMinimized()
+            self.view.chview=curvaView
             self.curvaView.show()
             self.raiseWindow(self.curvaView)
 

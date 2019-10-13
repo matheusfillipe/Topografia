@@ -1246,6 +1246,14 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
             else:
                 table.setColumnWidth(columnNum, int(tableSize / numberOfColumns))
 
+    def event(self, event: QtCore.QEvent):
+        if event.type() == QtCore.QEvent.WindowStateChange and self.windowState() & QtCore.Qt.WindowMinimized and hasattr(self, "chview"):
+            view=self.chview
+#                view.show()
+            view.setWindowState(view.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+            view.activateWindow()
+        return super(Estacas, self).event(event)
+
     def exec_(self):
         self.point=False
         self.setCopy()

@@ -181,6 +181,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
             event.ignore()
         else:
             super(Curvas, self).hideEvent(event)
+            
 
     def createLayer(self):
         if hasattr(self,"c"):

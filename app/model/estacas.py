@@ -13,7 +13,7 @@ from qgis._core import QgsPoint, QgsProject, QgsVectorFileWriter, QgsPointXY
 from ..controller.Geometria.Figure import prismoide
 from ..model.config import extractZIP, Config, compactZIP
 from ..model.curvas import Curvas
-from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation, pointToWGS84, roundFloat2str
+from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation, pointToWGS84, roundFloat2str, msgLog
 from ..view.estacas import SelectFeatureDialog
 
 
@@ -771,6 +771,7 @@ class Estacas(object):
     def saveLayer(self, path):
         from pathlib import Path
         import shutil
+        msgLog("Armazenando layer em "+path)
         path=Path(path.split('|layername=')[0])
         extractZIP(Config.fileName)
         for p in Path(Config.instance().TMP_DIR_PATH+"tmp/data/").rglob("*"):

@@ -940,10 +940,9 @@ class EstacasCv(QtWidgets.QDialog):
                 self.parent.model.saveLayer(path)
             except Exception as e:
                 try:
-                    from ..model.utils import msgLog
                     msgLog("Erro: " + str(e) + "  ao remover layer " + lyr.name())
                 except:
-                    pass
+                    msgLog("Erro: " + str(e))
         self.curvaLayers = []
 
 
@@ -1312,10 +1311,10 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
                 self.parent.model.saveLayer(path)
             except Exception as e:
                 try:
-                    from ..model.utils import msgLog
                     msgLog("Erro: "+str(e)+"  ao remover layer "+lyr.name())
                 except:
-                    pass
+                    msgLog("Erro: " + str(e))
+
         self.curvaLayers=[]
 
     def setCopy(self):

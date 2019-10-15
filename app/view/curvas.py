@@ -175,6 +175,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
         self.nextCurva()
         self.previousCurva()
+        self.mudancaCurva(0)
 
     def hideEvent(self, event: QtGui.QHideEvent):
         if not event.spontaneous():

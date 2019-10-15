@@ -716,8 +716,6 @@ class Estacas(object):
     def saveGeoPackage(self,name:str, poly, fields, type, driver):
         import shutil
         from pathlib import Path
-        import os
-
         extractZIP(Config.fileName)
         tmp=str(Path(self.tmpFolder()+"/"+name+".gpkg"))
         path=str(Path(Config.instance().TMP_DIR_PATH+"tmp/data/"+name+".gpkg"))
@@ -771,13 +769,23 @@ class Estacas(object):
     def saveLayer(self, path):
         from pathlib import Path
         import shutil
-        msgLog("Armazenando layer em "+path)
+        for name in dir():
+            if not name.startswith('_'):
+                del globals()[name]
+#        from qgis.core import *
         path=Path(path.split('|layername=')[0])
+        msgLog("Armazenando layer em " + path)
         extractZIP(Config.fileName)
         for p in Path(Config.instance().TMP_DIR_PATH+"tmp/data/").rglob("*"):
             if p.stem==path.stem:
-                p.unlink()
+                try:
+                    p.unlink()
+                except:
+                    msgLog("Failed to erase " + str(p) + "  at model/estacas.py saveLayer")
         for p in Path(path.parent).rglob("*"):
             shutil.copy(str(p), Config.instance().TMP_DIR_PATH+"tmp/data/")
-            p.unlink()
+            try:
+                p.unlink()
+            except:
+                msgLog("Failed to erase "+str(p)+"  at model/estacas.py saveLayer")
         compactZIP(Config.fileName)

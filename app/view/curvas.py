@@ -740,7 +740,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         v = Config.instance().velproj if new else self.txtVelocidade.value()
         #velocidade(float(i), self.classe, self.tipo)
         e_max = Config.instance().emax if new else float(self.txtEMAX.value())
-        f_max = fmax(int(v)) if new else 0 if self.txtFMAX.text()=="" else float(self.txtFMAX.text())
+        f_max = fmax(int(v))# if new else 0 if self.txtFMAX.text()=="" else float(self.txtFMAX.text())
 
         delta_val = delta(float(azi(featureToPolyline(featuresList(self.layer)[self.current_index]))),
                           float(azi(featureToPolyline(featuresList(self.layer)[self.next_index]))))

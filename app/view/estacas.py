@@ -931,22 +931,23 @@ class EstacasCv(QtWidgets.QDialog):
 
     def closeLayers(self):
         for l in self.curvaLayers:
-            lyr = l
+            lyr=l
+            name=lyr.name()
             try:
                 l.commitChanges()
                 l.endEditCommand()
-                path = l.dataProvider().dataSourceUri()
+                path=l.dataProvider().dataSourceUri()
                 QgsProject.instance().removeMapLayer(l.id())
                 self.parent.model.saveLayer(path)
                 del l
             except Exception as e:
                 try:
-                    msgLog("Erro: " + str(e) + "  ao remover layer " + lyr.name())
+                    msgLog("Erro: "+str(e)+"  ao remover layer "+name)
                     del l
                 except Exception as ee:
-                    msgLog("Erro: " + str(e)+str(ee))
-        self.curvaLayers = []
+                    msgLog("Erro: " + str(e) +" _&_  "+ str(ee))
 
+        self.curvaLayers=[]
 
     def reject(self):
         try:

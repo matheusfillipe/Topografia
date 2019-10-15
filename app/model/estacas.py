@@ -745,6 +745,14 @@ class Estacas(object):
 
     def getSavedLayers(self, name):
         from pathlib import Path
+        import shutil
+
+        try:
+            shutil.rmtree(Config.instance().TMP_DIR_PATH)
+        except Exception as e:
+            msgLog("Erro ao remover diretório temporário: "+Config.instance().TMP_DIR_PATH+"    "+str(e))
+        Path(Config.instance().TMP_DIR_PATH).mkdir(parents=True, exist_ok=True)
+
         R = [Path(self.saveLayerToPath(str(path.absolute()))) for path in extractZIP(Config.fileName)
                if (str(path).endswith(".gpkg") or str(path).endswith(".gpkg-shm") or str(path).endswith(".gpkg-wal"))
                 and Path(path).stem==name]
@@ -771,10 +779,13 @@ class Estacas(object):
         import shutil
         for name in dir():
             if not name.startswith('_'):
-                del globals()[name]
+                try:
+                    del globals()[name]
+                except:
+                    pass
 #        from qgis.core import *
         path=Path(path.split('|layername=')[0])
-        msgLog("Armazenando layer em " + path)
+        msgLog("Armazenando layer em " + str(path))
         extractZIP(Config.fileName)
         for p in Path(Config.instance().TMP_DIR_PATH+"tmp/data/").rglob("*"):
             if p.stem==path.stem:

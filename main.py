@@ -104,12 +104,17 @@ class TopoGrafia(object):
                 QCoreApplication.installTranslator(self.translator)
 
         tmp_path=pathlib.Path(cfg.instance().TMP_DIR_PATH)
+        if tmp_path.is_file():
+            try:
+                tmp_path.unlink()
+            except Exception as e:
+                msgLog("Falha ao remover arquivo: "+str(tmp_path)+"  "+str(e)+ "  Por favor, remova o arquivo deve ser removido manualmente")
         if not tmp_path.is_dir():
             tmp_path=pathlib.Path(tempfile.gettempdir() + "/" + cfg.TMP_FOLDER)
             try:
                 shutil.rmtree(str(tmp_path))
-            except:
-                pass
+            except Exception as e:
+                msgLog("Erro ao remover pasta temporária "+str(e))
             tmp_path.mkdir(parents=True, exist_ok=True)
             cfg.instance().store("TMP_DIR_PATH", str(tmp_path))
 

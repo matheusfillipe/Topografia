@@ -92,7 +92,6 @@ class TopoGrafia(object):
                 msgLog(str(e))
 
 
-
         try:
             addGoogleXYZTiles(iface, QSettings)
         except Exception as e:

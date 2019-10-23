@@ -12,14 +12,6 @@ from ..controller.threading import nongui
 DEBUG=True
 from ..controller.Geometria.Prismoide import QPrismoid
 
-try:
-    from PIL import Image
-except:
-    from platform import system
-    if system() == "Linux":
-        from ...PIL import Image
-    elif system() == "Windows":
-        from ...PILWin import Image
 
 from ..controller.perfil import Ui_Perfil, cv as CV, Ui_sessaoTipo, Ui_Bruckner
 from ..model.estacas import Estacas as EstacasModel
@@ -866,6 +858,7 @@ class Estacas(object):
 
                     except ValueError as e:
                         self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
+                        msgLog(str(e))
                         return False
                     except IndexError as e:
                         continue
@@ -886,82 +879,8 @@ class Estacas(object):
 
         except e:
             msgLog("Interpolação Falhou: "+str(e))
-            img = Image.open(filename)
-            img.size = tuple(img.tile[-1][1][2:])
-            self.img_origem = img.tag.get(33922)[3:5]
-            self.tamanho_pixel = img.tag.get(33550)[:2]
+            terreno=[]
 
-            estacas = self.estacas = self.model.load_intersect()
-            if not estacas:
-                if yesNoDialog(
-                        message="Você ainda não calculou a interseção das estacas! Quer que a sessão transversal contenha somente estacas do perfil Horizontal?"):
-                    estacas = self.estacas = self.view.get_estacas()
-                else:
-                    return
-
-            # fazer multithreading?
-            self.progressDialog.setValue(0)
-            self.progressDialog.setLoop(100, len(estacas))
-
-            for i, _ in enumerate(estacas):
-                v=[]
-                az=float(estacas[i][6])
-                perp=az+90
-                if perp>360:
-                    perp=perp-360
-
-                nsign=1
-                esign=1
-                if perp<90:
-                    nsign=1
-                    esign=1
-                elif perp<180:
-                    nsign=-1
-                    esign=1
-                elif perp<270:
-                    nsign=-1
-                    esign=-1
-                elif perp<360:
-                    nsign=1
-                    esign=-1
-
-                pointsList=[]
-
-                #TODO... tamanho pixel para plotrans?
-
-                OFFSET=Config.instance().T_OFFSET
-                for yi in range(int(-Config.instance().T_SPACING), int(Config.instance().T_SPACING+1)):
-                    y=yi*OFFSET
-
-                    yangleE=esign*y*abs(math.sin(perp*math.pi/180))*self.tamanho_pixel[0]
-                    yangleN=nsign*y*abs(math.cos(perp*math.pi/180))*self.tamanho_pixel[1]
-
-                    try:
-                        xPoint=float(float(estacas[i][4])+yangleE)
-                        yPoint=float(float(estacas[i][3])+yangleN)
-
-                        pixel = (int(abs(xPoint - self.img_origem[0]) / self.tamanho_pixel[0]),
-                                 int(abs(yPoint - self.img_origem[1]) / self.tamanho_pixel[1]))
-
-                        v.append([y,float(img.getpixel(pixel))])
-                        pointsList.append([xPoint, yPoint])
-
-                    except ValueError as e:
-                        self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
-                        return False
-                    except IndexError as e:
-                        continue
-
-                terreno.append(v)
-                self.progressDialog.increment()
-
-                if plotTrans:
-                    if index==-1:
-                        self.drawPoints(pointsList, str(i))
-                        self.drawPoint(pointsList[0], str(i))
-                    if index==i:
-                        self.drawPoints(pointsList, str(i))
-                        self.drawPoint(pointsList[0], str(i))
 
         return terreno
 
@@ -1080,9 +999,6 @@ class Estacas(object):
         self.progressDialog.show()
 
         try:
-            if not Config.instance().interpol:
-                raise 1
-
             l=False
             for l in self.iface.mapCanvas().layers():
                 if l.source() == filename:
@@ -1098,7 +1014,7 @@ class Estacas(object):
             self.progressDialog.setLoop(100, len(estacas))
 
             for i, _ in enumerate(estacas):
-                cota = ri.cotaFromTiff(layer, QgsPointXY(float(estacas[i][4]),float(estacas[i][3])))
+                cota = ri.cotaFromTiff(layer, QgsPointXY(float(estacas[i][4]),float(estacas[i][3])), interpolate=Config.instance().interpol)
                 if cota:
                     estacas[i][5] = roundFloat2str(cota)
                 else:
@@ -1107,25 +1023,7 @@ class Estacas(object):
                 self.progressDialog.increment()
 
         except Exception as e:
-            try:
-                img = Image.open(filename)
-                img.size = tuple(img.tile[-1][1][2:])
-                self.img_origem = img.tag.get(33922)[3:5]
-                self.tamanho_pixel = img.tag.get(33550)[:2]
-                self.estacas = self.view.get_estacas()
-                estacas = self.estacas
-
-                self.progressDialog.setValue(0)
-                self.progressDialog.setLoop(100, len(estacas))
-
-                # fazer multithreading
-                for i, _ in enumerate(estacas):
-                        pixel = (int(abs(float(estacas[i][4]) - self.img_origem[0]) / self.tamanho_pixel[0]),
-                                 int(abs(float(estacas[i][3]) - self.img_origem[1]) / self.tamanho_pixel[1]))
-                        estacas[i][5] = "%f" % img.getpixel(pixel)
-                        self.progressDialog.increment()
-
-            except Exception as e:
+                msgLog("TasterInterpolator failed with "+str(e))
                 from osgeo import gdal
                 dataset = gdal.Open(filename, gdal.GA_ReadOnly)
                 for x in range(1, dataset.RasterCount + 1):
@@ -1148,30 +1046,16 @@ class Estacas(object):
                     except Exception as e:
                         #self.drawEstacas(estacas)
                         self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
-                        return
+                        msgLog("Erro: "+str(e))
+                        break
 
+        self.progressDialog.close()
         self.model.table = estacas
         self.model.save(self.model.id_filename)
         self.openEstaca(False)
         self.progressDialog.close()
 
 
-    def obterCotasThread(self, estacas, inicio=0, fim=None):
-
-        for i in range(inicio, fim):
-            # fix_print_with_import
-            print(i)
-            try:
-                pixel = (int(abs(float(estacas[i][4]) - self.img_origem[0]) / self.tamanho_pixel[0]),
-                         int(abs(float(estacas[i][3]) - self.img_origem[1]) / self.tamanho_pixel[1]))
-                self.estacas[i][5] = "%f" % img.getpixel(pixel)
-            except:
-                self.terminou += 1
-                self.preview.error(u"GeoTIFF não compativel com a coordenada!!!")
-                return
-        # fix_print_with_import
-        print("Terminou")
-        self.terminou += 1
 
     def obterCotasPC3(self):
 

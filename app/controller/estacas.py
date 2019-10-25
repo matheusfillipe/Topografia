@@ -1015,7 +1015,7 @@ class Estacas(object):
 
             for i, _ in enumerate(estacas):
                 cota = ri.cotaFromTiff(layer, QgsPointXY(float(estacas[i][4]),float(estacas[i][3])), interpolate=Config.instance().interpol)
-                if cota:
+                if cota>=0:
                     estacas[i][5] = roundFloat2str(cota)
                 else:
                     self.preview.error(u"Pontos do traçado estão fora do raster selecionado!!!")

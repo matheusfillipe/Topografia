@@ -2,6 +2,7 @@ from collections import defaultdict
 
 Kmin = defaultdict(dict)
 Kdes = defaultdict(dict)
+listedVels=[30,40,50,60,70,80,90,100,120]
 
 Kmin[30][False]=2
 Kmin[30][True]=4

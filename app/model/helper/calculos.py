@@ -11,6 +11,25 @@ def delta(azimutePrev, azimuteCurrent):
         res = 360 - res
     return res
 
+def vmedia(x):
+    terms = [
+        1.7995760048853219e+002,
+        -1.9589809033622782e+001,
+        9.7608162682466526e-001,
+        -2.4742990072266831e-002,
+        3.5898025026505798e-004,
+        -2.9860942431386416e-006,
+        1.3228446165447730e-008,
+        -2.4183434420566437e-011
+    ]
+
+    t = 1
+    r = 0
+    for c in terms:
+        r += c * t
+        t *= x
+    return r
+
 
 def velocidade(i, classeProjeto, tipo):
     if i >= float(tipo[0]) and i < float(tipo[1]):

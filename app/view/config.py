@@ -64,6 +64,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.setup()
         
         self.unitsList=['m','Km','mm']
+        self.comboClasse.currentIndexChanged.connect(self.updateVelocidade)
 
         self.dataAssociationWrite = {Config.data[0]: self.units,
                                 Config.data[1]: self.txtCSV.text,
@@ -104,6 +105,9 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.dbBuild: QtWidgets.QPushButton
         self.dbBuild.clicked.connect(self.buildDb)
 
+    def updateVelocidade(self, i):
+        v=[100, 100, 80, 80, 70, 60, 40, 40]
+        self.velProj.setValue(v[i])
 
     def buildDb(self):
         if yesNoDialog(iface=self, message="Tem certeza que deseja reconstruir o banco de dados?"):

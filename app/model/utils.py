@@ -489,7 +489,6 @@ class RasterInterpolator():
     def cotaFromTiff(self, layer, p, interpolate=True):
         p = QgsCoordinateTransform(QgsProject.instance().crs(), layer.crs(), QgsProject.instance()).transform(p)
         if interpolate:
-
             b, rec, row, col = self.getBlockRecAndItemFromPointInRaster(layer, p)
             if not b:
                 return 0
@@ -519,11 +518,19 @@ class RasterInterpolator():
 
             return sum(v * i for v, i in zip(V, I)) / sum(I)
 
-
-        v = layer.dataProvider().sample(p, 1)
-        if layer.extent().contains(p) and v[1]:
-            return v[0]
         else:
-            return 0
+            v = layer.dataProvider().sample(p, 1)
+            try:
+                if v[1]:
+                    return v[0]
+                else:
+                    return 0
+            except:
+                return 0
+    #
+    #        if layer.extent().contains(p) and v[1]:
+    #            return v[0]
+    #        else:
+    #            return 0
 
 

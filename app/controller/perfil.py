@@ -7,6 +7,7 @@ import numpy as np
 from PyQt5.QtCore import QPointF
 from qgis.PyQt import QtGui
 
+from ..model.helper.calculos import vmedia, fmax
 from ..model import constants
 from ..model.utils import *
 from ..view.estacas import cvEdit, closeDialog, rampaDialog, QgsMessageLog, ApplyTransDialog, SetCtAtiDialog, \
@@ -171,7 +172,6 @@ class cvEditDialog(cvEdit):
             self.groupBox_2.setEnabled(True)
         except AttributeError:
             self.handle.curve = cv(self.i1, self.i2, 0, self.handle.pos(), self.getHandlePos(i-1))
-            #self.uiLutilizado.setText(str(self.handle.curve.L))
 
         self.initialCurve = cv(self.handle.curve.i1, self.handle.curve.i2, self.handle.curve.L, self.handle.curve.handlePos, self.handle.curve.lastHandlePos)
         self.uiLutilizado.valueChanged.connect(self.updateL)
@@ -191,6 +191,16 @@ class cvEditDialog(cvEdit):
         self.shortcut2 = QtWidgets.QShortcut(QtGui.QKeySequence.MoveToPreviousChar, self)
         self.shortcut1.activated.connect(self.nextVertex)
         self.shortcut2.activated.connect(self.previousVertex)
+        self.velproj.valueChanged.connect(lambda: self.redefineUI(self.elm))
+        self.generateAll.clicked.connect(self.generateAllC)
+        
+    def generateAllC(self):
+        self.verticeCb.setCurrentIndex(1)
+        while self.nextBtn.isEnabled():
+            self.nextVertex()
+            self.updateL()
+        self.updateL()
+
 
     def nextVertex(self):
         if self.nextBtn.isEnabled():
@@ -214,7 +224,7 @@ class cvEditDialog(cvEdit):
         self.uicota.setValidator(QtGui.QDoubleValidator())
         self.uihorizontal1.setValidator(QtGui.QDoubleValidator())
         self.uihorizontal2.setValidator(QtGui.QDoubleValidator())
-#        self.uiLutilizado.setValidator(QtGui.QDoubleValidator())
+
         self.uiL.setValidator(QtGui.QDoubleValidator())
 
 
@@ -286,8 +296,9 @@ class cvEditDialog(cvEdit):
 
     def updateL(self):
         try:
-            if not self.isBeingModified:  
+            if not self.isBeingModified:
                 self.Lutilizado=float(self.uiLutilizado.value())
+                self.uif.setText(('{:0.3e}'.format(self.G / (2 * float(self.Lutilizado)))))
                 self.handle.curve.update(self.i1, self.i2, self.Lutilizado,self.getHandlePos(self.i), self.getHandlePos(self.i-1))
                 self.roi.plotWidget.addItem(self.handle.curve.curve)
 
@@ -300,6 +311,7 @@ class cvEditDialog(cvEdit):
 
 
     def redefineUI(self, elm):
+        self.elm=elm
         self.isBeingModified=True
         i=self.i
         roi=self.roi
@@ -320,27 +332,57 @@ class cvEditDialog(cvEdit):
         self.uiG.setText(longRoundFloat2str(self.G))
         self.uicota.setText(roundFloat2str(self.cota))
 
-
+        concave=False
         if self.G > 0:
             self.uiCurveType.setText("Côncava")
+            concave=True
         else:
             self.uiCurveType.setText("Convexa")
 
         g=self.G
-        velproj=self.roi.perfil.velProj
-        Kmin=constants.Kmin[velproj][self.G>0]
-        Kdes=constants.Kdes[velproj][self.G>0]
 
+        if self.velproj.value()==0:
+            v=velproj = Config.instance().velproj
+        else:
+            v=velproj=self.velproj.value()
+
+        vv = self.roi.perfil.velProj
+
+        self.velproj.setValue(v)
+        Kmin=constants.Kmin[min(max(30,(round(velproj/10)*10)),120)][self.G>0]
+        Kdes=constants.Kdes[min(max(30,(round(velproj/10)*10)),120)][self.G>0]
+        dp=0.7*vmedia(v)+vmedia(v)**2/(255*(fmax(v)))
+        self.uiDp.setText(roundFloat2str(dp))
         self.uiKmin.setText(roundFloat2str(Kmin))
         self.uiKdes.setText(roundFloat2str(Kdes))
+        self.uiLutilizado : QtWidgets.QDoubleSpinBox
+        self.uiLutilizado.setSingleStep(Config.instance().DIST)
+        l1=0
+        l2=0
+        if not concave:
+            l1=max(0,abs(self.G)*dp**2/412)
+            l2=max(0,2*dp-412/self.G)
+        else:
+            l1=max(0,abs(self.G)*dp**2/(122+3.5*dp))
+            l2=max(0,2*dp-(122+3.5*dp)/abs(self.G))
+
+        self.lmin1 : QtWidgets.QLabel
+        self.lmin2 : QtWidgets.QLabel
+
+        self.lmin1.setText(roundFloat2str(l1))
+        self.lmin2.setText(roundFloat2str(l2))
+        lsmin= l1 if l1>=dp else l2
 
         if self.Lutilizado==0:
-            self.Lutilizado=float(roundUpFloat2str(Kdes*abs(g)))
+            dist=Config.instance().DIST
+            self.Lutilizado=max(.6*v, Kmin*abs(g), lsmin)
+            self.Lutilizado=self.Lutilizado+dist-self.Lutilizado % dist
 
-        self.uif.setText(('{:0.3e}'.format(g/(2*float(self.Lutilizado)))))
+        self.uif.setText(('{:0.3e}'.format(self.G/(2*float(self.Lutilizado)))))
         self.uiLmin.setText(roundFloat2str(Kmin*abs(g)))
         self.uiLdes.setText(roundFloat2str(Kdes*abs(g)))
-        self.uiLutilizado.setValue(float(self.Lutilizado))
+
+        self.uiLutilizado.setValue(self.Lutilizado)
         self.uiL.setText(str(velproj*.6))
 
         self.isBeingModified = False
@@ -348,7 +390,12 @@ class cvEditDialog(cvEdit):
         self.roi.update()
 
         try:
-            if self.getHandlePos(self.i).x()+self.Lutilizado/2 > self.getHandlePos(self.i+1).x()-self.roi.handles[self.i+1]['item'].curve.L/2 or self.getHandlePos(self.i).x()-self.Lutilizado/2 < self.getHandlePos(self.i-1).x()+self.roi.handles[self.i-1]['item'].curve.L/2:
+            self.uiAlertaLb: QtWidgets.QLabel
+            if v > vv:
+                self.uiAlertaLb.setText(roundFloat2str(v) + ">" + roundFloat2str(vv) + "!")
+                self.uiAlertaLb.setToolTip(
+                    "A velocidade de projeto configurada é menor que a velocidade de projeto para esse perfil")
+            elif self.getHandlePos(self.i).x()+self.Lutilizado/2 > self.getHandlePos(self.i+1).x()-self.roi.handles[self.i+1]['item'].curve.L/2 or self.getHandlePos(self.i).x()-self.Lutilizado/2 < self.getHandlePos(self.i-1).x()+self.roi.handles[self.i-1]['item'].curve.L/2:
                 self.uiAlertaLb.setText("Alerta: Sobreposição de curvas!")
             else:
                 self.uiAlertaLb.setText("")

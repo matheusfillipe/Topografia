@@ -1454,7 +1454,7 @@ class rampaDialog(QtWidgets.QDialog):
         Incl=QtWidgets.QDoubleSpinBox()
         Incl.setMaximum(100.0)
         Incl.setMinimum(-100.0)
-        Incl.setSingleStep(.01)
+        Incl.setSingleStep(.1)
         compr=QtWidgets.QDoubleSpinBox()
         compr.setMaximum(1000000000.0)
         compr.setMinimum(0.0)
@@ -1590,9 +1590,9 @@ class rampaDialog(QtWidgets.QDialog):
     def updateIncl(self):
         try:
             if not self.isBeingModified:
-               self.Incl=round(float(self.InclText.value()), 2)
-               self.cota=round(np.sin(np.deg2rad(self.Incl))*self.compr+self.h1.pos().y(), 2)
-               self.abscissa=round(np.cos(np.deg2rad(self.Incl))*self.compr+self.h1.pos().x(), 2)
+               self.Incl=float(np.arctan(self.InclText.value()/100))
+               self.cota=round(np.sin((self.Incl))*self.compr+self.h1.pos().y(), 2)
+               self.abscissa=round(np.cos((self.Incl))*self.compr+self.h1.pos().x(), 2)
                self.update()
                self.redefineUI(4)
         except ValueError:

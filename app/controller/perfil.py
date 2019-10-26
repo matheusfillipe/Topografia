@@ -303,14 +303,14 @@ class cvEditDialog(cvEdit):
                 self.uif.setText(('{:0.6e}'.format(self.G / (2 * float(self.Lutilizado)))))
                 self.handle.curve.update(self.i1, self.i2, self.Lutilizado,self.getHandlePos(self.i), self.getHandlePos(self.i-1))
                 self.roi.plotWidget.addItem(self.handle.curve.curve)
-
+                self.updateAlert()
         except ValueError:
             pass
 
 
     def update(self):
         self.roi.handles[self.i]["item"].setPos(self.horizontal, self.cota)
-
+        self.updateAlert()
 
     def redefineUI(self, elm):
         self.elm=elm
@@ -356,10 +356,8 @@ class cvEditDialog(cvEdit):
         fmax = constants.f[min(max(30,(round(velproj/10)*10)),120)]
         #dp=0.7*vmedia(v)+vmedia(v)**2/(255*(fmax))
         dp=0.7*v+v**2/(255*(fmax))
-
         self.uiDp.setText(shortFloat2String(dp))
-        self.uiKmin.setText(shortFloat2String(Kmin))
-        self.uiKdes.setText(shortFloat2String(Kdes))
+
         self.uiLutilizado : QtWidgets.QDoubleSpinBox
         self.uiLutilizado.setSingleStep(Config.instance().DIST)
         l1=0
@@ -385,7 +383,6 @@ class cvEditDialog(cvEdit):
 
         self.uif.setText(('{:0.6e}'.format(self.G/(2*float(self.Lutilizado)))))
         self.uiLmin.setText(shortFloat2String(Kmin*abs(g)))
-        self.uiLdes.setText(shortFloat2String(Kdes*abs(g)))
 
         self.uiLutilizado.setValue(self.Lutilizado)
         self.uiL.setText(shortFloat2String(velproj*.6))
@@ -395,6 +392,24 @@ class cvEditDialog(cvEdit):
 
         self.roi.update()
 
+        txt="Cota"
+        self.cotaLabel_6.setText(txt+" V"+str(i-1)+ ":")
+        self.cotaLabel.setText(txt+" V"+str(i)+":")
+        self.cotaLabel_8.setText(txt+" V"+str(i+1)+":")
+
+        txt="Horizontal"
+        self.label_9.setText(txt + " V"+str(i-1) + "-" + "V"+str(i)+":")
+        self.label_12.setText(txt + " V"+str(i) + "-" + "V"+str(i+1)+":")
+
+        self.updateAlert()
+
+
+    def updateAlert(self):
+        vv = self.roi.perfil.velProj
+        if self.velproj.value()==0:
+            v=Config.instance().velproj
+        else:
+            v=self.velproj.value()
         try:
             self.uiAlertaLb: QtWidgets.QLabel
             if v > vv:
@@ -410,21 +425,6 @@ class cvEditDialog(cvEdit):
         except:
             pass
 
-        self.cotaLabel_19.hide()
-        self.uiLdes.hide()
-        self.uiKmin.hide()
-        self.cotaLabel_20.hide()
-        self.cotaLabel_21.hide()
-        self.uiKdes.hide()
-
-        txt="Cota"
-        self.cotaLabel_6.setText(txt+" V"+str(i-1)+ ":")
-        self.cotaLabel.setText(txt+" V"+str(i)+":")
-        self.cotaLabel_8.setText(txt+" V"+str(i+1)+":")
-
-        txt="Horizontal"
-        self.label_9.setText(txt + " V"+str(i-1) + "-" + "V"+str(i)+":")
-        self.label_12.setText(txt + " V"+str(i) + "-" + "V"+str(i+1)+":")
 
 
     def updateVerticesCb(self):

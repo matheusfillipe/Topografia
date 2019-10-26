@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>799</width>
-    <height>667</height>
+    <width>765</width>
+    <height>651</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -536,7 +536,7 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="2" rowspan="10">
+      <item row="4" column="2" rowspan="9">
        <widget class="Line" name="line_2">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
@@ -678,6 +678,12 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -784,7 +790,7 @@
         </item>
        </layout>
       </item>
-      <item row="12" column="0" rowspan="2" colspan="2">
+      <item row="11" column="0" rowspan="2" colspan="2">
        <layout class="QHBoxLayout" name="horizontalLayout_20">
         <item>
          <layout class="QVBoxLayout" name="verticalLayout">
@@ -888,7 +894,14 @@
         </item>
        </layout>
       </item>
-      <item row="8" column="3" rowspan="6">
+      <item row="3" column="0" colspan="3">
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="3" rowspan="5">
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <widget class="QPushButton" name="viewCurveBtn">
@@ -938,7 +951,7 @@
         </property>
        </widget>
       </item>
-      <item row="10" column="0">
+      <item row="9" column="0">
        <widget class="QLabel" name="label_10">
         <property name="font">
          <font>
@@ -949,97 +962,6 @@
          <string>Critério da distância de visibilidade:</string>
         </property>
        </widget>
-      </item>
-      <item row="6" column="1" rowspan="4">
-       <layout class="QVBoxLayout" name="verticalLayout_4">
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_13">
-          <item>
-           <widget class="QLabel" name="cotaLabel_19">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>L des:</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="uiLdes">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_28">
-          <item>
-           <widget class="QLabel" name="cotaLabel_20">
-            <property name="text">
-             <string>Kmin:</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="uiKmin">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_29">
-          <item>
-           <widget class="QLabel" name="cotaLabel_21">
-            <property name="text">
-             <string>Kdes:</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="uiKdes">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
       </item>
       <item row="6" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -1078,13 +1000,6 @@
         </item>
        </layout>
       </item>
-      <item row="3" column="0" colspan="3">
-       <widget class="Line" name="line">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
      </layout>
     </widget>
    </item>
@@ -1105,8 +1020,6 @@
   <tabstop>uiCurveType</tabstop>
   <tabstop>uif</tabstop>
   <tabstop>uiL</tabstop>
-  <tabstop>uiKmin</tabstop>
-  <tabstop>uiKdes</tabstop>
   <tabstop>uihorizontal1</tabstop>
   <tabstop>uicota</tabstop>
  </tabstops>

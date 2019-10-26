@@ -636,7 +636,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
             h1 = segment.handles[0]['item']
             h2 = segment.handles[1]['item']
             i = self.segments.index(segment)
-            h3 = self.addRotateHandle(pos, pos, index=self.indexOfHandle(h2))
+            h3 = self.addFreeHandle(pos, index=self.indexOfHandle(h2))
             self.addSegment(h3, h2, index=i+1)
             segment.replaceHandle(h2, h3)
             self.wasModified.emit()

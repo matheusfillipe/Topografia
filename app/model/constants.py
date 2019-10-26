@@ -2,7 +2,34 @@ from collections import defaultdict
 
 Kmin = defaultdict(dict)
 Kdes = defaultdict(dict)
+f = defaultdict(dict)
+amax = defaultdict(dict)
+
 listedVels=[30,40,50,60,70,80,90,100,120]
+
+amax[30]=1.4
+amax[40]=2.5
+amax[50]=3.9
+amax[60]=5.7
+amax[70]=7.7
+amax[80]=10.1
+amax[90]=12.8
+amax[100]=15.7
+amax[110]=19.1
+amax[120]=22.7
+
+
+
+f[30]=0.4
+f[40]=0.37
+f[50]=0.35
+f[60]=.33
+f[70]=.31
+f[80]=.3
+f[90]=.29
+f[100]=.28
+f[110]=.25
+f[120]=.25
 
 Kmin[30][False]=2
 Kmin[30][True]=4

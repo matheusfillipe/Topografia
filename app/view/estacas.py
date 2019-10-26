@@ -1427,12 +1427,13 @@ class closeDialog(QtWidgets.QDialog):
 
 
 class rampaDialog(QtWidgets.QDialog):
-    def __init__(self, roi, segment, pos):
+    def __init__(self, roi, segment, pos, index=1):
         super(rampaDialog, self).__init__(None)
         self.setWindowTitle(u"Modificar Rampa")
         self.roi=roi
         self.segment=segment
         self.pos=pos
+        self.index=index
         self.setupUI()
 
 
@@ -1452,9 +1453,9 @@ class rampaDialog(QtWidgets.QDialog):
         label=QtWidgets.QLabel("Modificar Rampa")
 
         Incl=QtWidgets.QDoubleSpinBox()
-        Incl.setMaximum(100.0)
-        Incl.setMinimum(-100.0)
-        Incl.setSingleStep(.1)
+        Incl.setMaximum(99.99)
+        Incl.setMinimum(-99.99)
+        Incl.setSingleStep(.05)
         compr=QtWidgets.QDoubleSpinBox()
         compr.setMaximum(1000000000.0)
         compr.setMinimum(0.0)
@@ -1470,9 +1471,10 @@ class rampaDialog(QtWidgets.QDialog):
 
         InclLbl=QtWidgets.QLabel(u"Inclinação: ")
         posInclLbl=QtWidgets.QLabel(u"%")
-        comprLbl=QtWidgets.QLabel(u"Comprimento: ")
+        comprLbl=QtWidgets.QLabel(u"Distância inclinada: ")
         poscomprLbl=QtWidgets.QLabel(u"m")
-        cotaLbl=QtWidgets.QLabel(u"Cota:      ")
+        cotaLbl=QtWidgets.QLabel(u"Cotas: V"+str(self.index-1)+"")
+        cotaLbl2=QtWidgets.QLabel(u"V"+str(self.index))
         poscotaLbl=QtWidgets.QLabel(u"m")
         abscissalbl=QtWidgets.QLabel(u"Distância Horizontal: ")
         posabscissaLbl=QtWidgets.QLabel(u"m")
@@ -1493,6 +1495,7 @@ class rampaDialog(QtWidgets.QDialog):
 
         H1layout.addWidget(cotaLbl)
         H1layout.addWidget(cota2)
+        H1layout.addWidget(cotaLbl2)
         H1layout.addWidget(cota)
         H1layout.addWidget(poscotaLbl)
         H1layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
@@ -1505,7 +1508,7 @@ class rampaDialog(QtWidgets.QDialog):
         H2layout.addWidget(InclLbl)
         H2layout.addWidget(Incl)
         H2layout.addWidget(posInclLbl)
-        H2layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
+        H2layout.addItem(QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding))
 
         H2layout.addWidget(abscissalbl)
         H2layout.addWidget(abscissa)
@@ -1602,7 +1605,6 @@ class rampaDialog(QtWidgets.QDialog):
     def update(self): 
 
         self.h2.setPos(self.abscissa, self.cota)
-
 
         if self.firstHandle == self.h2:
             self.firstHandle.setPos(self.initialPos[1].x(),self.cota)   

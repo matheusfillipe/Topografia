@@ -350,6 +350,9 @@ def roundFloat(f:float):
 def roundFloatShort(f):
     return round(f,1)
 
+def shortFloat2String(f):
+    return str(round(f,2))
+
 def formatValue(value):
     try:
         if int(float(value))==float(value): #value is a int

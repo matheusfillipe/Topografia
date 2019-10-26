@@ -177,8 +177,8 @@ class cvEditDialog(cvEdit):
         self.uiLutilizado.valueChanged.connect(self.updateL)
         self.addCurveBtn.clicked.connect(self.updateL)
 
-        self.uicota1.setText(roundFloat2str(self.getHandlePos(i-1).y()))
-        self.uicota2.setText(roundFloat2str(self.getHandlePos(i+1).y()))
+        self.uicota1.setText(shortFloat2String(self.getHandlePos(i-1).y()))
+        self.uicota2.setText(shortFloat2String(self.getHandlePos(i+1).y()))
 
         self.setupValidators()
         self.redefineUI(-10)
@@ -194,11 +194,13 @@ class cvEditDialog(cvEdit):
         self.velproj.valueChanged.connect(lambda: self.redefineUI(self.elm))
         self.generateAll.clicked.connect(self.generateAllC)
         
+        self.generateAll.hide()
+        
     def generateAllC(self):
         self.verticeCb.setCurrentIndex(1)
         while self.nextBtn.isEnabled():
-            self.nextVertex()
             self.updateL()
+            self.nextVertex()
         self.updateL()
 
 
@@ -298,7 +300,7 @@ class cvEditDialog(cvEdit):
         try:
             if not self.isBeingModified:
                 self.Lutilizado=float(self.uiLutilizado.value())
-                self.uif.setText(('{:0.3e}'.format(self.G / (2 * float(self.Lutilizado)))))
+                self.uif.setText(('{:0.6e}'.format(self.G / (2 * float(self.Lutilizado)))))
                 self.handle.curve.update(self.i1, self.i2, self.Lutilizado,self.getHandlePos(self.i), self.getHandlePos(self.i-1))
                 self.roi.plotWidget.addItem(self.handle.curve.curve)
 
@@ -321,19 +323,19 @@ class cvEditDialog(cvEdit):
         else:
             self.i1=self.getSegIncl(i-1,i)
             self.i2=self.getSegIncl(i,i+1)
-            self.G=self.i2-self.i1
+            self.G=self.i1-self.i2
 
         self.horizontal1=self.horizontal-self.getHandlePos(i-1).x()
         self.horizontal2=self.getHandlePos(i+1).x()-self.horizontal
-        self.uihorizontal1.setText(roundFloat2str(self.horizontal1))
-        self.uihorizontal2.setText(roundFloat2str(self.horizontal2))
-        self.uii1.setText(str(self.i1))
-        self.uii2.setText(str(self.i2))
-        self.uiG.setText(longRoundFloat2str(self.G))
-        self.uicota.setText(roundFloat2str(self.cota))
+        self.uihorizontal1.setText(shortFloat2String(self.horizontal1))
+        self.uihorizontal2.setText(shortFloat2String(self.horizontal2))
+        self.uii1.setText(shortFloat2String(self.i1))
+        self.uii2.setText(shortFloat2String(self.i2))
+        self.uiG.setText(shortFloat2String(self.G))
+        self.uicota.setText(shortFloat2String(self.cota))
 
         concave=False
-        if self.G > 0:
+        if self.G < 0:
             self.uiCurveType.setText("Côncava")
             concave=True
         else:
@@ -349,12 +351,15 @@ class cvEditDialog(cvEdit):
         vv = self.roi.perfil.velProj
 
         self.velproj.setValue(v)
-        Kmin=constants.Kmin[min(max(30,(round(velproj/10)*10)),120)][self.G>0]
+        Kmin = velproj**2/(1296*9.8*1.5/100) #constants.Kmin[min(max(30,(round(velproj/10)*10)),120)][self.G>0]
         Kdes=constants.Kdes[min(max(30,(round(velproj/10)*10)),120)][self.G>0]
-        dp=0.7*vmedia(v)+vmedia(v)**2/(255*(fmax(v)))
-        self.uiDp.setText(roundFloat2str(dp))
-        self.uiKmin.setText(roundFloat2str(Kmin))
-        self.uiKdes.setText(roundFloat2str(Kdes))
+        fmax = constants.f[min(max(30,(round(velproj/10)*10)),120)]
+        #dp=0.7*vmedia(v)+vmedia(v)**2/(255*(fmax))
+        dp=0.7*v+v**2/(255*(fmax))
+
+        self.uiDp.setText(shortFloat2String(dp))
+        self.uiKmin.setText(shortFloat2String(Kmin))
+        self.uiKdes.setText(shortFloat2String(Kdes))
         self.uiLutilizado : QtWidgets.QDoubleSpinBox
         self.uiLutilizado.setSingleStep(Config.instance().DIST)
         l1=0
@@ -369,8 +374,8 @@ class cvEditDialog(cvEdit):
         self.lmin1 : QtWidgets.QLabel
         self.lmin2 : QtWidgets.QLabel
 
-        self.lmin1.setText(roundFloat2str(l1))
-        self.lmin2.setText(roundFloat2str(l2))
+        self.lmin1.setText(shortFloat2String(l1))
+        self.lmin2.setText(shortFloat2String(l2))
         lsmin= l1 if l1>=dp else l2
 
         if self.Lutilizado==0:
@@ -378,12 +383,13 @@ class cvEditDialog(cvEdit):
             self.Lutilizado=max(.6*v, Kmin*abs(g), lsmin)
             self.Lutilizado=self.Lutilizado+dist-self.Lutilizado % dist
 
-        self.uif.setText(('{:0.3e}'.format(self.G/(2*float(self.Lutilizado)))))
-        self.uiLmin.setText(roundFloat2str(Kmin*abs(g)))
-        self.uiLdes.setText(roundFloat2str(Kdes*abs(g)))
+        self.uif.setText(('{:0.6e}'.format(self.G/(2*float(self.Lutilizado)))))
+        self.uiLmin.setText(shortFloat2String(Kmin*abs(g)))
+        self.uiLdes.setText(shortFloat2String(Kdes*abs(g)))
 
         self.uiLutilizado.setValue(self.Lutilizado)
-        self.uiL.setText(str(velproj*.6))
+        self.uiL.setText(shortFloat2String(velproj*.6))
+        self.uiff.setText(shortFloat2String(fmax))
 
         self.isBeingModified = False
 
@@ -397,10 +403,28 @@ class cvEditDialog(cvEdit):
                     "A velocidade de projeto configurada é menor que a velocidade de projeto para esse perfil")
             elif self.getHandlePos(self.i).x()+self.Lutilizado/2 > self.getHandlePos(self.i+1).x()-self.roi.handles[self.i+1]['item'].curve.L/2 or self.getHandlePos(self.i).x()-self.Lutilizado/2 < self.getHandlePos(self.i-1).x()+self.roi.handles[self.i-1]['item'].curve.L/2:
                 self.uiAlertaLb.setText("Alerta: Sobreposição de curvas!")
+                self.uiAlertaLb.setToolTip("")
             else:
                 self.uiAlertaLb.setText("")
+                self.uiAlertaLb.setToolTip("")
         except:
             pass
+
+        self.cotaLabel_19.hide()
+        self.uiLdes.hide()
+        self.uiKmin.hide()
+        self.cotaLabel_20.hide()
+        self.cotaLabel_21.hide()
+        self.uiKdes.hide()
+
+        txt="Cota"
+        self.cotaLabel_6.setText(txt+" V"+str(i-1)+ ":")
+        self.cotaLabel.setText(txt+" V"+str(i)+":")
+        self.cotaLabel_8.setText(txt+" V"+str(i+1)+":")
+
+        txt="Horizontal"
+        self.label_9.setText(txt + " V"+str(i-1) + "-" + "V"+str(i)+":")
+        self.label_12.setText(txt + " V"+str(i) + "-" + "V"+str(i+1)+":")
 
 
     def updateVerticesCb(self):
@@ -408,7 +432,7 @@ class cvEditDialog(cvEdit):
         self.verticeCb: QtWidgets.QComboBox
         self.verticeCb.clear()
         for i in range(1, len(self.roi.handles)):
-            self.verticeCb.addItem(str(i))
+            self.verticeCb.addItem(str(i-1))
 
         try:
             self.verticeCb.currentIndexChanged.disconnect()
@@ -527,7 +551,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
 
 
     def updateLabel(self, handle, i):
-        msg="V" + str(i)
+        msg="V" + str(i-1)
         i=i-1
         text: pg.TextItem
         if i>=len(self.labels):
@@ -602,7 +626,8 @@ class CustomPolyLineROI(pg.PolyLineROI):
         else:
             raise Exception("Either an event or a position must be given.")
         if ev.button() == QtCore.Qt.RightButton:
-            d = rampaDialog(self, segment, pos)
+            i = self.segments.index(segment)
+            d = rampaDialog(self, segment, pos, i+2)
             d.exec_()
             self.wasModified.emit()
             self.sigRegionChangeFinished.emit(self)
@@ -611,7 +636,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
             h1 = segment.handles[0]['item']
             h2 = segment.handles[1]['item']
             i = self.segments.index(segment)
-            h3 = self.addFreeHandle(pos, index=self.indexOfHandle(h2))
+            h3 = self.addRotateHandle(pos, pos, index=self.indexOfHandle(h2))
             self.addSegment(h3, h2, index=i+1)
             segment.replaceHandle(h2, h3)
             self.wasModified.emit()
@@ -852,7 +877,6 @@ class brucknerRoi(CustomPolyLineROI):
         for i in range(start, len(self.handles) - 1):
             self.addSegment(self.handles[i]['item'], self.handles[i + 1]['item'])
             j = i + 1
-
             self.handles[j]['item'].fixedOnY = True
 
         self.handles[j]['item'].fixedOnX=True
@@ -866,25 +890,20 @@ class brucknerRoi(CustomPolyLineROI):
 
         if self.wasInitialized:
             for i in range(0, len(self.handles) - 1):
-
                 try:
                     self.handles[i]['item'].sigEditRequest.disconnect()
                 except:
                     pass
 
-
             start = -1 if self.closed else 0
-
             for i in range(start, len(self.handles) - 1):
                 j = i + 1
-
                 self.handles[j]['item'].fixedOnY = True
                 try:
                     diag = cvEditDialog(self, j)
                     diag.reset()
                 except:
                     pass
-
             self.wasInitialized = True
 
 

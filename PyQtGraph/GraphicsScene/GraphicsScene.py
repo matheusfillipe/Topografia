@@ -2,6 +2,8 @@ from past.builtins import cmp
 from builtins import map
 from builtins import str
 import weakref
+
+from ...app.model.utils import msgLog
 from ..Qt import QtCore, QtGui
 from ..python2_3 import sortList, cmp
 from ..Point import Point
@@ -196,7 +198,10 @@ class GraphicsScene(QtGui.QGraphicsScene):
                 if self.sendDragEvent(ev, final=True):
                     #print "sent drag event"
                     ev.accept()
-                self.dragButtons.remove(ev.button())
+                try:
+                    self.dragButtons.remove(ev.button())
+                except:
+                    msgLog("PyqtGraph deleting error !23!")
             else:
                 cev = [e for e in self.clickEvents if int(e.button()) == int(ev.button())]
                 if self.sendClickEvent(cev[0]):

@@ -1187,6 +1187,7 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.lastGreide=self.getVertices()
         self.lastCurvas=self.getCurvas()
         self.lblTipo.setText("Salvo!")
+        self.reset.emit()
     
     def getCurvas(self):
         r=[]        

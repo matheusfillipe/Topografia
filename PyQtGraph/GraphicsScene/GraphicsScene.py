@@ -206,12 +206,15 @@ class GraphicsScene(QtGui.QGraphicsScene):
                 except:
                     msgLog("PyqtGraph deleting error !23!")
             else:
-                cev = [e for e in self.clickEvents if int(e.button()) == int(ev.button())]
-                if self.sendClickEvent(cev[0]):
-                    #print "sent click event"
-                    ev.accept()
-                self.clickEvents.remove(cev[0])
-                
+                try:
+                    cev = [e for e in self.clickEvents if int(e.button()) == int(ev.button())]
+                    if self.sendClickEvent(cev[0]):
+                        #print "sent click event"
+                        ev.accept()
+                    self.clickEvents.remove(cev[0])
+                except:
+                    pass
+
         if int(ev.buttons()) == 0:
             self.dragItem = None
             self.dragButtons = []

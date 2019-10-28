@@ -533,8 +533,10 @@ class CustomPolyLineROI(pg.PolyLineROI):
         if closed is not None:
             self.closed = closed
         self.clearPoints()
-        for p in points:
-           self.addTranslateHandle(p)
+
+        for i,p in enumerate(points):
+            self.addRotateFreeHandle(p, p)
+
         start = -1 if self.closed else 0
 
         self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))

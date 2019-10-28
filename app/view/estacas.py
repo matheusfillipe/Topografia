@@ -1528,11 +1528,13 @@ class rampaDialog(QtWidgets.QDialog):
         self.comprText=compr
         self.compr=np.sqrt((h2.pos().y()-h1.pos().y())**2+(h2.pos().x()-h1.pos().x())**2)
         self.cotaText=cota
+        self.cotaText2=cota2
         self.cota=h2.pos().y()
+        self.cotaa=h1.pos().y()
         self.abscissaText=abscissa
         self.abscissa=h2.pos().x()
-        cota2.setValue(round(h1.pos().y(),2))
-        cota2.setDisabled(True)
+        cota2.setValue(round(h1.pos().y(), 2))
+        #cota2.setDisabled(True)
         cota2.setWhatsThis("Cota do ponto anterior ao seguimento")
         cota.setWhatsThis("Cota do ponto adjacente ao seguimento")
 
@@ -1543,6 +1545,7 @@ class rampaDialog(QtWidgets.QDialog):
 
         compr.valueChanged.connect(self.updateCompr)
         cota.valueChanged.connect(self.updateCota)
+        cota2.valueChanged.connect(self.updateCota)
         abscissa.valueChanged.connect(self.updateAbscissa)
         Incl.valueChanged.connect(self.updateIncl)
 
@@ -1570,6 +1573,7 @@ class rampaDialog(QtWidgets.QDialog):
         try:
             if not self.isBeingModified:  
                 self.cota=float(self.cotaText.value())
+                self.cotaa=float(self.cotaText2.value())
                 self.update()
                 self.compr=np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)
                 self.Incl=100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())
@@ -1605,6 +1609,7 @@ class rampaDialog(QtWidgets.QDialog):
     def update(self): 
 
         self.h2.setPos(self.abscissa, self.cota)
+        self.h1.setPos(self.h1.pos().x(), self.cotaa)
 
         if self.firstHandle == self.h2:
             self.firstHandle.setPos(self.initialPos[1].x(),self.cota)   

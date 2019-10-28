@@ -176,7 +176,10 @@ class GraphicsScene(QtGui.QGraphicsScene):
                     if int(ev.buttons() & btn) == 0:
                         continue
                     if int(btn) not in self.dragButtons:  ## see if we've dragged far enough yet
-                        cev = [e for e in self.clickEvents if int(e.button()) == int(btn)][0]
+                        try:
+                            cev = [e for e in self.clickEvents if int(e.button()) == int(btn)][0]
+                        except:
+                            pass
                         dist = Point(ev.scenePos() - cev.scenePos()).length()
                         if dist == 0 or (dist < self._moveDistance and now - cev.time() < self.minDragTime):
                             continue

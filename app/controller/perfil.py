@@ -362,6 +362,7 @@ class cvEditDialog(cvEdit):
         self.uiLutilizado.setSingleStep(Config.instance().DIST)
         l1=0
         l2=0
+        msgLog("Curva: "+str(self.index))
         msgLog("v: " + str(velproj))
         msgLog("kmin: " + str(Kmin))
         if not concave:
@@ -417,18 +418,24 @@ class cvEditDialog(cvEdit):
         try:
             self.uiAlertaLb: QtWidgets.QLabel
             if v > vv:
-                self.uiAlertaLb.setText(roundFloat2str(v) + ">" + roundFloat2str(vv) + "!")
-                self.uiAlertaLb.setToolTip(
-                    "A velocidade de projeto configurada é menor que a velocidade de projeto para esse perfil")
-            elif self.getHandlePos(self.i).x()+self.Lutilizado/2 > self.getHandlePos(self.i+1).x()-self.roi.handles[self.i+1]['item'].curve.L/2 or self.getHandlePos(self.i).x()-self.Lutilizado/2 < self.getHandlePos(self.i-1).x()+self.roi.handles[self.i-1]['item'].curve.L/2:
+                self.uiAlertaLb2.setText("Alerta: "+roundFloat2str(v) + ">" + roundFloat2str(vv) + "!")
+                self.uiAlertaLb2.setToolTip(
+                    "A velocidade de projeto configurada é maior que a recomendada para esse perfil")
+            else:
+                self.uiAlertaLb2.setText("")
+                self.uiAlertaLb2.setToolTip("")
+
+            if self.getHandlePos(self.i).x() + self.Lutilizado / 2 > self.getHandlePos(self.i + 1).x() -                self.roi.handles[self.i + 1]['item'].curve.L / 2 or self.getHandlePos(
+                    self.i).x() - self.Lutilizado / 2 < self.getHandlePos(self.i - 1).x() + self.roi.handles[self.i - 1][
+                     'item'].curve.L / 2:
                 self.uiAlertaLb.setText("Alerta: Sobreposição de curvas!")
                 self.uiAlertaLb.setToolTip("")
             else:
                 self.uiAlertaLb.setText("")
                 self.uiAlertaLb.setToolTip("")
-        except:
-            pass
 
+        except:
+            msgLog("Falha ao mostrar alertas")
 
 
     def updateVerticesCb(self):

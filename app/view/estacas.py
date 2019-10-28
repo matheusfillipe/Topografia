@@ -1554,10 +1554,10 @@ class rampaDialog(QtWidgets.QDialog):
         try:
             if not self.isBeingModified:
                 c=self.compr
-                self.compr=round(float(self.comprText.value()), 2)
+                self.compr=float(self.comprText.value())
                 dc=self.compr-c
-                self.cota=round(self.cota+np.sin(np.deg2rad(self.Incl))*dc, 2)
-                self.abscissa=round(self.abscissa+np.cos(np.deg2rad(self.Incl))*dc, 2)
+                self.cota=self.cota+np.sin(np.deg2rad(self.Incl))*dc
+                self.abscissa=self.abscissa+np.cos(np.deg2rad(self.Incl))*dc
                 self.update()
                 self.redefineUI(1)
 
@@ -1569,10 +1569,10 @@ class rampaDialog(QtWidgets.QDialog):
     def updateCota(self):
         try:
             if not self.isBeingModified:  
-                self.cota=round(float(self.cotaText.value()), 2)
+                self.cota=float(self.cotaText.value())
                 self.update()
-                self.compr=round(np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2), 2)
-                self.Incl=round(100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x()), 2)
+                self.compr=np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)
+                self.Incl=100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())
                 self.redefineUI(2)
         except ValueError:
             pass
@@ -1581,10 +1581,10 @@ class rampaDialog(QtWidgets.QDialog):
     def updateAbscissa(self):
         try:
             if not self.isBeingModified:
-                self.abscissa=round(float(self.abscissaText.value()), 2)
+                self.abscissa=float(self.abscissaText.value())
                 self.update()
-                self.compr=round(np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2), 2)
-                self.Incl=round(100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x()), 2)
+                self.compr=np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)
+                self.Incl=100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())
                 self.redefineUI(3)
         except ValueError:
             pass
@@ -1594,8 +1594,8 @@ class rampaDialog(QtWidgets.QDialog):
         try:
             if not self.isBeingModified:
                self.Incl=float(np.arctan(self.InclText.value()/100))
-               self.cota=round(np.sin((self.Incl))*self.compr+self.h1.pos().y(), 2)
-               self.abscissa=round(np.cos((self.Incl))*self.compr+self.h1.pos().x(), 2)
+               self.cota=np.sin((self.Incl))*self.compr+self.h1.pos().y()
+               self.abscissa=np.cos((self.Incl))*self.compr+self.h1.pos().x()
                self.update()
                self.redefineUI(4)
         except ValueError:
@@ -1608,19 +1608,19 @@ class rampaDialog(QtWidgets.QDialog):
 
         if self.firstHandle == self.h2:
             self.firstHandle.setPos(self.initialPos[1].x(),self.cota)   
-            self.Incl=round(100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())   , 2)
-            self.compr=round(np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)   , 2)
-            self.cota=round(self.h2.pos().y(), 2)
-            self.abscissa=round(self.h2.pos().x(), 2)
+            self.Incl=100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())
+            self.compr=np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)
+            self.cota=self.h2.pos().y()
+            self.abscissa=self.h2.pos().x()
             self.cotaText.setValue(float(self.cota))
             self.abscissaText.setValue(float(self.abscissa))
 
         if self.lastHandle == self.h2:
             self.lastHandle.setPos(self.initialPos[1].x(),self.cota)
-            self.Incl=round(100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x()), 2)
-            self.compr=round(np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)   , 2)
-            self.cota=round(self.h2.pos().y(), 2)
-            self.abscissa=round(self.h2.pos().x(), 2)
+            self.Incl=100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())
+            self.compr=np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)
+            self.cota=self.h2.pos().y()
+            self.abscissa=self.h2.pos().x()
             self.cotaText.setValue(float(self.cota))
             self.abscissaText.setValue(float(self.abscissa))
 
@@ -1660,7 +1660,7 @@ class rampaDialog(QtWidgets.QDialog):
 
 class ssRampaDialog(rampaDialog):
     def __init__(self, roi, segment, pos):
-        super(brucknerRampaDialog, self).__init__(roi, segment, pos)
+        super().__init__(roi, segment, pos)
         self.setWindowTitle("Modificar Elemento")
 
     def setupUI(self):

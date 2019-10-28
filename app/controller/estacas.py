@@ -641,6 +641,10 @@ class Estacas(object):
             self.progressDialog.setValue(1)
             self.openEstaca(False)
             terreno = self.obterTerrenoTIFF()
+            if not terreno:
+                return False, False, False
+            else:
+                prog=True
             self.trans=Ui_sessaoTipo(self.iface, terreno, self.model.load_intersect(), self.estacasVerticalList, greide=self.model.getGreide(self.model.id_filename), title="Transversal: "+str(self.model.getNameFromId(self.model.id_filename)))
         self.progressDialog.setValue(95)
         return prog, est, prism
@@ -648,6 +652,9 @@ class Estacas(object):
     def generateTrans(self):
         self.progressDialog.show()
         prog, est, prism = self.generateTransThread()
+        if not prog:
+            self.progressDialog.close()
+            return
         self.trans.save.connect(self.saveTrans)
         self.trans.plotar.connect(self.plotTransLayer)
         self.progressDialog.close()
@@ -1442,6 +1449,8 @@ class Estacas(object):
     def openEstacaCSV(self):
         self.view.clear()
         res = self.preview.openCSV()
+        if not res:
+            return
         file=res[0]
         if file[0] in ['', None] or res[1] in ['', None] or not (file[0].endswith('csv')): return
         filename, fileDB = file[0], res[1]

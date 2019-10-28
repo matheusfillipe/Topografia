@@ -362,9 +362,13 @@ class cvEditDialog(cvEdit):
         self.uiLutilizado.setSingleStep(Config.instance().DIST)
         l1=0
         l2=0
+        msgLog("v: " + str(velproj))
+        msgLog("kmin: " + str(Kmin))
         if not concave:
             l1=max(0,abs(self.G)*dp**2/412)
-            l2=max(0,2*dp-412/self.G)
+            msgLog("G: "+str(self.G))
+            msgLog("dp: " + str(dp))
+            l2=max(0,2*dp-412/abs(self.G))
         else:
             l1=max(0,abs(self.G)*dp**2/(122+3.5*dp))
             l2=max(0,2*dp-(122+3.5*dp)/abs(self.G))
@@ -523,8 +527,8 @@ class CustomPolyLineROI(pg.PolyLineROI):
         self.clearPoints()
 
         for p in points:
-            self.addRotateHandle(p, p)
-                      
+             self.addRotateHandle(p, p)
+             #self.addTranslateHandle(p)
         start = -1 if self.closed else 0
 
         self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))
@@ -763,6 +767,7 @@ class ssRoi(CustomPolyLineROI):
 
         for p in points:
             self.addRotateHandle(p, p)
+            #self.addTranslateHandle(p)
 
         start = -1 if self.closed else 0
 
@@ -866,6 +871,7 @@ class brucknerRoi(CustomPolyLineROI):
         first=True
         for p in points:
             self.addRotateHandle(p, p)
+          #  self.addTranslateHandle(p)
 
         start = -1 if self.closed else 0
 

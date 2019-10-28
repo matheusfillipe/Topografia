@@ -117,6 +117,9 @@
               <property name="inputMethodHints">
                <set>Qt::ImhDigitsOnly|Qt::ImhFormattedNumbersOnly|Qt::ImhPreferNumbers</set>
               </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
              </widget>
             </item>
             <item>
@@ -239,6 +242,9 @@
               <property name="toolTip">
                <string extracomment="Distância horizontal ao vértice anterior"/>
               </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
              </widget>
             </item>
             <item>
@@ -328,6 +334,9 @@
               </property>
               <property name="toolTip">
                <string extracomment="Distância horizontal ao próximo vértice "/>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -705,23 +714,23 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="uiCurveType">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
              <layout class="QHBoxLayout" name="horizontalLayout_19">
+              <item>
+               <widget class="QLineEdit" name="uiCurveType">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
               <item>
                <widget class="QLabel" name="label_5">
                 <property name="text">
@@ -765,6 +774,12 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
              </widget>
             </item>
             <item>
@@ -781,6 +796,9 @@
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -1017,10 +1035,8 @@
   <tabstop>uii1</tabstop>
   <tabstop>uii2</tabstop>
   <tabstop>uiG</tabstop>
-  <tabstop>uiCurveType</tabstop>
   <tabstop>uif</tabstop>
   <tabstop>uiL</tabstop>
-  <tabstop>uihorizontal1</tabstop>
   <tabstop>uicota</tabstop>
  </tabstops>
  <resources/>

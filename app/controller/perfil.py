@@ -362,7 +362,7 @@ class cvEditDialog(cvEdit):
         self.uiLutilizado.setSingleStep(Config.instance().DIST)
         l1=0
         l2=0
-        msgLog("Curva: "+str(self.index))
+        msgLog("Curva: "+str(self.i))
         msgLog("v: " + str(velproj))
         msgLog("kmin: " + str(Kmin))
         if not concave:

@@ -317,6 +317,7 @@ class cvEditDialog(cvEdit):
         self.isBeingModified=True
         i=self.i
         roi=self.roi
+        self.groupBox_2.setTitle("Curva Vertical: "+str(i))
 
         if i>=roi.countHandles()-1 or i==0:
             self.removeCv()
@@ -532,10 +533,8 @@ class CustomPolyLineROI(pg.PolyLineROI):
         if closed is not None:
             self.closed = closed
         self.clearPoints()
-
         for p in points:
-             self.addRotateHandle(p, p)
-             #self.addTranslateHandle(p)
+           self.addTranslateHandle(p)
         start = -1 if self.closed else 0
 
         self.handles[0]['item'].sigEditRequest.connect(lambda: self.HandleEditDialog(0))

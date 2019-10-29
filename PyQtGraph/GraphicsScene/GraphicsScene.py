@@ -3,7 +3,7 @@ from builtins import map
 from builtins import str
 import weakref
 
-from ...app.model.utils import msgLog
+
 from ..Qt import QtCore, QtGui
 from ..python2_3 import sortList, cmp
 from ..Point import Point
@@ -176,45 +176,35 @@ class GraphicsScene(QtGui.QGraphicsScene):
                     if int(ev.buttons() & btn) == 0:
                         continue
                     if int(btn) not in self.dragButtons:  ## see if we've dragged far enough yet
-                        try:
-                            cev = [e for e in self.clickEvents if int(e.button()) == int(btn)][0]
-                        except:
-                            pass
+                        cev = [e for e in self.clickEvents if int(e.button()) == int(btn)][0]
                         dist = Point(ev.scenePos() - cev.scenePos()).length()
                         if dist == 0 or (dist < self._moveDistance and now - cev.time() < self.minDragTime):
                             continue
                         init = init or (len(self.dragButtons) == 0)  ## If this is the first button to be dragged, then init=True
                         self.dragButtons.append(int(btn))
-                        
+
                 ## If we have dragged buttons, deliver a drag event
                 if len(self.dragButtons) > 0:
                     if self.sendDragEvent(ev, init=init):
                         ev.accept()
-                
+
     def leaveEvent(self, ev):  ## inform items that mouse is gone
         if len(self.dragButtons) == 0:
             self.sendHoverEvents(ev, exitOnly=True)
-                
+
     def mouseReleaseEvent(self, ev):
         if self.mouseGrabberItem() is None:
             if ev.button() in self.dragButtons:
                 if self.sendDragEvent(ev, final=True):
                     #print "sent drag event"
                     ev.accept()
-                try:
                     self.dragButtons.remove(ev.button())
-                except:
-                    msgLog("PyqtGraph deleting error !23!")
             else:
-                try:
-                    cev = [e for e in self.clickEvents if int(e.button()) == int(ev.button())]
-                    if self.sendClickEvent(cev[0]):
-                        #print "sent click event"
-                        ev.accept()
-                    self.clickEvents.remove(cev[0])
-                except:
-                    pass
-
+                cev = [e for e in self.clickEvents if int(e.button()) == int(ev.button())]
+                if self.sendClickEvent(cev[0]):
+                    #print "sent click event"
+                    ev.accept()
+                self.clickEvents.remove(cev[0])
         if int(ev.buttons()) == 0:
             self.dragItem = None
             self.dragButtons = []

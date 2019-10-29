@@ -1078,6 +1078,10 @@ class Ui_Perfil(QtWidgets.QDialog):
         for a in A:
             maxIndex=I.index(a)+1
             if a==p1:
+                if hasattr(self, "maxInclinationIndicatorLine"):
+                    self.perfilPlot.removeItem(self.maxInclinationIndicatorLine)
+                    self.maxInclinationIndicatorLine.clear()
+                    self.perfilPlot.update()
                 self.maxInclinationIndicatorLine=pg.PlotCurveItem()
                 self.maxInclinationIndicatorLine.setData([self.roi.getHandlePos(maxIndex-1).x(),self.roi.getHandlePos(maxIndex).x()],[self.roi.getHandlePos(maxIndex-1).y(), self.roi.getHandlePos(maxIndex).y()], pen=pg.mkPen("r", width=4))
                 self.perfilPlot.addItem(self.maxInclinationIndicatorLine)
@@ -1085,9 +1089,15 @@ class Ui_Perfil(QtWidgets.QDialog):
     def modifiedRoiStarted(self):
         self.roi.updateHandles()
         try:
+            self.perfilPlot.removeItem(self.maxInclinationIndicatorLine)
             self.maxInclinationIndicatorLine.clear()
-        except:
-            pass
+            self.perfilPlot.update()
+            self.vb.update()
+        except Exception as e:
+            import traceback
+            msgLog("Falha ao remover linha!")
+            msgLog(str(traceback.format_exception(None, e, e.__traceback__)))
+            
 
 
     def modifiedRoi(self):

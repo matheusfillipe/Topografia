@@ -477,6 +477,10 @@ class Estacas(object):
         self.viewCv.fill_table(tuple(table[-1]), True)
 
         self.viewCv.setWindowTitle(self.model.getNameFromId(self.model.id_filename) + ": Estacas")
+        try:
+            self.viewCv.btnGen.clicked.disconnect()
+        except:
+            pass
         self.viewCv.btnGen.clicked.connect(self.openCv)
         self.viewCv.comprimento.setText(roundFloat2str(s) + " " + Config.instance().UNITS)
         self.nextView=self.viewCv
@@ -511,18 +515,28 @@ class Estacas(object):
         estacas=self.viewCv.getEstacas()
         LH=500
         self.progressDialog.setLoop(60, LH)
-        for i, v in enumerate(estacas):  # prog=2 em ambos
-           prog=float(v[2])
-           if prog in progs:
-                h = horizontais[progs.index(float(v[2]))]
-                desc="" if h[1]=="" and v[1]=="" else h[1]+" + "+v[1]
-                verticais.append([v[0], desc, v[2], h[3], h[4], v[3], h[5], h[6]])
-           else:
-                pt=road.interpolate(prog).asPoint()
-                pt2=road.interpolate(prog+.1).asPoint()
-                verticais.append([v[0], v[1], v[2], pt.y(), pt.x(), v[3], None, azimuth(pt, pt2)])  #Não sei a cota 6
-           self.progressDialog.increment()
-           vprogs.append(prog)
+        try:
+            for i, v in enumerate(estacas):  # prog=2 em ambos
+               prog=float(v[2])
+               if prog in progs:
+                    h = horizontais[progs.index(float(v[2]))]
+                    desc="" if h[1]=="" and v[1]=="" else h[1]+" + "+v[1]
+                    verticais.append([v[0], desc, v[2], h[3], h[4], v[3], h[5], h[6]])
+               else:
+                    pt=road.interpolate(prog-.1).asPoint()
+                    pt2=road.interpolate(prog).asPoint()
+                    verticais.append([v[0], v[1], v[2], pt.y(), pt.x(), v[3], None, azimuth(pt, pt2)])  #Não sei a cota 6
+               self.progressDialog.increment()
+               vprogs.append(prog)
+        except Exception as e:
+            import traceback
+            msgLog("Erro ao gerar pontos!!!!!! ")
+            msgLog(str(traceback.format_exception(None, e, e.__traceback__)))
+            msgLog("Road: ")
+            msgLog(str(road))
+            msgLog("NA Progressiva: ")
+            msgLog(str(prog))
+            return [[]]
 
         table=verticais
         msgLog("Horizontais: " + str(time.time() - startTime) + " seconds")
@@ -1286,6 +1300,10 @@ class Estacas(object):
 
         for e in estacas:
             self.viewCv.fill_table(tuple(e), True)
+        try:
+            self.viewCv.btnGen.clicked.disconnect()
+        except:
+            pass
         self.viewCv.btnGen.clicked.connect(self.generateIntersec)
         self.nextView = self.viewCv
 

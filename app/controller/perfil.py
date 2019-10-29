@@ -349,6 +349,7 @@ class cvEditDialog(cvEdit):
         else:
             v=velproj=self.velproj.value()
 
+        self.roi.perfil.calcularGreide()
         vv = self.roi.perfil.velProj
 
         self.velproj.setValue(v)

@@ -924,7 +924,7 @@ class brucknerRoi(CustomPolyLineROI):
 
 class Ui_Perfil(QtWidgets.QDialog):
     
-    save = QtCore.pyqtSignal()
+    save = QtCore.pyqtSignal(bool)
     reset = QtCore.pyqtSignal()
 
     def __init__(self, ref_estaca, tipo, classeProjeto, greide, cvList, wintitle="Perfil Longitudinal", iface=None):
@@ -1030,8 +1030,10 @@ class Ui_Perfil(QtWidgets.QDialog):
         A.sort()
         p1=A[len(I)-1]
         maxIndex=I.index(p1)+1
-        classeProjeto = self.classeProjeto
-        if p1>=float(self.tipo[0]) and p1<float(self.tipo[1]):
+        classeProjeto = Config.instance().CLASSE_INDEX-1
+        cfg=Config.instance()
+
+        if p1>=cfg.planoMin and p1<cfg.planoMax:
             if classeProjeto<=0:
                 s = "120"
             elif classeProjeto <4:
@@ -1040,14 +1042,10 @@ class Ui_Perfil(QtWidgets.QDialog):
                 s = "80"
             else:
                 s = "60"
+
             self.lblTipo.setText(u"Plano %s KM/h, Rampa n° %d, Inclinação %s%%"%(s, maxIndex, roundFloat2str(I[maxIndex-1])[:-2]))
-            self.velProj=int(s)
 
-         #   for k in range(int(self.estaca1txt),int(self.estaca2txt)+1):
-         #       for j in range(self.ref_estaca.tableWidget.columnCount()):
-         #           self.ref_estaca.tableWidget.item(k, j).setBackground(QtWidgets.QColor(51,153,255))
-
-        elif p1>=float(self.tipo[2]) and p1<float(self.tipo[3]):
+        elif p1>=cfg.onduladoMin and p1<cfg.onduladoMax:
             if classeProjeto<=0:
                 s = "100"
             elif classeProjeto <3:
@@ -1058,12 +1056,10 @@ class Ui_Perfil(QtWidgets.QDialog):
                 s = "60"
             else:
                 s = "40"
+                
             self.lblTipo.setText(u"Ondulado %s KM/h, Rampa n° %d, Inclinação %s%%"%(s, maxIndex, roundFloat2str(I[maxIndex-1])[:-2]))
-            self.velProj=int(s)
- #           for k in range(int(self.estaca1txt),int(self.estaca2txt)+1):
- #               for j in range(self.ref_estaca.tableWidget.columnCount()):
- #                   self.ref_estaca.tableWidget.item(k, j).setBackground(QtWidgets.QColor(255,253,150))
-        else:
+
+        elif p1<=cfg.montanhosoMax:
             if classeProjeto<=0:
                 s = "80"
             elif classeProjeto <3:
@@ -1075,11 +1071,8 @@ class Ui_Perfil(QtWidgets.QDialog):
             else:
                 s = "30"
             self.lblTipo.setText("Montanhoso %s KM/h, Rampa n° %d, Inclinação %s%%"%(s, maxIndex, roundFloat2str(I[maxIndex-1])[:-2]))
-            self.velProj=int(s)
- #           for k in range(int(self.estaca1txt),int(self.estaca2txt)+1):
-#                for j in range(self.ref_estaca.tableWidget.columnCount()):
-#                    self.ref_estaca.tableWidget.item(k, j).setBackground(QtWidgets.QColor(255,51,51))
 
+        self.velProj=int(s)
 
         for a in A:
             maxIndex=I.index(a)+1
@@ -1178,21 +1171,20 @@ class Ui_Perfil(QtWidgets.QDialog):
             pass
 
 
-    def salvarPerfil(self):
+    def salvarPerfil(self, noreset=False):
         '''exportar greide para o banco de dados
         sinal emitido para salvar'''
     
-        self.save.emit()        
+        self.save.emit(noreset)
         self.saved=True
         self.lastGreide=self.getVertices()
         self.lastCurvas=self.getCurvas()
         self.lblTipo.setText("Salvo!")
-        self.reset.emit()
-    
+
     def getCurvas(self):
-        r=[]        
-        for i in range(0,self.roi.countHandles()):
-            x=[]
+        r = []
+        for i in range(0, self.roi.countHandles()):
+            x = []
             x.append(i)
             try:
                 x.append(str(self.roi.handles[i]["item"].curve.L))
@@ -1200,8 +1192,9 @@ class Ui_Perfil(QtWidgets.QDialog):
             except:
                 x.append(str(None))
             r.append(x)
-        
+
         return r
+
 
     def getVertices(self):
         r=[]
@@ -1244,7 +1237,7 @@ class Ui_Perfil(QtWidgets.QDialog):
             super(Ui_Perfil, self).closeEvent(event)
 
     def __exitSave(self):
-        self.salvarPerfil()
+        self.salvarPerfil(noreset=True)
         self.close()
 
     def justClose(self):

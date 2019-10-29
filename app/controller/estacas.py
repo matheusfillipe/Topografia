@@ -615,11 +615,14 @@ class Estacas(object):
         self.perfil.showMaximized()
         self.perfil.exec_()
 
-    def saveGreide(self):
+    def saveGreide(self, noreset=False):
         if self.model.id_filename == -1: return
         self.model.table = self.perfil.getVertices()
         self.model.cvData=self.perfil.getCurvas()
         self.model.saveGreide(self.model.id_filename)
+        if not noreset:
+            self.perfil.justClose()
+            self.perfilView()
 
     def cleanGreide(self):
         if self.model.id_filename == -1: return

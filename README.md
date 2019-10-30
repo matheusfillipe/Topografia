@@ -74,9 +74,9 @@ Caso você queira reportar algum erro não se esqueça de:
 
 1. Caso haja uma janela de erro python, copie todo o conteúdo dela
 
-2. Verifique no painel de logs do qgis, que pode ser acessado no canto inferior direito do programa, as abas python error e Topografia e copie todos os logs que existirem lá.
+2. Verifique no painel de logs do qgis, que pode ser acessado no canto inferior direito do programa, as abas python error e GeoRoad e copie todos os logs que existirem lá.
 
-3. Informe exatamente os passo que você fez e verifique se o erro acontece se você reiniciar o plugin, reinstalar, fechar abrir, etc... 
+3. Informe exatamente os passos que você fez e verifique se o erro continua acontecendo se você reiniciar o plugin, reinstalar, fechar abrir, etc... 
 
 4. Diga o que aconteceu e o que você esperava acontecer.
 

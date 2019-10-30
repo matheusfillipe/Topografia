@@ -1073,6 +1073,10 @@ class Ui_Perfil(QtWidgets.QDialog):
                 s = "30"
             self.lblTipo.setText("Montanhoso %s KM/h, Rampa n° %d, Inclinação %s%%"%(s, maxIndex, roundFloat2str(I[maxIndex-1])[:-2]))
 
+        else:
+            self.lblTipo.setText("Indefinido %s KM/h, Rampa n° %d, Inclinação %s%%"%(s, maxIndex, roundFloat2str(I[maxIndex-1])[:-2]))
+            s = "0"
+
         self.velProj=int(s)
 
         for a in A:

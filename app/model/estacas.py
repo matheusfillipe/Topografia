@@ -582,8 +582,8 @@ class Estacas(object):
                     continue
                 f+=1
                 for seg_start, seg_end, tipo in pairs(elemento, self.estaca):
-                    ponto_inicial = QgsPoint(seg_start)
-                    ponto_final = QgsPoint(seg_end)
+                    ponto_inicial = QgsPoint(seg_start.x(), seg_start.y())
+                    ponto_final = QgsPoint(seg_end.x(), seg_end.y())
                     tamanho_da_linha = length(ponto_final, ponto_inicial)
                     ponto = diff(ponto_final, ponto_inicial)
 

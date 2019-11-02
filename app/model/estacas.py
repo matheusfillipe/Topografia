@@ -13,7 +13,7 @@ from qgis._core import QgsPoint, QgsProject, QgsVectorFileWriter, QgsPointXY
 from ..controller.Geometria.Figure import prismoide
 from ..model.config import extractZIP, Config, compactZIP
 from ..model.curvas import Curvas
-from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation, pointToWGS84, roundFloat2str, msgLog
+from ..model.utils import pairs, length, dircos, diff, azimuth, getElevation, pointToWGS84, roundFloat2str, msgLog, p2QgsPoint
 from ..view.estacas import SelectFeatureDialog
 
 
@@ -298,7 +298,7 @@ class Estacas(object):
         con.execute("DELETE FROM BRUCKNER_TABLE WHERE TABLEESTACA_id=?", (idEstacaTable,))
         con.commit()
         con.close()
-
+        from pathlib import Path
         [p.unlink() for p in Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable)).rglob(".prism")]
         compactZIP(Config.fileName)
 
@@ -440,7 +440,7 @@ class Estacas(object):
         con.isolation_level = ''
         con.commit()
         con.close()
-
+        from pathlib import Path
         [p.unlink() for p in Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable)).rglob(".prism")]
         compactZIP(Config.fileName)
 
@@ -582,13 +582,13 @@ class Estacas(object):
                     continue
                 f+=1
                 for seg_start, seg_end, tipo in pairs(elemento, self.estaca):
-                    ponto_inicial = QgsPoint(seg_start.x(), seg_start.y())
-                    ponto_final = QgsPoint(seg_end.x(), seg_end.y())
+                    ponto_inicial = p2QgsPoint(seg_start.x(), seg_start.y())
+                    ponto_final = p2QgsPoint(seg_end.x(), seg_end.y())
                     tamanho_da_linha = length(ponto_final, ponto_inicial)
                     ponto = diff(ponto_final, ponto_inicial)
 
                     cosa, cosb = dircos(ponto)
-                    az = azimuth(ponto_inicial, QgsPoint(ponto_inicial.x() + ((self.distancia) * cosa),
+                    az = azimuth(ponto_inicial, p2QgsPoint(ponto_inicial.x() + ((self.distancia) * cosa),
                                                          ponto_inicial.y() + ((self.distancia) * cosb)))
 
                     if tamanho_da_linha == 0:
@@ -597,7 +597,7 @@ class Estacas(object):
                     estacas_inteiras = int(math.floor((tamanho_da_linha - sobra) / self.distancia))
                     estacas_inteiras_sobra = estacas_inteiras + 1 if sobra > 0 else estacas_inteiras
                     if not sem_internet:
-                        cota = getElevation(crs, QgsPoint(float(ponto_inicial.x()), float(ponto_inicial.y())))
+                        cota = getElevation(crs, p2QgsPoint(float(ponto_inicial.x()), float(ponto_inicial.y())))
                         if cota == 0:
                             sem_internet = True
                     else:
@@ -617,14 +617,14 @@ class Estacas(object):
                     break
             estaca=int(estaca)
             i=int(int(i)+1)
-            cota = getElevation(crs, QgsPoint(float(ponto_final.x()), float(ponto_final.y())))
+            cota = getElevation(crs, p2QgsPoint(float(ponto_final.x()), float(ponto_final.y())))
             yield ['%d+%f' % (estaca, resto), 'PI%d' % i, prog, ponto_final.y(), ponto_final.x(), cota,
                    az], ponto_final, 0, tamanho_da_linha, az, sobra, tamanho_da_linha, cosa, cosb, tipo, elemento, resto
 
 
     def gera_estaca_intermediaria(self, estaca, anterior, prog, az, cosa, cosb, sobra=0.0):
         dist = sobra if sobra > 0 else self.distancia
-        p = QgsPoint(anterior.x() + (dist * cosa), anterior.y() + (dist * cosb))
+        p = p2QgsPoint(anterior.x() + (dist * cosa), anterior.y() + (dist * cosb))
         prog += dist
         return [str(int(estaca)), '', prog, p.y(), p.x(), 0.0, az], prog, p
 

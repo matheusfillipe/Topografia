@@ -16,7 +16,7 @@ from qgis.gui import *
 from qgis.utils import *
 
 from ..model.config import Config
-from ..model.utils import formatValue, msgLog, prog2estacaStr
+from ..model.utils import formatValue, msgLog, prog2estacaStr, p2QgsPoint
 
 # -*- coding: utf-8 -*-
 sip.setapi('QString',2)
@@ -221,12 +221,17 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
                 filename=""
                 names=[self.tableEstacas.item(i,1).text() for i in range(self.tableEstacas.rowCount())]
                 first=True
+                nomeSugerido="Traçado "+str(lastIndex)
+                c=0
+                while nomeSugerido in names and c<3:
+                    c+=1
+                    nomeSugerido+="_"
                 while filename=="" or filename in names:
                     if not first:
                         from ..model.utils import messageDialog
                         messageDialog(self,title="Erro",message="Já existe um arquivo com esse nome")
 
-                    filename, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:", text="Traçado "+str(lastIndex))
+                    filename, ok = QtWidgets.QInputDialog.getText(None, "Nome do arquivo", u"Nome do arquivo:", text=nomeSugerido)
                     if not ok:
                         return None
 
@@ -296,7 +301,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         self.reprojectgeographic = QgsCoordinateTransform(self.iface.mapCanvas().mapSettings().destinationCrs(), mycrs, QgsCoordinateTransformContext())
         pr = layer.dataProvider()
         line = QgsFeature()
-        line.setGeometry(QgsGeometry.fromPolyline([QgsPoint(self.reprojectgeographic.transform(point=QgsPointXY(p1))), QgsPoint(self.reprojectgeographic.transform(point=QgsPointXY(p2)))]))
+        line.setGeometry(QgsGeometry.fromPolyline([p2QgsPoint(self.reprojectgeographic.transform(point=QgsPointXY(p1))), p2QgsPoint(self.reprojectgeographic.transform(point=QgsPointXY(p2)))]))
         pr.addFeatures([line])
         #layer.setCrs(QgsCoordinateReferenceSystem(int(self.crs), 0))
         layer.updateExtents()
@@ -311,7 +316,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         self.reprojectgeographic = QgsCoordinateTransform(self.iface.mapCanvas().mapSettings().destinationCrs(), mycrs, QgsCoordinateTransformContext())
         pr = layer.dataProvider()
         point = QgsFeature()
-        point.setGeometry(QgsGeometry.fromPoint(QgsPoint(self.reprojectgeographic.transform(point=QgsPointXY(p1)))))
+        point.setGeometry(QgsGeometry.fromPoint(p2QgsPoint(self.reprojectgeographic.transform(point=QgsPointXY(p1)))))
         pr.addFeatures([point])
         #layer.setCrs(QgsCoordinateReferenceSystem(int(self.crs), 0))
         layer.updateExtents()
@@ -351,7 +356,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
 
 
     def get_click_coordenate(self,point, mouse):
-        self.actual_point=QgsPoint(point)
+        self.actual_point=p2QgsPoint(point)
         if self.tracado_dlg.txtNorthStart.text().strip()=='':
             self.tracado_dlg.txtNorthStart.setText("%f"%self.actual_point.y())
             self.tracado_dlg.txtEsteStart.setText("%f"%self.actual_point.x())
@@ -376,7 +381,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
             else:
                 pn = float(self.tracado_dlg_inicial.txtNorth.text().strip().replace(",", "."))
                 pe = float(self.tracado_dlg_inicial.txtEste.text().strip().replace(",", "."))
-                self.gera_tracado_ponto_inicial(QgsPoint(pe, pn))
+                self.gera_tracado_ponto_inicial(p2QgsPoint(pe, pn))
 
         if (not (inicial) and not (final)) or not (inicial):
             ok = self.tracado_dlg_final.exec_()
@@ -385,7 +390,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
             else:
                 pn = float(self.tracado_dlg_final.txtNorth.text().strip().replace(",", "."))
                 pe = float(self.tracado_dlg_final.txtEste.text().strip().replace(",", "."))
-                self.gera_tracado_ponto_final(QgsPoint(pe, pn))
+                self.gera_tracado_ponto_final(p2QgsPoint(pe, pn))
 
         if inicial and final:
             p1n = float(self.tracado_dlg_inicial.txtNorth.text().strip().replace(",", "."))
@@ -393,7 +398,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
             p2n = float(self.tracado_dlg_final.txtNorth.text().strip().replace(",", "."))
             p2e = float(self.tracado_dlg_final.txtEste.text().strip().replace(",", "."))
             self.iface.mapCanvas().setMapTool(None)
-            self.callback(pontos=self.create_line(QgsPoint(p1e, p1n), QgsPoint(p2e, p2n), "Diretriz"), parte=1)
+            self.callback(pontos=self.create_line(p2QgsPoint(p1e, p1n), p2QgsPoint(p2e, p2n), "Diretriz"), parte=1)
 
 
 
@@ -406,7 +411,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         else:
             pn = float(self.tracado_dlg_inicial.txtNorth.text().strip().replace(",","."))
             pe = float(self.tracado_dlg_inicial.txtEste.text().strip().replace(",","."))
-            self.gera_tracado_ponto_final(QgsPoint(pe, pn))
+            self.gera_tracado_ponto_final(p2QgsPoint(pe, pn))
         
         #self.gera_tracado_pontos(inicial=True)
         self.gera_tracado_pontos(final=True)
@@ -420,7 +425,7 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         else:
             pn = float(self.tracado_dlg_final.txtNorth.text().strip().replace(",","."))
             pe = float(self.tracado_dlg_final.txtEste.text().strip().replace(",","."))
-            #self.gera_tracado_ponto_final(QgsPoint(pe, pn))
+            #self.gera_tracado_ponto_final(p2QgsPoint(pe, pn))
         
         #self.gera_tracado_pontos(final=True)
         self.gera_tracado_pontos(inicial=True,final=True)
@@ -441,13 +446,13 @@ class EstacasUI(QtWidgets.QDialog,FORMESTACA1_CLASS):
         pr = layer.dataProvider()
         # fix_print_with_import
         print(points)
-        anterior = QgsPoint(points[0])
+        anterior = p2QgsPoint(points[0])
         fets=[]
         for p in points[1:]:
             fet = QgsFeature(layer.fields())
-            fet.setGeometry(QgsGeometry.fromPolyline([anterior, QgsPoint(p)]))
+            fet.setGeometry(QgsGeometry.fromPolyline([anterior, p2QgsPoint(p)]))
             fets.append(fet)
-            anterior = QgsPoint(p)
+            anterior = p2QgsPoint(p)
         pr.addFeatures(fets)
         self.crs = crs
         layer.setCrs(QgsCoordinateReferenceSystem(int(crs), 0))
@@ -715,7 +720,10 @@ class EstacasCv(QtWidgets.QDialog):
 
 
     def fill_table(self, estaca, f=False):
-        self.comboBox.currentTextChanged.disconnect(self.search)
+        try:
+            self.comboBox.currentTextChanged.disconnect(self.search)
+        except:
+            pass
         self.tableWidget.insertRow(self.tableWidget.rowCount())
         k = self.tableWidget.rowCount() - 1
         j = 0
@@ -1174,7 +1182,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
                 a = self.tableWidget.item(r, 6).text()
             except:
                 break
-            fet.setGeometry(QgsGeometry.fromPoint(QgsPoint(e, n)))
+            fet.setGeometry(QgsGeometry.fromPoint(p2QgsPoint(e, n)))
             fet.setAttributes([es, d, n, e, c, a])
             fets.append(fet)
         pr.addFeatures(fets)
@@ -1281,6 +1289,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
 
     def openLayers(self):
         self.closeLayers()
+
         self.parent.model.iface=self.iface
         l=self.parent.model.getSavedLayers(self.windowTitle().split(":")[0])
         if l:
@@ -1305,8 +1314,11 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
 
     def closeLayers(self):
         for l in self.curvaLayers:
-            lyr=l
-            name=lyr.name()
+            try:
+                lyr=l
+                name=lyr.name()
+            except:
+                break
             try:
                 l.commitChanges()
                 l.endEditCommand()

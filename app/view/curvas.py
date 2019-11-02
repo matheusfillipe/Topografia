@@ -8,7 +8,7 @@ from qgis.core import QgsProject, QgsFields, QgsField, QgsPoint
 
 from ..view.estacas import ProgressDialog
 from ..view.ui.ch import CurvasCompositorDialog, EMPTY_DATA
-from ..model.utils import msgLog, PointTool
+from ..model.utils import msgLog, PointTool, p2QgsPoint
 
 from ..model.helper.qgsgeometry import *
 
@@ -311,11 +311,11 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
                     l1=featureToPolyline(feat)
                     l2=featureToPolyline(self.layer.getFeature(self.next_index+1))
                     PI=seg_intersect(l1[0],l1[-1], l2[0],l2[-1])
-                    f.setGeometry(QgsGeometry.fromPolyline([QgsPoint(featureToPolyline(feat)[0]), PI ]))
+                    f.setGeometry(QgsGeometry.fromPolyline([p2QgsPoint(featureToPolyline(feat)[0]), PI ]))
                     features.append(f)
                 elif i == self.next_index:
                     PF=PI
-                    f.setGeometry(QgsGeometry.fromPolyline([PF, QgsPoint(featureToPolyline(feat)[-1])]))
+                    f.setGeometry(QgsGeometry.fromPolyline([PF, p2QgsPoint(featureToPolyline(feat)[-1])]))
                     features.append(f)
                 else:
                     f.setGeometry(feat.geometry())
@@ -365,7 +365,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
     def pointLayerDefine(self, point):
         point=QgsPointXY(point)
-        tangentFeaturesFromPointList(self.layer,[QgsPoint(point), QgsPoint(point.x(),point.y()+.001)])
+        tangentFeaturesFromPointList(self.layer,[p2QgsPoint(point), p2QgsPoint(point.x(),point.y()+.001)])
         refreshCanvas(self.iface, self.layer)
         self.comboCurva.addItem("PI"+str(0))
         self.enableInterface()
@@ -546,8 +546,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
                 attr[0]=len(features)+1
                 f.setAttributes(attr)
                 if i==self.current_index:
-                    PI=QgsPoint(featureToPolyline(curvaFeats[0])[0])
-                    f.setGeometry(QgsGeometry.fromPolyline([QgsPoint(featureToPolyline(feat)[0]), PI ]))
+                    PI=p2QgsPoint(featureToPolyline(curvaFeats[0])[0])
+                    f.setGeometry(QgsGeometry.fromPolyline([p2QgsPoint(featureToPolyline(feat)[0]), PI ]))
                     features.append(f)
 
                     for i,cf in enumerate(curvaFeats):
@@ -562,8 +562,8 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
 
 
                 elif i == self.next_index:
-                    PF=QgsPoint(featureToPolyline(curvaFeats[-1])[-1])
-                    f.setGeometry(QgsGeometry.fromPolyline([PF, QgsPoint(featureToPolyline(feat)[-1])]))
+                    PF=p2QgsPoint(featureToPolyline(curvaFeats[-1])[-1])
+                    f.setGeometry(QgsGeometry.fromPolyline([PF, p2QgsPoint(featureToPolyline(feat)[-1])]))
                     features.append(f)
                 else:
                     f.setGeometry(feat.geometry())

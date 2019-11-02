@@ -185,7 +185,7 @@ class Estacas(object):
         filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save dxf",filter="Arquivo DXF (*.dxf)")
         if filename[0] in ["", None]: return
         dist=Config.instance().DIST
-        self.saveDXF(filename[0], [[QgsPoint(x*dist, y/1000000) for x, y in (zip(X, Y))]])
+        self.saveDXF(filename[0], [[p2QgsPoint(x*dist, y/1000000) for x, y in (zip(X, Y))]])
 
     def exportDXF(self):
         filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save dxf",filter="Arquivo DXF (*.dxf)")
@@ -196,13 +196,13 @@ class Estacas(object):
         if self.viewCv.mode=="CV":
             points=[]
             for e in estacas:
-                points.append(QgsPoint(float(e[-2]), float(e[-1])))
+                points.append(p2QgsPoint(float(e[-2]), float(e[-1])))
             Lpoints.append(points)
 
         elif self.viewCv.mode=="T":
             points=[]
             for e in estacas:
-                points.append(QgsPoint(float(e[4]), float(e[3]), float(e[-3])))
+                points.append(p2QgsPoint(float(e[4]), float(e[3]), float(e[-3])))
             Lpoints.append(points)
 
         self.saveDXF(filename[0], Lpoints)
@@ -219,16 +219,16 @@ class Estacas(object):
             for face in prismoide.getFaces():
                 points=[]
                 for line in face.superior.lines:
-                    points.append(QgsPoint(line.point1.x(), line.point1.y()))
+                    points.append(p2QgsPoint(line.point1.x(), line.point1.y()))
                 for line in face.inferior.lines:
-                    points.append(QgsPoint(line.point1.x(), line.point1.y()))
+                    points.append(p2QgsPoint(line.point1.x(), line.point1.y()))
                 LPoints.append(points)
 
             self.saveDXF(filename[0], LPoints)
 
             self.progressDialog.close()
 
-    def saveDXF(self, filename, listOfListOfPoints):   #[ [ QgsPoint[ x,y], [x,y] ...] , [ [ x,y] , [x,y] ...] ....] Each list is a feature
+    def saveDXF(self, filename, listOfListOfPoints):   #[ [ p2QgsPoint[ x,y], [x,y] ...] , [ [ x,y] , [x,y] ...] ....] Each list is a feature
         layer=QgsVectorLayer("LineStringZ?crs=%s"%(QgsProject.instance().crs().authid()), "Perfil: " if self.viewCv.mode=="CV" else "Traçado Horizontal: "
                                                                                             + self.model.getNameFromId(self.model.id_filename), "memory")
         layer.setCrs(QgsCoordinateReferenceSystem(QgsProject.instance().crs()))
@@ -441,9 +441,11 @@ class Estacas(object):
         self.nextView = self.view
         self.view.setCopy()
         self.updateTables()
-
-        self.view.closeLayers()
-        self.viewCv.closeLayers()
+        try:
+            self.view.closeLayers()
+            self.viewCv.closeLayers()
+        except:
+            msgLog("Failed to close layers!")
 
     def cleanTrans(self):
         if yesNoDialog(None, message="Tem certeza que quer excluir os dados transversais?"):
@@ -465,6 +467,8 @@ class Estacas(object):
             self.progressDialog.show()
             table=self.generateintersecThread()
             self.progressDialog.close()
+            if not table:
+                return
 
         self.viewCv.clear()
         self.viewCv.setIntersect()
@@ -486,7 +490,6 @@ class Estacas(object):
         self.nextView=self.viewCv
 
 
-
     @nongui
     def generateintersecThread(self):
         self.progressDialog.setValue(0)
@@ -500,7 +503,7 @@ class Estacas(object):
         LH=len(horizontais)
         self.progressDialog.setLoop(100,LH)
         for i,h in enumerate(horizontais):
-            points.append(QgsPoint(float(h[4]), float(h[3])))
+            points.append(p2QgsPoint(float(h[4]), float(h[3])))
             progs.append(float(h[2]))
             self.progressDialog.increment()
 
@@ -510,9 +513,11 @@ class Estacas(object):
         msgLog("Organizando: " + str(time.time() - startTime) + " seconds")
 
         verticais=[]
+        lastH=deepcopy(h)
         self.openCv()
         vprogs=[]
         estacas=self.viewCv.getEstacas()
+
         LH=500
         self.progressDialog.setLoop(60, LH)
         try:
@@ -534,9 +539,14 @@ class Estacas(object):
             msgLog(str(traceback.format_exception(None, e, e.__traceback__)))
             msgLog("Road: ")
             msgLog(str(road))
-            msgLog("NA Progressiva: ")
+            msgLog("Na Progressiva: ")
             msgLog(str(prog))
-            return [[]]
+            messageDialog(message="As estacas finais do perfil vertical e horizontal não estão alinhadas", info="Tente criar seu perfil vertical novamente e recalcular a tabela vertical!")
+            return False
+
+        if v[2]!=lastH[2]:
+            messageDialog(message="As estacas finais do perfil vertical e horizontal não estão alinhadas", info="Tente criar seu perfil vertical novamente e recalcular a tabela vertical!")
+            return False
 
         table=verticais
         msgLog("Horizontais: " + str(time.time() - startTime) + " seconds")
@@ -750,7 +760,7 @@ class Estacas(object):
 
     def curva(self):
         curvas = self.model.getCurvas(self.model.id_filename)
-        vertices = [[v[1], QgsPoint(float(v[4]), float(v[3]))] for v in self.model.loadFilename() if v[1]!=""]
+        vertices = [[v[1], p2QgsPoint(float(v[4]), float(v[3]))] for v in self.model.loadFilename() if v[1]!=""]
         if len(self.view.curvaLayers)==0:
             self.geraCurvas(self.model.id_filename)
         if len(vertices)==0:
@@ -1165,7 +1175,7 @@ class Estacas(object):
         for entity in dwg.entities:
             if entity.dxftype == 'POINT':
                 dist = math.sqrt((inicial[0] - entity.point[0]) ** 2 + (inicial[1] - entity.point[1]) ** 2)
-                az = float(azimuth(QgsPoint(inicial[0], inicial[1]), QgsPoint(entity.point[0], entity.point[1])))
+                az = float(azimuth(p2QgsPoint(inicial[0], inicial[1]), p2QgsPoint(entity.point[0], entity.point[1])))
                 all_points.append([entity.point[0], entity.point[1]])
                 all_points_Y.append([entity.point[2]])
 
@@ -1206,7 +1216,7 @@ class Estacas(object):
         crs = int(self.model.getCRS())
         for i, _ in enumerate(self.model.table):
             try:
-                self.model.table[i][5] = u"%d" % getElevation(crs, QgsPoint(float(self.model.table[i][4]),
+                self.model.table[i][5] = u"%d" % getElevation(crs, p2QgsPoint(float(self.model.table[i][4]),
                                                                             float(self.model.table[i][3])))
                 if self.model.table[i][5] == 0:
                     return
@@ -1231,8 +1241,8 @@ class Estacas(object):
         self.edit = False
         # if mouse == 2: return
         if mouse == 1:
-            self.preview.create_point(QgsPoint(point), 'vertice')
-            self.points.append(QgsPoint(point))
+            self.preview.create_point(p2QgsPoint(point), 'vertice')
+            self.points.append(p2QgsPoint(point))
 
         self.edit = True
 
@@ -1242,13 +1252,13 @@ class Estacas(object):
         self.edit = False
         # if mouse == 2: return
         if mouse == 1:
-            self.preview.create_point(QgsPoint(point), 'vertice')
-            self.points.append(QgsPoint(point))
+            self.preview.create_point(p2QgsPoint(point), 'vertice')
+            self.points.append(p2QgsPoint(point))
 
         self.edit = True
 
     def exit_dialog(self):
-        self.points.append(QgsPoint(self.points_end))
+        self.points.append(p2QgsPoint(self.points_end))
         self.iface.mapCanvas().setMapTool(QgsMapToolEmitPoint(self.iface.mapCanvas()))
         self.edit = False
         self.preview.exit_dialog(self.points, self.crs)

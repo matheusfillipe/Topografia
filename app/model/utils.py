@@ -55,7 +55,7 @@ def mag(point):
 
 def diff(point2, point1):
     # substraction betwen two vector
-    return QgsPoint(point2.x()-point1.x(), point2.y() - point1.y())
+    return p2QgsPoint(point2.x()-point1.x(), point2.y() - point1.y())
 
 
 def length(point1,point2):
@@ -230,6 +230,15 @@ class ClickTool(QgsMapTool):
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
         self.callback(point)
         return None
+
+def p2QgsPoint(pt, pt2=None):  #Qgis 3.10.0 has a bug where the QgsPoint doesn't accept a QgsPointXY as a constructor
+    if pt2 is None:
+        try:
+            return QgsPoint(pt.x(), pt.y())
+        except:
+            return QgsPoint(pt)
+    else:
+        return QgsPoint(pt, pt2)
 
 def pointToWGS84(point):
     t=QgsCoordinateReferenceSystem("EPSG:4326")

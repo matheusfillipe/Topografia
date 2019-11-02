@@ -49,12 +49,14 @@ SHORTCUT="Ctrl+Alt+"  # 1,2,3,4,5,6,7 for each item in menu
 PYDEV = ""
 
 try:
-    from . import pydevpath # STRING containing pydev's egg path
+    from . import pydevpath  # STRING containing pydev's egg path
     PYDEV = pydevpath.pydev
 except:
     DEBUG = False
 
-
+import sys
+if sys.platform == 'linux':
+    sys.path.append("/usr/lib/python3/dist-packages/")
 
 class TopoGrafia(object):
     """QGIS Plugin Implementation."""

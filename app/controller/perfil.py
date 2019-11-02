@@ -986,10 +986,15 @@ class Ui_Perfil(QtWidgets.QDialog):
             lastHandleIndex=len(self.greide)-1
             L=[]            
             for pt in self.greide:
-                x=pt[0]
+                xh=pt[0]
                 cota=pt[1]
-                pos=(x,cota)
+                pos=(xh,cota)
                 L.append(pos)
+            if xh!=x[-1]:
+                final=(x[-1], cota)
+                self.greide[-1]=final
+                messageDialog(message="O último vértice foi ajustado ao novo traçado!")
+                L[-1]=final
             self.roi = CustomPolyLineROI(L, plot=self.perfilPlot)
         else:
             self.roi = CustomPolyLineROI([(x[0],w[0]*x[0]+w[1]), (x[len(x)-1],w[0]*x[len(x)-1]+w[1])], plot=self.perfilPlot)

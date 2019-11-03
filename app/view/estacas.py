@@ -16,7 +16,7 @@ from qgis.gui import *
 from qgis.utils import *
 
 from ..model.config import Config
-from ..model.utils import formatValue, msgLog, prog2estacaStr, p2QgsPoint
+from ..model.utils import formatValue, msgLog, prog2estacaStr, p2QgsPoint, fastProg2EstacaStr
 
 # -*- coding: utf-8 -*-
 sip.setapi('QString',2)
@@ -56,6 +56,8 @@ PROGRESS_DIALOG, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/progressBarDialog.ui'))
 BRUCKNER_SELECT, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/bruckner_select.ui'))
+VOLUME_DIALOG, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), '../view/ui/volume.ui'))
 
 rb = QgsRubberBand(iface.mapCanvas(), 1)
 premuto = False
@@ -595,6 +597,7 @@ class EstacasIntersec(QtWidgets.QDialog):
         self.btnClean.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
         self.btnClean.setObjectName(_fromUtf8("btnClean"))
 
+
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
@@ -836,6 +839,7 @@ class EstacasCv(QtWidgets.QDialog):
         self.btnClean.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
         self.btnClean.setObjectName(_fromUtf8("btnClean"))
         self.gridLayout.addWidget(self.btnClean, row, column, 1, 1)
+        self.btnClean.hide()
         row+=3
 
         self.labelProcurar = QtWidgets.QLabel(Form)
@@ -1953,12 +1957,14 @@ class ApplyTransDialog(QtWidgets.QDialog, APLICAR_TRANSVERSAL_DIALOG):
         self.setupUi2()
 
     def setupUi2(self):
-        self.firstCb.addItems(list(map(prog2estacaStr, self.progressiva)))
+        d=Config.instance().DIST
+        self.firstCb.addItems(list(map(lambda i: fastProg2EstacaStr(i,d), self.progressiva)))
         self.firstCb.currentIndexChanged.connect(self.setSecondCb)
         self.setSecondCb()
 
     def setSecondCb(self):
-        self.secondCb.addItems(list(map(prog2estacaStr, self.progressiva[self.firstCb.currentIndex()+1:])))
+        d=Config.instance().DIST
+        self.secondCb.addItems(list(map(lambda i: fastProg2EstacaStr(i,d), self.progressiva[self.firstCb.currentIndex()+1:])))
         self.secondCb.currentIndexChanged.connect(self.setIndexes)
         self.setIndexes()
 
@@ -2244,3 +2250,17 @@ class EstacaRangeSelect(QtWidgets.QDialog, BRUCKNER_SELECT):
         if self.final_2.currentIndex() <= self.inicial.currentIndex():
             self.final_2.setCurrentIndex(self.inicial.currentIndex()+1)
 
+
+class VolumeDialog(QtWidgets.QDialog, VOLUME_DIALOG):
+    def __init__(self, iface):
+        super().__init__(iface)
+        self.iface = iface
+        self.setupUi(self)
+
+    def set(self, corte, aterro):
+        from ..model.utils import roundFloat2str
+        self.corte: QtWidgets.QLineEdit
+        self.aterro: QtWidgets.QLineEdit
+        self.corte.setText(roundFloat2str(corte))
+        self.aterro.setText(roundFloat2str(aterro))
+        self.soma.setText(roundFloat2str(corte+aterro))

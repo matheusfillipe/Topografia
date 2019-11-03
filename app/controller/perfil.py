@@ -11,7 +11,7 @@ from ..model.helper.calculos import vmedia, fmax
 from ..model import constants
 from ..model.utils import *
 from ..view.estacas import cvEdit, closeDialog, rampaDialog, QgsMessageLog, ApplyTransDialog, SetCtAtiDialog, \
-    setEscalaDialog, brucknerRampaDialog, ssRampaDialog
+    setEscalaDialog, brucknerRampaDialog, ssRampaDialog, VolumeDialog
 from ... import PyQtGraph as pg
 
 # -*- coding: utf-8 -*-
@@ -1271,7 +1271,7 @@ from .Geometria import Figure, Prismoide
 
 class Ui_sessaoTipo(Ui_Perfil):
 
-    save = QtCore.pyqtSignal()
+    save = QtCore.pyqtSignal(bool)
     plotar = QtCore.pyqtSignal(int)
 
     def __init__(self, iface, terreno, hor, ver=[], st=False, prism=None, estacanum=0, greide=[], title="Perfil Transversal"):
@@ -1293,7 +1293,7 @@ class Ui_sessaoTipo(Ui_Perfil):
 
             for item in hor:
                 self.progressiva.append(float(item[2]))
-                defaultST=[[-9.8,-5.0],[-8.3,-5.0],[-7.3,0], [0,0.14], [7,0], [7.08,-0.1],[7.12,-0.1], [7.2,0], [7.3,0], [8.3,5], [9.8,5]]
+                defaultST=[[-9.8,-5.0],[-8.3,-5.0],[-7.3,0],[-7.2,0],[-7.12,-0.1], [-7.08,-0.1], [-7,0], [0,0.14], [7,0], [7.08,-0.1], [7.12,-0.1], [7.2,0], [7.3,0], [8.3,5], [9.8,5]]
                 newST=[]
                 for pt in defaultST:
                    newST.append([pt[0], pt[1]+greide.getY(float(item[2]))])
@@ -1466,60 +1466,83 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.btnCalcular.setGeometry(QtCore.QRect(260, 80, 99, 27))
         self.btnCalcular.setObjectName(_fromUtf8("btnCalcular"))
         self.btnCalcular.clicked.connect(self.plotTrans)
+        self.btnCalcular.setText("Criar Layer")
+        self.btnCalcular.setToolTip("Plotar Layers com as tranversais sobre o traçado horizontal (Perpendiculares ao traçado)")
 
         self.btnAutoRange=QtWidgets.QPushButton(PerfilTrecho)
         self.btnAutoRange.setGeometry(QtCore.QRect(260, 80, 99, 27))
-        self.btnAutoRange.setText("Zoom")
+        self.btnAutoRange.setText("Extender visão")
         self.btnAutoRange.clicked.connect(lambda: self.vb.autoRange())
-
+        self.btnAutoRange.setToolTip("Ajusta o zoom e retorna para visualização padrão")
 
         self.btnSave=QtWidgets.QPushButton(PerfilTrecho)
         self.btnSave.setGeometry(QtCore.QRect(260, 80, 99, 27))
         self.btnSave.setText("Salvar")
         self.btnSave.clicked.connect(self.salvarPerfil)
+        self.btnSave.setToolTip("Armazena edições")
 
-        self.btnCancel=QtWidgets.QPushButton(PerfilTrecho)
-        self.btnCancel.setGeometry(QtCore.QRect(260, 80, 99, 27))
-        self.btnCancel.setText("Fechar")
-        self.btnCancel.clicked.connect(self.close)
+        self.btnClean=QtWidgets.QPushButton(PerfilTrecho)
+        self.btnClean.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnClean.setText("Apagar")
+        self.btnClean.setToolTip("Apaga todas as modificações e retorna com o perfil padrão para todo o traçado")
+
+        self.btnReset=QtWidgets.QPushButton(PerfilTrecho)
+        self.btnReset.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnReset.setText("Restaurar sessão")
+        self.btnReset.clicked.connect(self.resetSS)
+        self.btnReset.setToolTip("Descarta as modificações na sessão atual")
+
+        self.btnVolume=QtWidgets.QPushButton(PerfilTrecho)
+        self.btnVolume.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnVolume.setText("Volume")
+        self.btnVolume.clicked.connect(self.volumeCalc)
+        self.btnVolume.setToolTip("Calcular volumes de aterro e de corte")
 
 
         self.btnPrevious=QtWidgets.QPushButton(PerfilTrecho)
         self.btnPrevious.setGeometry(QtCore.QRect(260, 80, 99, 27))
         self.btnPrevious.setText("Anterior")
         self.btnPrevious.clicked.connect(self.previousEstaca)
-
+        self.btnPrevious.setToolTip("Estaca anterior (seta esquerda)")
 
         self.btnNext=QtWidgets.QPushButton(PerfilTrecho)
         self.btnNext.setGeometry(QtCore.QRect(260, 80, 99, 27))
         self.btnNext.setText("Próxima")
         self.btnNext.clicked.connect(self.nextEstaca)
+        self.btnNext.setToolTip("Proxima estaca (seta direita)")
+
+        self.shortcut1 = QtWidgets.QShortcut(QtGui.QKeySequence.MoveToNextChar, self)
+        self.shortcut2 = QtWidgets.QShortcut(QtGui.QKeySequence.MoveToPreviousChar, self)
+        self.shortcut1.activated.connect(self.nextEstaca)
+        self.shortcut2.activated.connect(self.previousEstaca)
 
         self.btnEditToggle=QtWidgets.QPushButton(PerfilTrecho)
         self.btnEditToggle.setGeometry(QtCore.QRect(260, 80, 99, 27))
         self.btnEditToggle.setText("Visualizar")
         self.btnEditToggle.clicked.connect(self.editToggle)
 
-
         self.selectEstacaComboBox=QtWidgets.QComboBox(PerfilTrecho)
-        self.selectEstacaComboBox.addItems(list(map(prog2estacaStr, self.progressiva)))
+        dist=Config.instance().DIST
+        self.selectEstacaComboBox.addItems(list(map(lambda i: fastProg2EstacaStr(i, dist), self.progressiva)))
         self.selectEstacaComboBox.currentIndexChanged.connect(self.changeEstaca)
 
         self.applyBtn=QtWidgets.QPushButton(PerfilTrecho)
         self.applyBtn.setGeometry(QtCore.QRect(260, 80, 99, 27))
         self.applyBtn.setText("Aplicar")
         self.applyBtn.clicked.connect(self.applyTrans)
+        self.applyBtn.setToolTip("Aplica o desenho atual para um intervalo de estacas")
 
         self.ctatiBtn=QtWidgets.QPushButton(PerfilTrecho)
         self.ctatiBtn.setGeometry(QtCore.QRect(260, 80, 99, 27))
-        self.ctatiBtn.setText("Pontos")
+        self.ctatiBtn.setText("Laterais")
         self.ctatiBtn.clicked.connect(self.setAtCti)
+        self.ctatiBtn.setToolTip("Define os segmentos de reta que devem se repetir a partir das laterais de corte e aterro até a interseção com o terreno")
 
         self.areaCtLb=QtWidgets.QLabel(PerfilTrecho)
         self.areaAtLb=QtWidgets.QLabel(PerfilTrecho)
         self.areaLb=QtWidgets.QLabel(PerfilTrecho)
         self.progressivaLb=QtWidgets.QLabel(PerfilTrecho)
-        self.volumeTotal=QtWidgets.QLabel(PerfilTrecho)
+
 
         self.btnNext.setDisabled(self.current >= len(self.progressiva)-1)
         self.btnPrevious.setDisabled(self.current == 0)
@@ -1529,10 +1552,17 @@ class Ui_sessaoTipo(Ui_Perfil):
 
         PerfilTrecho.setWindowTitle(_translate("PerfilTrecho", "Perfil do trecho", None))
         self.calcularGreide()
-        self.btnCalcular.setText("Plotar")
-        self.btnCalcular.setToolTip("Plotar Layers com as tranversais sobre o traçado horizontal")
 
         self.changingEstaca=False
+
+    def resetSS(self):
+        pass
+
+    def volumeCalc(self):
+        diag=VolumeDialog(self)
+        ct, at=self.prismoide.getVolumes(0)
+        diag.set(ct, at)
+        diag.exec_()
 
 
     def layAllOut(self):
@@ -1558,13 +1588,15 @@ class Ui_sessaoTipo(Ui_Perfil):
         Hlayout.addWidget(self.btnCalcular)
         Hlayout.addWidget(self.applyBtn)
         Hlayout.addWidget(self.btnAutoRange)
+        Hlayout.addWidget(self.btnReset)
+        Hlayout.addWidget(self.btnClean)
         Hlayout.addWidget(self.btnSave)
-        Hlayout.addWidget(self.btnCancel)
+        Hlayout.addWidget(self.btnVolume)
 
         Hlayout3.addWidget(self.areaLb)
         Hlayout3.addWidget(self.areaCtLb)
         Hlayout3.addWidget(self.areaAtLb)
-        Hlayout3.addWidget(self.volumeTotal)
+
         Hlayout3.addWidget(self.progressivaLb)
 
         Hlayout2.addWidget(self.btnEditToggle)
@@ -1591,14 +1623,16 @@ class Ui_sessaoTipo(Ui_Perfil):
 
 
     def nextEstaca(self):
-        self.current+=1
-        self.changingEstaca=True
-        self.reset()
+        if self.current<len(self.progressiva)-1:
+            self.current+=1
+            self.changingEstaca=True
+            self.reset()
 
     def previousEstaca(self):
-        self.current-=1
-        self.changingEstaca=True
-        self.reset()
+        if self.current>0:
+            self.current-=1
+            self.changingEstaca=True
+            self.reset()
 
 
     def editToggle(self):
@@ -1658,8 +1692,7 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.areaCtLb.setText("Corte: " + str(round(act,4))+"m²")
         self.areaAtLb.setText("Aterro: " + str(round(aat,4))+"m²")
 
-        if self.prismoide.lastGeneratedIndex>=self.prismoide.lastIndex:
-            self.volumeTotal.setText("Volume: " + str(round(self.prismoide.getVolume(),4)) + "m³")
+
 
     def plotTransCurve(self):
 
@@ -1679,11 +1712,10 @@ class Ui_sessaoTipo(Ui_Perfil):
 
 
     def applyTrans(self):
-        diag=ApplyTransDialog(self.iface,self.progressiva)
+        diag=ApplyTransDialog(self.iface, self.progressiva)
         diag.show()
         if diag.exec_()==QtWidgets.QDialog.Accepted:
             st=self.st[self.current]
-
             for p in diag.progressivas:
                 newST=[]
                 for pt in st:
@@ -1703,6 +1735,7 @@ class Ui_sessaoTipo(Ui_Perfil):
         if diag.exec_()==QtWidgets.QDialog.Accepted:
             self.prismoide.ati=diag.ati
             self.prismoide.cti=diag.cti
+
 
 class Ui_Bruckner(Ui_Perfil):
 

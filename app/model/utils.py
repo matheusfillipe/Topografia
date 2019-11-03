@@ -383,23 +383,39 @@ def roundUpFloat2str(f:float):
     return str(round(int(f/Config.instance().DIST+1),0))
 
 def prog2estacaStr(i :float):
-    if i%Config.instance().DIST != 0:
-        return str(int(i/Config.instance().DIST))+"+"+str(i%Config.instance().DIST)
+    dist=Config.instance().DIST
+    if i%dist != 0:
+        return str(int(i/dist))+"+"+str(i%dist)
     else:
-        return str(int(i/Config.instance().DIST))
+        return str(int(i/dist))
+
+def fastProg2EstacaStr(i, dist):
+    if i%dist != 0:
+        return str(int(i/dist))+"+"+str(i%Config.instance().DIST)
+    else:
+        return str(int(i/dist))
 
 def estaca2progFloat(s: str):
+    dist=Config.instance().DIST
     if '+' in s:
         i=int(s.split("+")[0])
         f=float(s.split("+")[1])
-        return i*Config.instance().DIST+f
+        return i*dist+f
     else:
-        return int(s)*Config.instance().DIST
+        return int(s)*dist
+
+def fastEstaca2progFloat(s: str, dist):
+    dist=Config.instance().DIST
+    if '+' in s:
+        i=int(s.split("+")[0])
+        f=float(s.split("+")[1])
+        return i*dist+f
+    else:
+        return int(s)*dist
 
 
 
 class imgDialog(QDialog):
-
     def __init__(self,imagepath,title="Image", parent=None):
         super(imgDialog, self).__init__(parent)
         self.title = title
@@ -419,6 +435,7 @@ class imgDialog(QDialog):
         pixmap = QPixmap(self.imagepath)
         label.setPixmap(pixmap)
         self.resize(pixmap.width(), pixmap.height())
+
 
 def messageDialog(iface=None, title="Concluído", info="", message=""):
     msgBox = QtWidgets.QMessageBox(iface)

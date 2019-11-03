@@ -107,18 +107,18 @@ class Estacas(object):
         self.view.tableWidget.itemDoubleClicked.connect(self.mudancaCelula)
         self.view.btnDuplicar.clicked.connect(self.duplicarEstacaHorizontal)
 #        self.view.layerUpdated.connect(self.joinFeatures)
+        self.view.btnPerfil.clicked.connect(self.perfilView)
 
         self.viewCv.btnGen.clicked.connect(self.generateIntersec)
         self.viewCv.btnTrans.clicked.connect(self.generateTrans)
         self.viewCv.btnBruck.clicked.connect(self.bruckner)
         self.viewCv.btnPrint.clicked.connect(self.exportDXF)
         self.viewCv.btnCsv.clicked.connect(self.exportCSV)
-        self.viewCv.btnClean.clicked.connect(self.cleanTrans)
+        #self.viewCv.btnClean.clicked.connect(self.cleanTrans)
         self.viewCv.btnRecalcular.clicked.connect(self.recalcularVerticais)
-        self.view.btnPerfil.clicked.connect(self.perfilView)
+
 
     def bruckner(self):
-
         self.progressDialog.show()
         self.progressDialog.setValue(0)
         table = self.model.load_bruckner()
@@ -449,7 +449,9 @@ class Estacas(object):
 
     def cleanTrans(self):
         if yesNoDialog(None, message="Tem certeza que quer excluir os dados transversais?"):
+            self.trans.close()
             self.model.cleanTrans(idEstacaTable=self.model.id_filename)
+            self.generateTrans()
 
 
     def recalcularVerticais(self):
@@ -683,6 +685,7 @@ class Estacas(object):
             self.progressDialog.close()
             return
         self.trans.save.connect(self.saveTrans)
+        self.trans.btnClean.clicked.connect(self.cleanTrans)
         self.trans.plotar.connect(self.plotTransLayer)
         self.progressDialog.close()
         self.trans.showMaximized()

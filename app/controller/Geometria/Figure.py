@@ -1019,12 +1019,26 @@ class prismoide(figure):
             i2=len(self.faces)
 
         self.volume=0
-        for i, face in enumerate(self.faces[i1:i2]):
+        for i, face in enumerate(self.faces[i1:i2-1]):
             #semisoma
-            nextFace=self.faces[i]
+            nextFace=self.faces[i+1]
             self.volume+=(face.getArea()+nextFace.getArea())*abs(face.position.z()-nextFace.position.z())/2
-
         return self.volume
+
+    def getVolumes(self, i1=0, i2=None):
+        if i2 is None:
+            i2 = len(self.faces)
+        at = ct = 0
+        for i, face in enumerate(self.faces[i1:i2-1]):
+            #semisoma
+            nextFace = self.faces[i+1]
+            volume = (face.getArea() + nextFace.getArea()) * abs(face.position.z() - nextFace.position.z()) / 2
+            if volume>0:
+                ct+=volume
+            else:
+                at+=abs(volume)
+        return ct, at
+
 
 class square(curve):
 

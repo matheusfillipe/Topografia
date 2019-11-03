@@ -1700,21 +1700,25 @@ class ssRampaDialog(rampaDialog):
         label = QtWidgets.QLabel("Modificar Rampa")
 
         Incl=QtWidgets.QDoubleSpinBox()
-        Incl.setMaximum(100.0)
-        Incl.setMinimum(-100.0)
+        Incl.setMaximum(99.99)
+        Incl.setMinimum(-99.99)
+        Incl.setSingleStep(.05)
         compr=QtWidgets.QDoubleSpinBox()
         compr.setMaximum(1000000000.0)
         compr.setMinimum(0.0)
+        compr.setSingleStep(.1)
         cota=QtWidgets.QDoubleSpinBox()
         cota.setMinimum(0.0)
         cota.setMaximum(10000.0)
+        cota.setSingleStep(.1)
         cota2 = QtWidgets.QDoubleSpinBox()
         cota2.setMinimum(0.0)
         cota2.setMaximum(10000.0)
+        cota2.setSingleStep(.1)
         abscissa=QtWidgets.QDoubleSpinBox()
         abscissa.setMaximum(1000000000.0)
         abscissa.setMinimum(0.0)
-        Incl.setSingleStep(.01)
+        abscissa.setSingleStep(.1)
 
         InclLbl = QtWidgets.QLabel(u"Inclinação: ")
         posInclLbl = QtWidgets.QLabel(u"%")
@@ -1774,11 +1778,13 @@ class ssRampaDialog(rampaDialog):
         self.cotaText = cota
         cota2.setValue(round(h1.pos().y(),2))
         self.cota = h2.pos().y()
+        self.cotaa = h1.pos().y()
         self.abscissaText = abscissa
         self.abscissa = h2.pos().x()
-        cota2.setDisabled(True)
         cota2.setWhatsThis("Cota do ponto anterior ao seguimento")
         cota.setWhatsThis("Cota do ponto adjacente ao seguimento")
+        self.cotaText2 = cota2
+        cota2.valueChanged.connect(self.updateCota)
 
         Incl.setValue(float(round(self.Incl, 2)))
         compr.setValue(float(round(self.compr, 2)))

@@ -1338,9 +1338,10 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.taludeLbA=pg.TextItem(text="Talude de corte", anchor=(.5,0))
 
 
-    def perfil_grafico(self):
-        self.perfilPlot.setWindowTitle('Sessao Tipo')
-        self.createLabels()
+    def perfil_grafico(self, reseting=False):
+        if not reseting:
+            self.perfilPlot.setWindowTitle('Sessao Tipo')
+            self.createLabels()
 
         if self.greide:
             lastHandleIndex=len(self.greide)-1
@@ -1356,6 +1357,9 @@ class Ui_sessaoTipo(Ui_Perfil):
             self.roi.setAcceptedMouseButtons(QtCore.Qt.RightButton)
             self.perfilPlot.addItem(self.roi)
 
+        if reseting:
+            self.st[self.current]=self.greide
+            self.updateData()
 
         self.lastGreide=self.getVertices()
         self.lastCurvas=self.getCurvas()
@@ -1450,7 +1454,6 @@ class Ui_sessaoTipo(Ui_Perfil):
 
 
     def setupUi(self, PerfilTrecho):
-
 
         PerfilTrecho.setObjectName(_fromUtf8("PerfilTrecho"))
         PerfilTrecho.resize(680, 320)
@@ -1556,7 +1559,10 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.changingEstaca=False
 
     def resetSS(self):
-        pass
+        self.perfilPlot.removeItem(self.roi)
+        self.perfil_grafico(reseting=True)
+#        self.reset()
+
 
     def volumeCalc(self):
         diag=VolumeDialog(self)
@@ -1623,13 +1629,13 @@ class Ui_sessaoTipo(Ui_Perfil):
 
 
     def nextEstaca(self):
-        if self.current<len(self.progressiva)-1:
+        if self.current<len(self.progressiva)-1 and not self.changingEstaca:
             self.current+=1
             self.changingEstaca=True
             self.reset()
 
     def previousEstaca(self):
-        if self.current>0:
+        if self.current>0 and not self.changingEstaca:
             self.current-=1
             self.changingEstaca=True
             self.reset()
@@ -1654,9 +1660,7 @@ class Ui_sessaoTipo(Ui_Perfil):
             self.reset()
 
 
-
     def reset(self):
-
         perfilPlot=self.perfilPlot
         self.disableArrowButtons(True)
 
@@ -1667,10 +1671,7 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.btnNext.setDisabled(self.current == len(self.progressiva))
         self.btnPrevious.setDisabled(self.current == 0)
         self.selectEstacaComboBox.setCurrentIndex(self.current)
-
-        self.changingEstaca=False
         self.Vlayout.replaceWidget(perfilPlot, self.perfilPlot)
-
         self.disableArrowButtons(False)
 
         if not self.editMode:
@@ -1682,6 +1683,7 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.btnNext.setDisabled(self.current >= len(self.progressiva)-1)
         self.btnPrevious.setDisabled(self.current == 0)
         self.updateAreaLabels()
+        self.changingEstaca = False
 
     def updateAreaLabels(self):
 

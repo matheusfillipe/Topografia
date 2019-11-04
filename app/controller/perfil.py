@@ -1584,11 +1584,15 @@ class Ui_sessaoTipo(Ui_Perfil):
 
 
     def volumeCalc(self):
-        diag=VolumeDialog(self)
-        ct, at=self.prismoide.getVolumes(0)
-        diag.set(ct, at)
-        diag.exec_()
-
+        try:
+            diag=VolumeDialog(self)
+            ct, at=self.prismoide.getVolumes(0)
+            diag.set(ct, at)
+            diag.exec_()
+        except Exception as e:
+            import traceback
+            msgLog(str(traceback.format_exception(None, e, e.__traceback__)))
+            messageDialog(message="Erro! Os taludes definidos não encontram o terreno!")
 
     def layAllOut(self):
 
@@ -1708,8 +1712,15 @@ class Ui_sessaoTipo(Ui_Perfil):
 
 
     def updateAreaLabels(self):
-        act, aat = self.prismoide.getFace(self.current).getAreas()
-        self.areaLb.setText("Area: " + str(round(self.prismoide.getFace(self.current).getArea(),3))+"m²")
+        try:
+            act, aat = self.prismoide.getFace(self.current).getAreas()
+            area=self.prismoide.getFace(self.current).getArea()
+        except Exception as e:
+            import traceback
+            msgLog(str(traceback.format_exception(None, e, e.__traceback__)))
+            messageDialog(message="Erro! Os taludes definidos não encontram o terreno!")
+            area=act=aat=0
+        self.areaLb.setText("Area: " + str(round(area,3))+"m²")
         dist=Config.instance().DIST
         self.progressivaLb.setText("E: " + str(int(self.progressiva[self.current]/dist))+" + "+str(round((self.progressiva[self.current]/dist-int(self.progressiva[self.current]/dist))*dist,4)) + "  " + str(self.intersecTable[self.current][1]))
        # act,aat = self.prismoide.getAreasCtAt(self.current)

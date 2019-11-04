@@ -989,15 +989,7 @@ class face(figure):
             else: #Corte
                 areaCt+=abs(mf.getArea())
 
-        areaCt=-areaCt
-
-     #   if round(areaAt-areaCt,2)!=self.getArea():
-     #       if abs(areaAt) > abs(areaCt):
-     #           areaCt=self.getArea()-areaAt
-     #       else:
-     #           areaAt=self.getArea()-areaCt
-
-        return areaCt, areaAt
+        return areaCt, -areaAt
 
 
     def copy(self):

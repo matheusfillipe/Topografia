@@ -6,6 +6,7 @@ from builtins import zip
 import numpy as np
 from PyQt5.QtCore import QPointF
 from qgis.PyQt import QtGui
+from copy import deepcopy
 
 from ..model.helper.calculos import vmedia, fmax
 from ..model import constants
@@ -20,8 +21,6 @@ from ... import PyQtGraph as pg
 ##############################################################################################################
 #TODO:
 
-
-#checar se as curvas são possíveis
 #Features to  ADD
 #Cálculo de aterro imbutido
 #ctrl+Z utility
@@ -741,8 +740,7 @@ class ssRoi(CustomPolyLineROI):
 
     def __init__(self, *args, **kwds):
         super(ssRoi, self).__init__(*args, **kwds)
-
-
+        self.cota=kwds["cota"]
 
     def segmentClicked(self, segment, ev=None, pos=None): ## pos should be in this item's coordinate system
         if ev != None:
@@ -752,7 +750,7 @@ class ssRoi(CustomPolyLineROI):
         else:
             raise Exception("Either an event or a position must be given.")
         if ev.button() == QtCore.Qt.RightButton:
-            d = ssRampaDialog(self, segment, pos)
+            d = ssRampaDialog(self, segment, pos, self.cota)
             d.exec_()
             self.wasModified.emit()
             self.sigRegionChangeFinished.emit(self)
@@ -1275,30 +1273,25 @@ class Ui_sessaoTipo(Ui_Perfil):
     plotar = QtCore.pyqtSignal(int)
 
     def __init__(self, iface, terreno, hor, ver=[], st=False, prism=None, estacanum=0, greide=[], title="Perfil Transversal"):
-
         self.progressiva=[]
         self.terreno=[]
         self.iface=iface
         self.editMode=True
+        self.intersecTable=hor
 
         if not st:
             msgLog("Creating new terrain")
             st=[]
             self.terreno=terreno
-            ptList=[]
-            for item in greide:
-                ptList.append(Figure.point(item[0],item[1]))
-            greide=Figure.curve()
-            greide.setPoints(ptList)
-
+            self.verticais=self.vGreideCurve(hor)
+            defaultST = [[-9.8, -5.0], [-8.3, -5.0], [-7.3, 0], [-7.2, 0], [-7.12, -0.1], [-7.08, -0.1], [-7, 0],
+                         [0, 0.14], [7, 0], [7.08, -0.1], [7.12, -0.1], [7.2, 0], [7.3, 0], [8.3, 5], [9.8, 5]]
             for item in hor:
                 self.progressiva.append(float(item[2]))
-                defaultST=[[-9.8,-5.0],[-8.3,-5.0],[-7.3,0],[-7.2,0],[-7.12,-0.1], [-7.08,-0.1], [-7,0], [0,0.14], [7,0], [7.08,-0.1], [7.12,-0.1], [7.2,0], [7.3,0], [8.3,5], [9.8,5]]
                 newST=[]
                 for pt in defaultST:
-                   newST.append([pt[0], pt[1]+greide.getY(float(item[2]))])
+                   newST.append([pt[0], pt[1]+self.verticais.getY(float(item[2]))])
                 st.append(newST)
-
             self.st=st
 
         else:
@@ -1306,6 +1299,7 @@ class Ui_sessaoTipo(Ui_Perfil):
             self.terreno=terreno
             self.progressiva=ver
             self.st=st
+            self.verticais=self.vGreideCurve(hor)
 
         self.current=estacanum
 
@@ -1320,10 +1314,23 @@ class Ui_sessaoTipo(Ui_Perfil):
         else:
             self.prismoide = Prismoide.QPrismoid(prism=prism, cti=7)
 
-        self.roi.sigRegionChangeFinished.connect(self.updateData)
+        if not len(self.terreno)==len(self.st)==len(self.progressiva)==len(self.verticais.getPoints())==len(self.prismoide.progressiva):
+            msgLog("Terreno: " + str(len(self.terreno)))
+            msgLog("Progressiva: " + str(len(self.progressiva)))
+            msgLog("Verticais: " + str(len(self.verticais.getPoints())))
+            msgLog("Prismoide: " + str(len(self.self.prismoide.progressiva)))
+            messageDialog(message="O traçado foi modificado! As edições não vão funcionar corretamente!")
 
+        self.roi.sigRegionChangeFinished.connect(self.updateData)
         self.updateAreaLabels()
 
+    def vGreideCurve(self, greide):
+        ptList = []
+        for item in greide:
+            ptList.append(Figure.point(item[2], item[5]))
+        greide = Figure.curve()
+        greide.setPoints(ptList)
+        return greide
 
     def createPrismoid(self, j):
         self.prismoide.generate(j)
@@ -1352,7 +1359,7 @@ class Ui_sessaoTipo(Ui_Perfil):
                 pos=(x,cota)
                 L.append(pos)
 
-            self.roi = ssRoi(L)
+            self.roi = ssRoi(L, cota=self.verticais.getY(self.progressiva[self.current]))
             self.roi.wasModified.connect(self.setAsNotSaved)
             self.roi.setAcceptedMouseButtons(QtCore.Qt.RightButton)
             self.perfilPlot.addItem(self.roi)
@@ -1471,6 +1478,18 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.btnCalcular.clicked.connect(self.plotTrans)
         self.btnCalcular.setText("Criar Layer")
         self.btnCalcular.setToolTip("Plotar Layers com as tranversais sobre o traçado horizontal (Perpendiculares ao traçado)")
+
+        self.btnExportDxf = QtWidgets.QPushButton(PerfilTrecho)
+        self.btnExportDxf.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnExportDxf.setObjectName(_fromUtf8("btnExportDxf"))
+        self.btnExportDxf.setText("Exportar")
+        self.btnExportDxf.setToolTip("Exporta DXF que pode ser modificado e importado")
+
+        self.btnImportDxf = QtWidgets.QPushButton(PerfilTrecho)
+        self.btnImportDxf.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnImportDxf.setObjectName(_fromUtf8("btnImportDxf"))
+        self.btnImportDxf.setText("Importar")
+        self.btnImportDxf.setToolTip("Importar DXF com a sessão tipo")
 
         self.btnAutoRange=QtWidgets.QPushButton(PerfilTrecho)
         self.btnAutoRange.setGeometry(QtCore.QRect(260, 80, 99, 27))
@@ -1592,6 +1611,8 @@ class Ui_sessaoTipo(Ui_Perfil):
         Vlayout=QtWidgets.QVBoxLayout()
 
         Hlayout.addWidget(self.btnCalcular)
+        Hlayout.addWidget(self.btnExportDxf)
+        Hlayout.addWidget(self.btnImportDxf)
         Hlayout.addWidget(self.applyBtn)
         Hlayout.addWidget(self.btnAutoRange)
         Hlayout.addWidget(self.btnReset)
@@ -1685,15 +1706,15 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.updateAreaLabels()
         self.changingEstaca = False
 
+
     def updateAreaLabels(self):
-
-        self.areaLb.setText("Area: " + str(round(self.prismoide.getFace(self.current).getArea(),4))+"m²")
+        act, aat = self.prismoide.getFace(self.current).getAreas()
+        self.areaLb.setText("Area: " + str(round(self.prismoide.getFace(self.current).getArea(),2))+"m²")
         dist=Config.instance().DIST
-        self.progressivaLb.setText("E: " + str(int(self.progressiva[self.current]/dist))+" + "+str(round((self.progressiva[self.current]/dist-int(self.progressiva[self.current]/dist))*dist,4)))
-        act,aat = self.prismoide.getAreasCtAt(self.current)
-        self.areaCtLb.setText("Corte: " + str(round(act,4))+"m²")
-        self.areaAtLb.setText("Aterro: " + str(round(aat,4))+"m²")
-
+        self.progressivaLb.setText("E: " + str(int(self.progressiva[self.current]/dist))+" + "+str(round((self.progressiva[self.current]/dist-int(self.progressiva[self.current]/dist))*dist,4)) + "  " + str(self.intersecTable[self.current][1]))
+       # act,aat = self.prismoide.getAreasCtAt(self.current)
+        self.areaCtLb.setText("Corte: " + str(round(act,2))+"m²")
+        self.areaAtLb.setText("Aterro: " + str(round(aat,2))+"m²")
 
 
     def plotTransCurve(self):
@@ -1717,19 +1738,18 @@ class Ui_sessaoTipo(Ui_Perfil):
         diag=ApplyTransDialog(self.iface, self.progressiva)
         diag.show()
         if diag.exec_()==QtWidgets.QDialog.Accepted:
-            st=self.st[self.current]
-            for p in diag.progressivas:
-                newST=[]
+            st=deepcopy(self.st[self.current])
+            greide=self.verticais
+            for estaca in range(diag.progressivas[0],diag.progressivas[1]+1):
+                progressiva=self.progressiva[estaca]
+                newST = []
                 for pt in st:
-                    t=interpolList(self.terreno[self.current],1)
-                    tn=interpolList(self.terreno[p],1)
-                    newST.append([float(pt[0]),float(pt[1])-float(t)+float(tn)])
-
-                self.st[p]=newST
+                    newST.append([float(pt[0]), float(pt[1]) + float(greide.getY(progressiva))-float(greide.getY(self.progressiva[self.current]))])
+                self.st[estaca]=newST
 
             self.prismoide.st = self.st
-            for p in diag.progressivas:
-                self.createPrismoid(p)
+            for estaca in range(diag.progressivas[0],diag.progressivas[1]+1):
+                self.prismoide.generate(estaca)
 
     def setAtCti(self):
         diag=SetCtAtiDialog(self.iface, self.roi.getVerticesList())

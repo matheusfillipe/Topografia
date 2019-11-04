@@ -1675,14 +1675,16 @@ class rampaDialog(QtWidgets.QDialog):
     
     def cleanClose(self):
         self.h2.setPos(self.initialPos[1].x(),self.initialPos[1].y())
+        self.h1.setPos(self.initialPos[0].x(),self.initialPos[0].y())
         self.close()
 
-
-
 class ssRampaDialog(rampaDialog):
-    def __init__(self, roi, segment, pos):
+    def __init__(self, roi, segment, pos, cota):
+        self.ycenter=cota
+        self.isBeingModified = True
         super().__init__(roi, segment, pos)
         self.setWindowTitle("Modificar Elemento")
+
 
     def setupUI(self):
         r = []
@@ -1708,16 +1710,16 @@ class ssRampaDialog(rampaDialog):
         compr.setMinimum(0.0)
         compr.setSingleStep(.1)
         cota=QtWidgets.QDoubleSpinBox()
-        cota.setMinimum(0.0)
+        cota.setMinimum(-10000.0)
         cota.setMaximum(10000.0)
         cota.setSingleStep(.1)
         cota2 = QtWidgets.QDoubleSpinBox()
-        cota2.setMinimum(0.0)
+        cota2.setMinimum(-10000.0)
         cota2.setMaximum(10000.0)
         cota2.setSingleStep(.1)
         abscissa=QtWidgets.QDoubleSpinBox()
-        abscissa.setMaximum(1000000000.0)
-        abscissa.setMinimum(0.0)
+        abscissa.setMaximum(100000.0)
+        abscissa.setMinimum(-10000.0)
         abscissa.setSingleStep(.1)
 
         InclLbl = QtWidgets.QLabel(u"Inclinação: ")
@@ -1776,7 +1778,6 @@ class ssRampaDialog(rampaDialog):
         self.comprText = compr
         self.compr = np.sqrt((h2.pos().y() - h1.pos().y()) ** 2 + (h2.pos().x() - h1.pos().x()) ** 2)
         self.cotaText = cota
-        cota2.setValue(round(h1.pos().y(),2))
         self.cota = h2.pos().y()
         self.cotaa = h1.pos().y()
         self.abscissaText = abscissa
@@ -1784,20 +1785,80 @@ class ssRampaDialog(rampaDialog):
         cota2.setWhatsThis("Cota do ponto anterior ao seguimento")
         cota.setWhatsThis("Cota do ponto adjacente ao seguimento")
         self.cotaText2 = cota2
-        cota2.valueChanged.connect(self.updateCota)
 
-        Incl.setValue(float(round(self.Incl, 2)))
-        compr.setValue(float(round(self.compr, 2)))
-        cota.setValue(float(round(self.cota, 2)))
+        cota.setValue(float(round(self.cota-self.ycenter, 2)))
         abscissa.setValue(float(round(self.abscissa, 2)))
+        cota2.setValue(round(self.cotaa-self.ycenter,2))
 
         compr.valueChanged.connect(self.updateCompr)
         cota.valueChanged.connect(self.updateCota)
         abscissa.valueChanged.connect(self.updateAbscissa)
         Incl.valueChanged.connect(self.updateIncl)
+        cota2.valueChanged.connect(self.updateCota)
 
+        Incl.setValue(float(round(self.Incl, 2)))
+        compr.setValue(float(round(self.compr, 2)))
         self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.isBeingModified = False
+
+    def updateCota(self):
+        try:
+            if not self.isBeingModified:
+                self.cota=float(self.cotaText.value())+self.ycenter
+                self.cotaa=float(self.cotaText2.value())+self.ycenter
+                self.update()
+                self.compr=np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)
+                self.Incl=100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())
+                self.redefineUI(2)
+        except ValueError:
+            pass
+
+    def redefineUI(self, elm):
+        self.isBeingModified = True
+
+        if elm == 1:
+            self.cotaText.setValue(float(round(self.cota-self.ycenter, 2)))
+            self.abscissaText.setValue(float(round(self.abscissa, 2)))
+            self.InclText.setValue(float(round(self.Incl, 2)))
+        elif elm == 2:
+            self.comprText.setValue(float(round(self.compr, 2)))
+            self.abscissaText.setValue(float(round(self.abscissa, 2)))
+            self.InclText.setValue(float(round(self.Incl, 2)))
+        elif elm == 3:
+            self.comprText.setValue(float(round(self.compr, 2)))
+            self.cotaText.setValue(float(round(self.cota-self.ycenter, 2)))
+            self.InclText.setValue(float(round(self.Incl, 2)))
+        elif elm == 4:
+            self.comprText.setValue(float(round(self.compr, 2)))
+            self.cotaText.setValue(float(round(self.cota-self.ycenter, 2)))
+            self.abscissaText.setValue(float(round(self.abscissa, 2)))
+        self.isBeingModified=False
+
+
+    def update(self):
+
+        self.h2.setPos(self.abscissa, self.cota)
+        self.h1.setPos(self.h1.pos().x(), self.cotaa)
+
+        if self.firstHandle == self.h2:
+            self.firstHandle.setPos(self.initialPos[1].x(),self.cota)
+            self.Incl=100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())
+            self.compr=np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)
+            self.cota=self.h2.pos().y()
+            self.abscissa=self.h2.pos().x()
+            self.cotaText.setValue(float(self.cota)-self.ycenter)
+            self.abscissaText.setValue(float(self.abscissa))
+
+        if self.lastHandle == self.h2:
+            self.lastHandle.setPos(self.initialPos[1].x(),self.cota)
+            self.Incl=100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())
+            self.compr=np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)
+            self.cota=self.h2.pos().y()
+            self.abscissa=self.h2.pos().x()
+            self.cotaText.setValue(float(self.cota)-self.ycenter)
+            self.abscissaText.setValue(float(self.abscissa))
+
+
 
 class brucknerRampaDialog(rampaDialog):
     def __init__(self, roi, segment, pos):
@@ -1959,23 +2020,25 @@ class ApplyTransDialog(QtWidgets.QDialog, APLICAR_TRANSVERSAL_DIALOG):
         self.iface=iface
         self.setupUi(self)
         self.progressiva=prog
-        self.progressivas=None
+        self.progressivas=[]
+        self.dist=Config.instance().DIST
+        self.firstCb.currentIndexChanged.connect(self.setSecondCb)
+        self.secondCb.currentIndexChanged.connect(self.setIndexes)
         self.setupUi2()
 
     def setupUi2(self):
-        d=Config.instance().DIST
-        self.firstCb.addItems(list(map(lambda i: fastProg2EstacaStr(i,d), self.progressiva)))
-        self.firstCb.currentIndexChanged.connect(self.setSecondCb)
+        d=self.dist
+        self.firstCb.addItems(list(map(lambda i: fastProg2EstacaStr(i, d), self.progressiva)))
         self.setSecondCb()
 
     def setSecondCb(self):
-        d=Config.instance().DIST
-        self.secondCb.addItems(list(map(lambda i: fastProg2EstacaStr(i,d), self.progressiva[self.firstCb.currentIndex()+1:])))
-        self.secondCb.currentIndexChanged.connect(self.setIndexes)
+        d=self.dist
+        self.secondCb.clear()
+        self.secondCb.addItems(list(map(lambda i: fastProg2EstacaStr(i, d), self.progressiva[self.firstCb.currentIndex():])))
         self.setIndexes()
 
     def setIndexes(self):
-        self.progressivas=[self.firstCb.currentIndex(),self.secondCb.currentIndex()+self.firstCb.currentIndex()+1]
+        self.progressivas=[self.firstCb.currentIndex(),self.secondCb.currentIndex()]
 
 
 class SetCtAtiDialog(QtWidgets.QDialog, SETCTATI_DIALOG):

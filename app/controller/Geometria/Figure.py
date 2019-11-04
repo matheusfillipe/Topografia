@@ -863,6 +863,31 @@ class curve(figure):
             H.append(abs(h))
         return max(H)
 
+    def cut(self, xn):
+        newCurve1=curve()
+        newCurve2=curve()
+        lines1=[]
+        lines2=[]
+        cutted=False
+        for l in self.lines:
+            if not cutted:
+                if xn in l:
+                    lines1.append(line(l.point1, xn))
+                    lines2.append(line(xn, l.point2))
+                    cutted=True
+                else:
+                    lines1.append(l)
+            else:
+                lines2.append(l)
+
+        if len(lines1)>0:
+            newCurve1.setLines(lines1)
+        if len(lines2)>0:
+            newCurve2.setLines(lines2)
+        return newCurve1, newCurve2
+
+
+
 class face(figure):
 
     def __init__(self):
@@ -941,10 +966,46 @@ class face(figure):
         self.area=s
         return s
 
+    def getAreas(self):
+        sup=self.superior
+        inf=self.inferior
+        areaCt=0
+        areaAt=0
+        x=sup.intersect(inf)
+
+
+        for i in range(0, len(x)-1):
+            mf=face()
+            xp=x[i].x()
+            xn=x[i+1].x()
+            m=(xp+xn)/2
+            pista, sup=sup.cut(x[i+1])
+            terreno, inf=inf.cut(x[i+1])
+            mf.from2Curves(pista,terreno)
+          #  test(plotCurve(mf.curve))
+
+            if self.inferior.getY(m)<self.superior.getY(m): #Aterro
+                areaAt+=abs(mf.getArea())
+            else: #Corte
+                areaCt+=abs(mf.getArea())
+
+        areaCt=-areaCt
+
+     #   if round(areaAt-areaCt,2)!=self.getArea():
+     #       if abs(areaAt) > abs(areaCt):
+     #           areaCt=self.getArea()-areaAt
+     #       else:
+     #           areaAt=self.getArea()-areaCt
+
+        return areaCt, areaAt
+
+
     def copy(self):
         f=face()
         f.fromClosedCurve(self.curve.copy())
         return f
+
+
 
 class prismoide(figure):
 
@@ -1028,16 +1089,16 @@ class prismoide(figure):
     def getVolumes(self, i1=0, i2=None):
         if i2 is None:
             i2 = len(self.faces)
-        at = ct = 0
+        vat = vct = 0
         for i, face in enumerate(self.faces[i1:i2-1]):
             #semisoma
             nextFace = self.faces[i+1]
-            volume = (face.getArea() + nextFace.getArea()) * abs(face.position.z() - nextFace.position.z()) / 2
-            if volume>0:
-                ct+=volume
-            else:
-                at+=abs(volume)
-        return ct, at
+            nct, nat = nextFace.getAreas()
+            ct, at = face.getAreas()
+            vct += (ct + nct) * abs(face.position.z() - nextFace.position.z()) / 2
+            vat += (at + nat) * abs(face.position.z() - nextFace.position.z()) / 2
+
+        return vct, vat
 
 
 class square(curve):

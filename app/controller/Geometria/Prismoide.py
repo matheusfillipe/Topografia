@@ -149,11 +149,10 @@ class QPrismoid(prismoide, QThread):
         pista.appendCurve(right)
         f.from2Curves(pista, terreno)
 
-       #TODO replace custom offset 20
         self.replaceFaceKeepZ(f, i)
 
     def getFaces(self):
-        """Iterate through primoid's faces  -> face"""
+        """Generator: Iterate through primoid's faces  -> face"""
         for face in self.faces:
             yield face
 
@@ -207,16 +206,11 @@ class QPrismoid(prismoide, QThread):
         return areaCt, areaAt
 
     #correct valeta accti (bug to corte embaixo)
-    #correct saving prismoid
     #correct terreno prismoid intersec lines on each side to trim
-    #Set superelevation and super width rules
 
-
-    #Correct 20 m problem
     #Add distance vision to CV's
     #Better horizontal plotind and drawing
 
 
 
-    #TODO reduce getArea and getVolume calls by doing it on instanciacion and checking if primsmoid changed before getVolume call
 

@@ -117,6 +117,24 @@ class Estacas(object):
         #self.viewCv.btnClean.clicked.connect(self.cleanTrans)
         self.viewCv.btnRecalcular.clicked.connect(self.recalcularVerticais)
 
+    def exportTrans(self):
+        filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save dxf", filter="Arquivo DXF (*.dxf)")
+        if filename[0] in ["", None]: return
+        v=self.trans.verticais.getY(self.trans.progressiva[self.trans.current])
+        self.saveDXF(filename[0], [[p2QgsPoint(x,y-v) for x, y in self.trans.st[self.trans.current]]])
+
+    def importTrans(self):
+        filename = QtWidgets.QFileDialog.getOpenFileName(caption="Open dxf", filter="Arquivo DXF (*.dxf)")
+        if filename[0] in ["", None]: return
+        uri = filename[0]+"|layername=entities|geometrytype=Line"
+        vlayer = QgsVectorLayer(uri, "Sessão tipo", "ogr")
+        features = [f for f in vlayer.getFeatures()]
+        v = self.trans.verticais.getY(self.trans.progressiva[self.trans.current])
+        pl=featureToPolyline(features[0])
+        self.trans.st[self.trans.current]=[[pt.x(), pt.y()+v] for pt in pl]
+        self.trans.prismoide.st = self.trans.st
+        self.trans.prismoide.generate(self.trans.current)
+        self.trans.reset()
 
     def bruckner(self):
         self.progressDialog.show()
@@ -664,7 +682,7 @@ class Estacas(object):
         if prog:
             #Database Trans
             self.progressDialog.setValue(1)
-            self.trans=Ui_sessaoTipo(self.iface, est[1], self.model.load_intersect(), prog, est[0], prism=prism)
+            self.trans=Ui_sessaoTipo(self.iface, est[1], self.model.load_intersect(), prog, est[0], prism=prism, greide=self.model.getGreide(self.model.id_filename), title="Transversal: "+str(self.model.getNameFromId(self.model.id_filename)))
         else:
             #New trans
             self.progressDialog.setValue(1)
@@ -674,8 +692,16 @@ class Estacas(object):
                 return False, False, False
             else:
                 prog=True
-            self.trans=Ui_sessaoTipo(self.iface, terreno, self.model.load_intersect(), self.estacasVerticalList, greide=self.model.getGreide(self.model.id_filename), title="Transversal: "+str(self.model.getNameFromId(self.model.id_filename)))
-        self.progressDialog.setValue(95)
+            self.progressDialog.setValue(91)
+            intersect=self.model.load_intersect()
+            self.progressDialog.setValue(92)
+            if len(intersect)<=1:
+                self.generateIntersec(True)
+                self.progressDialog.setValue(93)
+                intersect = self.model.load_intersect()
+                self.progressDialog.setValue(95)
+            self.trans=Ui_sessaoTipo(self.iface, terreno, intersect, self.estacasVerticalList, greide=self.model.getGreide(self.model.id_filename), title="Transversal: "+str(self.model.getNameFromId(self.model.id_filename)))
+
         return prog, est, prism
 
     def generateTrans(self):
@@ -688,8 +714,11 @@ class Estacas(object):
         self.trans.btnClean.clicked.connect(self.cleanTrans)
         self.trans.plotar.connect(self.plotTransLayer)
         self.progressDialog.close()
+        self.trans.btnExportDxf.clicked.connect(self.exportTrans)
+        self.trans.btnImportDxf.clicked.connect(self.importTrans)
         self.trans.showMaximized()
         self.trans.exec_()
+        self.raiseWindow(self.viewCv)
 
 
     def saveTrans(self):

@@ -20,11 +20,10 @@ from qgis._core import QgsGeometry
 from qgis._core import QgsProject
 from qgis._core import QgsPoint
 from qgis._core import QgsVectorLayer
-from qgis.core import *
 from qgis.gui import *
 import sys, os, http.client, json, tempfile, urllib.request, urllib.parse, urllib.error
 from qgis.PyQt import QtWidgets
-
+from qgis.core import QgsRectangle, QgsGeometry, QgsVectorLayer, QgsPoint, QgsFeature, QgsPointXY, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsField, QgsFields, QgsMessageLog, QgsWkbTypes
 
 
 class Create_vlayer(object):

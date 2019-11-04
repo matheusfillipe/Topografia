@@ -7,7 +7,7 @@ from builtins import str
 from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import QSettings, Qt
 from qgis.PyQt.QtWidgets import QAbstractItemView
-from qgis._core import *
+from qgis._core import QgsCoordinateReferenceSystem, QgsProject, QgsRasterLayer, QgsMapLayer, QgsRectangle, QgsVectorFileWriter, QgsVectorLayer
 
 from ..model.utils import yesNoDialog
 from ..model.config import Config, extractZIP, compactZIP

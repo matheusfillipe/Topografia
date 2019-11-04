@@ -2,7 +2,7 @@ from copy import deepcopy
 
 from qgis.PyQt import QtGui, uic, Qt, QtWidgets
 import os
-from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtCore import pyqtSignal
 
 from ...model.utils import msgLog
 

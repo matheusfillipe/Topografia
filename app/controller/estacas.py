@@ -12,6 +12,11 @@ from ..controller.threading import nongui
 DEBUG=True
 from ..controller.Geometria.Prismoide import QPrismoid
 
+from qgis.core import QgsDxfExport
+try:
+    import dxfgrabber
+except:
+    pass
 
 from ..controller.perfil import Ui_Perfil, cv as CV, Ui_sessaoTipo, Ui_Bruckner
 from ..model.estacas import Estacas as EstacasModel
@@ -121,7 +126,7 @@ class Estacas(object):
         filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save dxf", filter="Arquivo DXF (*.dxf)")
         if filename[0] in ["", None]: return
         v=self.trans.verticais.getY(self.trans.progressiva[self.trans.current])
-        self.saveDXF(filename[0], [[p2QgsPoint(x,y-v) for x, y in self.trans.st[self.trans.current]]])
+        self.saveDXF(filename[0], [[p2QgsPoint(float(x),float(y)-float(v)) for x, y in self.trans.st[self.trans.current]]])
 
     def importTrans(self):
         filename = QtWidgets.QFileDialog.getOpenFileName(caption="Open dxf", filter="Arquivo DXF (*.dxf)")
@@ -313,7 +318,7 @@ class Estacas(object):
         self.progressDialog.setValue(50)
         if X:
             # Database Trans
-            self.trans = Ui_sessaoTipo(self.iface, est[1], self.estacasHorizontalList, X, est[0], prism=prism)
+            self.trans=Ui_sessaoTipo(self.iface, est[1], self.model.load_intersect(), X, est[0], prism=prism, greide=self.model.getGreide(self.model.id_filename), title="Transversal: "+str(self.model.getNameFromId(self.model.id_filename)))
         else:
             self.progressDialog.close()
             msgLog("Não há sessão transversal!")
@@ -443,7 +448,7 @@ class Estacas(object):
             try:
                 prog, est, prism = self.model.getTrans(self.model.id_filename)
                 if prog:
-                    self.trans=Ui_sessaoTipo(self.iface, est[1], self.estacasHorizontalList, prog, est[0], prism=prism)
+                    self.trans=Ui_sessaoTipo(self.iface, est[1], self.model.load_intersect(), prog, est[0], prism=prism, greide=self.model.getGreide(self.model.id_filename), title="Transversal: " + str(self.model.getNameFromId(self.model.id_filename)))
                     self.saveTrans()
             except Exception as e:
                 msgLog("Falha ao duplicar Transversais: ")

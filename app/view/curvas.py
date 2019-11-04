@@ -32,11 +32,7 @@ from qgis._core import QgsVectorLayer
 from qgis._core import Qgis
 
 from qgis.utils import *
-
-from qgis.PyQt.QtCore import *
-from qgis.PyQt.QtGui import *
-from qgis.PyQt.QtWidgets import QAction
-from qgis.PyQt import  QtWidgets
+from qgis.PyQt import QtWidgets
 
 from ..model.helper.calculos import *
 from ..model.curvas import Curvas as CurvasModel

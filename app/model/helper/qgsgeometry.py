@@ -1,10 +1,9 @@
 from copy import deepcopy
 
-from qgis.core import *
 from ..utils import *
 import numpy as np
 from osgeo import gdal
-
+from qgis.core import QgsRectangle, QgsGeometry, QgsVectorLayer, QgsPoint, QgsFeature, QgsPointXY, QgsCircularString
 
 polyline=qgsGeometryToPolyline
 

@@ -1142,7 +1142,7 @@ class Ui_Perfil(QtWidgets.QDialog):
 
         self.btnSave=QtWidgets.QPushButton(PerfilTrecho)
         self.btnSave.setGeometry(QtCore.QRect(260, 80, 99, 27))
-        self.btnSave.setText("Salvar")
+        self.btnSave.setText("Aplicar")
         self.btnSave.clicked.connect(self.salvarPerfil)
 
         self.btnCancel=QtWidgets.QPushButton(PerfilTrecho)
@@ -1318,7 +1318,7 @@ class Ui_sessaoTipo(Ui_Perfil):
             msgLog("Terreno: " + str(len(self.terreno)))
             msgLog("Progressiva: " + str(len(self.progressiva)))
             msgLog("Verticais: " + str(len(self.verticais.getPoints())))
-            msgLog("Prismoide: " + str(len(self.self.prismoide.progressiva)))
+            msgLog("Prismoide: " + str(len(self.prismoide.progressiva)))
             messageDialog(message="O traçado foi modificado! As edições não vão funcionar corretamente!")
 
         self.roi.sigRegionChangeFinished.connect(self.updateData)
@@ -1709,12 +1709,12 @@ class Ui_sessaoTipo(Ui_Perfil):
 
     def updateAreaLabels(self):
         act, aat = self.prismoide.getFace(self.current).getAreas()
-        self.areaLb.setText("Area: " + str(round(self.prismoide.getFace(self.current).getArea(),2))+"m²")
+        self.areaLb.setText("Area: " + str(round(self.prismoide.getFace(self.current).getArea(),3))+"m²")
         dist=Config.instance().DIST
         self.progressivaLb.setText("E: " + str(int(self.progressiva[self.current]/dist))+" + "+str(round((self.progressiva[self.current]/dist-int(self.progressiva[self.current]/dist))*dist,4)) + "  " + str(self.intersecTable[self.current][1]))
        # act,aat = self.prismoide.getAreasCtAt(self.current)
-        self.areaCtLb.setText("Corte: " + str(round(act,2))+"m²")
-        self.areaAtLb.setText("Aterro: " + str(round(aat,2))+"m²")
+        self.areaCtLb.setText("Corte: " + str(round(act,3))+"m²")
+        self.areaAtLb.setText("Aterro: " + str(round(aat,3))+"m²")
 
 
     def plotTransCurve(self):

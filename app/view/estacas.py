@@ -4,19 +4,22 @@ import sip
 from builtins import range
 
 import numpy as np
-import qgis
+from PyQt5.QtCore import Qt
 from qgis.PyQt import QtWidgets, QtGui
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtCore import pyqtSignal, QVariant
 from qgis.PyQt.QtGui import QKeySequence
 from qgis.PyQt.QtWidgets import *
+import qgis._core
 from qgis._core import QgsCoordinateReferenceSystem
-from qgis.core import *
+from qgis.core import QgsRectangle, QgsGeometry, QgsVectorLayer, QgsPoint, QgsFeature
 from qgis.gui import *
 from qgis.utils import *
+from qgis.core import QgsProject, QgsCoordinateTransform, QgsPointXY, QgsVectorFileWriter, QgsWkbTypes, QgsField, QgsFields, QgsCoordinateTransformContext
 
 from ..model.config import Config
 from ..model.utils import formatValue, msgLog, prog2estacaStr, p2QgsPoint, fastProg2EstacaStr
+
 
 # -*- coding: utf-8 -*-
 sip.setapi('QString',2)
@@ -1489,8 +1492,8 @@ class rampaDialog(QtWidgets.QDialog):
         posInclLbl=QtWidgets.QLabel(u"%")
         comprLbl=QtWidgets.QLabel(u"Distância inclinada: ")
         poscomprLbl=QtWidgets.QLabel(u"m")
-        cotaLbl=QtWidgets.QLabel(u"Cotas: V"+str(self.index-1)+"")
-        cotaLbl2=QtWidgets.QLabel(u"V"+str(self.index))
+        cotaLbl=QtWidgets.QLabel(u"Cotas: V"+str(self.index-2)+"")
+        cotaLbl2=QtWidgets.QLabel(u"V"+str(self.index-1))
         poscotaLbl=QtWidgets.QLabel(u"m")
         abscissalbl=QtWidgets.QLabel(u"Distância Horizontal: ")
         posabscissaLbl=QtWidgets.QLabel(u"m")
@@ -2174,7 +2177,7 @@ class SelectFeatureDialog(QtWidgets.QDialog, SELECT_FEATURE):
             self.tableWidget.setDisabled(True)
 
 from qgis.PyQt.QtWidgets import QProgressBar
-from qgis.PyQt.QtCore import *
+
 
 class ProgressDialog():#QtWidgets.QProgressDialog):  #, PROGRESS_DIALOG):
 

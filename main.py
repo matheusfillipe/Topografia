@@ -30,7 +30,7 @@ from builtins import object
 import os.path
 from qgis.utils import *
 
-from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtCore import qVersion, QTranslator
 from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtWidgets import QAction, QShortcut
 

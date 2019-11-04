@@ -1077,8 +1077,8 @@ class Ui_Perfil(QtWidgets.QDialog):
             self.lblTipo.setText("Montanhoso %s KM/h, Rampa n° %d, Inclinação %s%%"%(s, maxIndex, roundFloat2str(I[maxIndex-1])[:-2]))
 
         else:
-            self.lblTipo.setText("Indefinido %s KM/h, Rampa n° %d, Inclinação %s%%"%(s, maxIndex, roundFloat2str(I[maxIndex-1])[:-2]))
             s = "0"
+            self.lblTipo.setText("Indefinido %s KM/h, Rampa n° %d, Inclinação %s%%"%(s, maxIndex, roundFloat2str(I[maxIndex-1])[:-2]))
 
         self.velProj=int(s)
 
@@ -1152,7 +1152,7 @@ class Ui_Perfil(QtWidgets.QDialog):
 
         self.btnReset=QtWidgets.QPushButton(PerfilTrecho)
         self.btnReset.setGeometry(QtCore.QRect(260, 80, 99, 27))
-        self.btnReset.setText("Limpar")
+        self.btnReset.setText("Apagar")
         self.btnReset.clicked.connect(self.resetGeometry)
 
         Hlayout=QtWidgets.QHBoxLayout()
@@ -1770,17 +1770,22 @@ class Ui_Bruckner(Ui_Perfil):
        # self.V=[v/1000000 for v in V]
         self.V=V
         super(Ui_Bruckner, self).__init__(0, 0, 0, [], [], wintitle="Diagrama de Bruckner")
-        self.btnCalcular.setDisabled(True)
+#        self.btnCalcular.setDisabled(True)
         self.btnReset.clicked.disconnect()
-        self.btnReset.clicked.connect(self.resetView)
+        self.btnReset.clicked.connect(self.resetGeometry)
         self.setWindowTitle("Diagrama de Bruckner")
         self.btnSave.setText("Exportar")
+        self.btnCalcular.disconnect()
+        self.btnCalcular.setText("Limpar Alterações")
+        self.btnCalcular.clicked.connect(self.resetView)
+
 
     def resetView(self):
         for h in self.roi.getHandles()[1:-1]:
             h.sigRemoveRequested.emit(h)
         self.roi.removeRect(self.roi.getHandles()[-1])
         self.roi.removeRect(self.roi.getHandles()[0])
+
 
     def salvarPerfil(self):
         self.save.emit()

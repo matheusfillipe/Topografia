@@ -171,8 +171,15 @@ class Estacas(object):
         bruck = Ui_Bruckner(X, V)
         bruck.showMaximized()
         bruck.save.connect(lambda: self.bruckner2DXF(bruck.X, bruck.V))
+        bruck.reset.connect(self.brucknerReset)
+        self.brucknerView=bruck
         self.progressDialog.close()
         bruck.exec_()
+
+    def brucknerReset(self):
+        self.brucknerView.close()
+        self.model.cleanBruckner()
+        self.bruckner()
 
     def matplot(self, X, V, title="Diagrama de Bruckner", xlabel=u'Estacas', ylabel=u'Volume m³'):
         import matplotlib.pyplot as plt

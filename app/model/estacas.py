@@ -168,6 +168,19 @@ class Estacas(object):
         except sqlite3.OperationalError:
             return False
 
+    def cleanBruckner(self):
+        extractZIP(Config.fileName)
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con.execute("DELETE FROM BRUCKNER_TABLE WHERE TABLEESTACA_id=?", (self.id_filename,))
+        con.isolation_level = None
+        con.execute("VACUUM")
+        con.isolation_level = ''
+        con.commit()
+
+        con.close()
+        compactZIP(Config.fileName)
+        return True
+
     def getCurvas(self, id_filename):
         # instancia da model de curvas.
         curva_model = Curvas(id_filename)

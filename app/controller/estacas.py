@@ -136,9 +136,14 @@ class Estacas(object):
         features = [f for f in vlayer.getFeatures()]
         v = self.trans.verticais.getY(self.trans.progressiva[self.trans.current])
         pl=featureToPolyline(features[0])
+        from collections import OrderedDict
+        pl=list(OrderedDict.fromkeys(pl))
         self.trans.st[self.trans.current]=[[pt.x(), pt.y()+v] for pt in pl]
         self.trans.prismoide.st = self.trans.st
-        self.trans.prismoide.generate(self.trans.current)
+        try:
+            self.trans.prismoide.generate(self.trans.current)
+        except:
+            msgLog("Falha ao achar interseção com o terreno!")
         self.trans.reset()
 
     def bruckner(self):

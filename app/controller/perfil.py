@@ -1284,8 +1284,8 @@ class Ui_sessaoTipo(Ui_Perfil):
             st=[]
             self.terreno=terreno
             self.verticais=self.vGreideCurve(hor)
-            defaultST = [[-9.8, -5.0], [-8.3, -5.0], [-7.3, 0], [-7.2, 0], [-7.12, -0.1], [-7.08, -0.1], [-7, 0],
-                         [0, 0.14], [7, 0], [7.08, -0.1], [7.12, -0.1], [7.2, 0], [7.3, 0], [8.3, 5], [9.8, 5]]
+            defaultST = [[-9.549337802669857, -5.325013960480259], [-8.049337802669857, -5.370013960480259], [-4.299337802669858, -0.3700139604802599], [-4.099337802669858, -0.8700139604802597], [-3.699337802669858, -0.8700139604802597], [-3.499337802669858, -0.0700139604802598], [0.0006621973301417, -1.39604802598e-05], [3.500662197330141, -0.0700139604802598], [3.700662197330141, -0.8700139604802597], [4.100662197330142, -0.8700139604802597], [4.300662197330142, -0.3700139604802599], [6.800662197330142, 4.62998603951974], [8.300662197330142, 4.58498603951974]]
+
             for item in hor:
                 self.progressiva.append(float(item[2]))
                 newST=[]
@@ -1759,8 +1759,16 @@ class Ui_sessaoTipo(Ui_Perfil):
                 self.st[estaca]=newST
 
             self.prismoide.st = self.st
+            erros=[]
             for estaca in range(diag.progressivas[0],diag.progressivas[1]+1):
-                self.prismoide.generate(estaca)
+                try:
+                    self.prismoide.generate(estaca)
+                except Exception as e:
+                    import traceback
+                    msgLog(str(traceback.format_exception(None, e, e.__traceback__)))
+                    erros.append(estaca)
+            if erros:
+                messageDialog(message="Faha ao encontrar a interseção com o terreno nas estacas: \n"+"; ".join([str(e) for e in erros]))
 
     def setAtCti(self):
         diag=SetCtAtiDialog(self.iface, self.roi.getVerticesList())

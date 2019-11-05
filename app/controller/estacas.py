@@ -138,6 +138,7 @@ class Estacas(object):
         pl=featureToPolyline(features[0])
         from collections import OrderedDict
         pl=list(OrderedDict.fromkeys(pl))
+        msgLog("Sessão :"+str([[p.x(),p.y()] for p in pl]))
         self.trans.st[self.trans.current]=[[pt.x(), pt.y()+v] for pt in pl]
         self.trans.prismoide.st = self.trans.st
         try:

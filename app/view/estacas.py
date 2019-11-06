@@ -2061,19 +2061,16 @@ class SetCtAtiDialog(QtWidgets.QDialog, SETCTATI_DIALOG):
 
         self.indices=None
         self.setupUi2()
+        self.firstCb.currentIndexChanged.connect(self.setIndexes)
+        self.secondCb.currentIndexChanged.connect(self.setIndexes)
 
     def setupUi2(self):
         self.firstCb.addItems(list(map(str, self.firstOptions)))
-        self.firstCb.currentIndexChanged.connect(self.setIndexes)
         self.secondCb.addItems(list(map(str, self.firstOptions)))
-        self.secondCb.currentIndexChanged.connect(self.setIndexes)
 
     def setIndexes(self):
-        try:
-            self.cti=int(self.firstCb.currentText())
-            self.ati=int(self.secondCb.currentText())
-        except:
-            pass
+        self.cti=self.firstCb.currentIndex()
+        self.ati=self.secondCb.currentIndex()
 
 
 #TODO convert to real scale

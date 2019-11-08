@@ -6,6 +6,9 @@ import sys
 import numpy as np
 import copy
 
+from ...model.utils import msgLog
+
+
 def Infinity():
     return float("inf")
 
@@ -1078,16 +1081,19 @@ class prismoide(figure):
         return self.volume
 
     def getVolumes(self, i1=0, i2=None):
-        if i2 is None:
-            i2 = len(self.faces)-1
-        vat = vct = 0
-        for i, face in enumerate(self.faces[i1:i2]):
-            #semisoma
-            nextFace = self.faces[i+1]
-            nct, nat = nextFace.getAreas()
-            ct, at = face.getAreas()
-            vct += (ct + nct) * abs(face.position.z() - nextFace.position.z()) / 2
-            vat += (at + nat) * abs(face.position.z() - nextFace.position.z()) / 2
+        try:
+            if i2 is None:
+                i2 = len(self.faces)-1
+            vat = vct = 0
+            for i, face in enumerate(self.faces[i1:i2]):
+                #semisoma
+                nextFace = self.faces[i+1]
+                nct, nat = nextFace.getAreas()
+                ct, at = face.getAreas()
+                vct += (ct + nct) * abs(face.position.z() - nextFace.position.z()) / 2
+                vat += (at + nat) * abs(face.position.z() - nextFace.position.z()) / 2
+        except:
+            msgLog("Erro na estaca de número "+str(i))
 
         return vct, vat
 

@@ -563,7 +563,10 @@ class Estacas(object):
                prog=float(v[2])
                if prog in progs:
                     h = horizontais[progs.index(float(v[2]))]
-                    desc="" if h[1]=="" and v[1]=="" else h[1]+" + "+v[1]
+                    if h[1]:
+                        desc="" if h[1]=="" and v[1]=="" else h[1]+" + "+v[1]
+                    else:
+                        desc=v[1]
                     verticais.append([v[0], desc, v[2], h[3], h[4], v[3], h[5], h[6]])
                else:
                     pt=road.interpolate(prog-.1).asPoint()
@@ -1419,21 +1422,23 @@ class Estacas(object):
         fpcv=0
         fptv=0
         est=1
-        LH=int(self.perfil.roi.getHandlePos(self.perfil.roi.countHandles() - 1).x() / 20)
+        dist=Config.instance().DIST
+        LH=int(self.perfil.roi.getHandlePos(self.perfil.roi.countHandles() - 1).x() / dist)
+        skip=False
         self.progressDialog.setLoop(80,LH)
         while est <= LH:
              self.progressDialog.increment()
              if fptv:
-                 dx=20-dx
+                 dx=dist-dx
                  dy=point["i1"]*dx
                  fptv=0
 
              elif fpcv:
-                 dx=20-dx
+                 dx=dist-dx
                  dy=point["i1"]*dx
                  fpcv=0
              else:
-                dx=20
+                dx=dist
                 dy=i*dx
 
              desc=""
@@ -1487,17 +1492,31 @@ class Estacas(object):
                   c+=1
 
              x+=dx
-
              if s and not (pv or pt):
                  dy=point["cv"].getCota(x)-y
              y+=dy
 
-             (estaca,descricao,progressiva,cota) = (
-                est if not (pv or pt) else str(est)+' + ' + str(dx),
-                desc,
-                x,
-                y
-             )
+             if skip:
+                 skip = False
+                 est+=1
+                 continue
+
+             if dx==dist and (pv or pt):
+                 (estaca,descricao,progressiva,cota) = (
+                    str(est+1),
+                    desc,
+                    x,
+                    y
+                 )
+                 skip=True
+             else:
+                 (estaca, descricao, progressiva, cota) = (
+                     est if not (pv or pt) else str(est) + ' + ' + str(dx),
+                     desc,
+                     x,
+                     y
+                 )
+
              estacas.append((estaca,descricao,progressiva,cota))
              est+=1
 

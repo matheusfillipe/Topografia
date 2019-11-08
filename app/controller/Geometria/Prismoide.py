@@ -1,3 +1,4 @@
+from ...model.utils import msgLog
 from .Figure import *
 from qgis.PyQt import QtWidgets
 from qgis.PyQt.QtCore import QThread, pyqtSignal
@@ -127,6 +128,10 @@ class QPrismoid(prismoide, QThread):
             tmp.appendCurve(tmp2)
             inter=tmp.getInversed().intersect(terreno)
             r=len(inter)
+        if len(inter)==0:
+            msgLog("Erro: Sessão não possui intersessão com o terreno na estaca de número "+str(i))
+            return
+
         if type(inter)==list:
             inter=inter[-1]
         pts=tmp.getPoints()

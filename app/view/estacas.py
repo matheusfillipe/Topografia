@@ -1551,7 +1551,7 @@ class rampaDialog(QtWidgets.QDialog):
         self.cota=h2.pos().y()
         self.cotaa=h1.pos().y()
         self.abscissaText=abscissa
-        self.abscissa=h2.pos().x()
+        self.abscissa=h2.pos().x()-h1.pos().x()
         cota2.setValue(round(h1.pos().y(), 2))
         #cota2.setDisabled(True)
         cota2.setWhatsThis("Cota do ponto anterior ao seguimento")
@@ -1578,8 +1578,9 @@ class rampaDialog(QtWidgets.QDialog):
                 c=self.compr
                 self.compr=float(self.comprText.value())
                 dc=self.compr-c
+                Incl = float(np.arctan(self.InclText.value() / 100))
                 self.cota=self.cota+np.sin(np.deg2rad(self.Incl))*dc
-                self.abscissa=self.abscissa+np.cos(np.deg2rad(self.Incl))*dc
+                self.abscissa = np.cos((Incl)) * self.compr
                 self.update()
                 self.redefineUI(1)
 
@@ -1618,8 +1619,9 @@ class rampaDialog(QtWidgets.QDialog):
             if not self.isBeingModified:
                self.Incl=float(np.arctan(self.InclText.value()/100))
                self.cota=np.sin((self.Incl))*self.compr+self.h1.pos().y()
-               self.abscissa=np.cos((self.Incl))*self.compr+self.h1.pos().x()
+               #self.abscissa=np.cos((self.Incl))*self.compr
                self.update()
+               self.compr = np.sqrt((self.h2.pos().y() - self.h1.pos().y()) ** 2 + (self.h2.pos().x() - self.h1.pos().x()) ** 2)
                self.redefineUI(4)
         except ValueError:
             pass
@@ -1627,7 +1629,7 @@ class rampaDialog(QtWidgets.QDialog):
        
     def update(self): 
 
-        self.h2.setPos(self.abscissa, self.cota)
+        self.h2.setPos(self.abscissa+self.h1.pos().x(), self.cota)
         self.h1.setPos(self.h1.pos().x(), self.cotaa)
 
         if self.firstHandle == self.h2:
@@ -1635,7 +1637,7 @@ class rampaDialog(QtWidgets.QDialog):
             self.Incl=100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())
             self.compr=np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)
             self.cota=self.h2.pos().y()
-            self.abscissa=self.h2.pos().x()
+            self.abscissa=self.h2.pos().x()-self.h1.pos().x()
             self.cotaText.setValue(float(self.cota))
             self.abscissaText.setValue(float(self.abscissa))
 
@@ -1644,7 +1646,7 @@ class rampaDialog(QtWidgets.QDialog):
             self.Incl=100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())
             self.compr=np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)
             self.cota=self.h2.pos().y()
-            self.abscissa=self.h2.pos().x()
+            self.abscissa=self.h2.pos().x()-self.h1.pos().x()
             self.cotaText.setValue(float(self.cota))
             self.abscissaText.setValue(float(self.abscissa))
 
@@ -1803,6 +1805,45 @@ class ssRampaDialog(rampaDialog):
         compr.setValue(float(round(self.compr, 2)))
         self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.isBeingModified = False
+
+    def updateCompr(self):
+        try:
+            if not self.isBeingModified:
+                self.Incl = float(np.arctan(self.InclText.value() / 100))
+                c=self.compr
+                self.compr=float(self.comprText.value())
+                dc=self.compr-c
+                self.cota=self.cota+np.sin(np.deg2rad(self.Incl))*dc
+                self.abscissa=self.abscissa+np.cos(np.deg2rad(self.Incl))*dc
+                self.update()
+                self.redefineUI(1)
+
+        except ValueError:
+            pass
+
+
+    def updateIncl(self):
+        try:
+            if not self.isBeingModified:
+               self.Incl=float(np.arctan(self.InclText.value()/100))
+               self.cota=np.sin((self.Incl))*self.compr+self.h1.pos().y()
+               self.abscissa=np.cos((self.Incl))*self.compr+self.h1.pos().x()
+               self.update()
+               self.redefineUI(4)
+        except ValueError:
+            pass
+
+
+    def updateAbscissa(self):
+        try:
+            if not self.isBeingModified:
+                self.abscissa=float(self.abscissaText.value())
+                self.update()
+                self.compr=np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)
+                self.Incl=100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())
+                self.redefineUI(3)
+        except ValueError:
+            pass
 
     def updateCota(self):
         try:

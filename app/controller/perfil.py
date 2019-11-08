@@ -946,7 +946,19 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.perfilPlot = pg.PlotWidget(viewBox=self.vb,  enableMenu=False, title=wintitle)
         self.perfilPlot.curves=[]
         self.saved=True
+        self.isValid=False
 
+    def showMaximized(self):
+        if self.isValid:
+            return super().showMaximized()
+        else:
+            return False
+
+    def exec_(self):
+        if self.isValid:
+            return super().exec_()
+        else:
+            return messageDialog(message="Defina as cotas na tabela de horizontais primeiro!")
 
     def __setAsNotSaved(self):
         self.lblTipo.setText("Modificado")
@@ -966,6 +978,8 @@ class Ui_Perfil(QtWidgets.QDialog):
                 ponto.append(float(self.ref_estaca[k][1]))
                 ponto.append(float(self.ref_estaca[k][2]))
                 pontos.append(ponto)
+                if ponto[1]!=0:
+                    self.isValid=True
                 #self.comboEstaca1.addItem(_fromUtf8(e))
             except:
                 break
@@ -1310,7 +1324,7 @@ class Ui_sessaoTipo(Ui_Perfil):
                 self.prismoide
             except AttributeError:
                 self.prismoide = Prismoide.QPrismoid(self.terreno, self.st, self.progressiva)
-                self.createPrismoid(self.current)
+                self.prismoide.generate(self.current)
         else:
             self.prismoide = Prismoide.QPrismoid(prism=prism, cti=7)
 
@@ -1323,6 +1337,8 @@ class Ui_sessaoTipo(Ui_Perfil):
 
         self.roi.sigRegionChangeFinished.connect(self.updateData)
         self.updateAreaLabels()
+        self.isValid=True
+
 
     def vGreideCurve(self, greide):
         ptList = []
@@ -1828,6 +1844,7 @@ class Ui_Bruckner(Ui_Perfil):
         self.roi.setPlotWidget(self.perfilPlot)
         self.perfilPlot.plot(self.X, self.V)
 #        self.updateLabels()
+        self.isValid=True
 
     def updater(self):
         if not self.roi.ismodifying:
@@ -1876,8 +1893,6 @@ class Ui_Bruckner(Ui_Perfil):
                 self.roi.plotWidget.addItem(handle.leg)
 
             pg.QtGui.QGuiApplication.processEvents()
-
-
 
     def closeEvent(self, event):
         pass

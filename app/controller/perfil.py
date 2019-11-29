@@ -299,7 +299,7 @@ class cvEditDialog(cvEdit):
         try:
             if not self.isBeingModified:
                 self.Lutilizado=float(self.uiLutilizado.value())
-                self.uif.setText(('{:0.6e}'.format(self.G / (2 * float(self.Lutilizado)))))
+                self.uif.setText(('{:0.6e}'.format(self.G / (100*2 * float(self.Lutilizado)))))
                 self.handle.curve.update(self.i1, self.i2, self.Lutilizado,self.getHandlePos(self.i), self.getHandlePos(self.i-1))
                 self.roi.plotWidget.addItem(self.handle.curve.curve)
                 self.updateAlert()
@@ -387,7 +387,7 @@ class cvEditDialog(cvEdit):
             self.Lutilizado=max(.6*v, Kmin*abs(g), lsmin)
             self.Lutilizado=self.Lutilizado+dist-self.Lutilizado % dist
 
-        self.uif.setText(('{:0.6e}'.format(self.G/(2*float(self.Lutilizado)))))
+        self.uif.setText(('{:0.6e}'.format(self.G/(100*2*float(self.Lutilizado)))))
         self.uiLmin.setText(shortFloat2String(Kmin*abs(g)))
 
         self.uiLutilizado.setValue(self.Lutilizado)
@@ -1602,7 +1602,7 @@ class Ui_sessaoTipo(Ui_Perfil):
     def volumeCalc(self):
         try:
             diag=VolumeDialog(self)
-            ct, at=self.prismoide.getVolumes(0)
+            ct, at=self.prismoide.getvolumes(0)
             diag.set(ct, at)
             diag.exec_()
         except Exception as e:

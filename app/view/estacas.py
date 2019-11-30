@@ -837,6 +837,14 @@ class EstacasCv(QtWidgets.QDialog):
         self.gridLayout.addWidget(self.btnCsv, row, column, 1,1)
         row+=1
 
+        self.btn3D = QtWidgets.QPushButton(Form)
+        self.btn3D.setText("Exportar modelo 3D")
+        self.btn3D.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
+        self.btn3D.setObjectName(_fromUtf8("btn3D"))
+        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+        self.gridLayout.addWidget(self.btn3D, row, column, 1,1)
+        row+=1
+
         self.btnClean = QtWidgets.QPushButton(Form)
         self.btnClean.setText("Apagar Dados Transversais")
         self.btnClean.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))

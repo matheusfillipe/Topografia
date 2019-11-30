@@ -11,7 +11,7 @@
 name=GeoRoad
 qgisMinimumVersion=3.0
 description=Geometric Road Design
-version=0.90
+version=0.92
 author=Lucas, Matheus Fillipe
 email=matheusfillipeag@gmail.com
 qgisMaximumVersion=3.99

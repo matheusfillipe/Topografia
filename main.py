@@ -147,11 +147,8 @@ class TopoGrafia(object):
         # combo.addItems(["%d - %s" % (x[1], x[0]) for x in self.rowsCRS])
 
 
-
     def changeCRS(self):
         self.conf.changeCRS()
-
-
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):

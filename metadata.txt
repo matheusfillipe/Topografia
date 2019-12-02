@@ -11,7 +11,7 @@
 name=GeoRoad
 qgisMinimumVersion=3.0
 description=Geometric Road Design
-version=0.92
+version=0.94
 author=Lucas, Matheus Fillipe
 email=matheusfillipeag@gmail.com
 qgisMaximumVersion=3.99
@@ -25,10 +25,10 @@ repository=https://github.com/matheusfillipe/Topografia
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog=Interface para curvas horizontais, change to zip format;  TODO: Duplicar
+changelog=extração 3D (stl)
 
 # Tags are comma separated with spaces allowed
-tags=topography, road, design, python, raster, vector, interpolation, export, layers, cad, table, csv, terrain
+tags=topography, road, design, python, raster, vector, interpolation, export, layers, cad, table, csv, terrain, stl
 
 homepage=https://github.com/matheusfillipe/Topografia
 category=Plugins

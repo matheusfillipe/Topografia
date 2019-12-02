@@ -26,7 +26,7 @@ from ..model.curvas import Curvas
 from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv, ProgressDialog, \
     EstacaRangeSelect
 from ..view.curvas import Curvas as CurvasView, refreshCanvas
-from ...collada import material, Collada, geometry, scene, source
+
 
 DIALOGS_TO_CLOSE_ON_LOOP=["curvaView"]
 
@@ -124,44 +124,92 @@ class Estacas(object):
         self.viewCv.btn3D.clicked.connect(self.export3D)
 
     def export3D(self):
+        self.progressDialog.show()
+        self.progressDialog.setValue(0)
 
-        filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo de backup (*.dae *.DAE)")[0]
-        if filename in ['', None]: return
-        filename = str(filename) if str(filename).endswith(".dae") else str(filename) + ".dae"
+        filter=".stl"
+        X, table, prismoide = self.model.getTrans(self.model.id_filename)
+        intersect=self.model.load_intersect()
+        prismoide: QPrismoid
+        if not X or not prismoide:
+            messageDialog(message="Sessão Transversal não definida!")
+            self.progressDialog.close()
+            return
 
-        mesh = Collada()
-        effect = material.Effect("effect0", [], "phong", diffuse=(1, 0, 0), specular=(0, 1,0))
-        mat = material.Material("material0", "mymaterial", effect)
-        mesh.effects.append(effect)
-        mesh.materials.append(mat)
+        import numpy as np
+        from ...stl import mesh
+        self.progressDialog.setValue(25)
 
-        import numpy
-        vert_floats = [-50, 50, 50, 50, 50, 50, -50, -50, 50, 50,
-                       -50, 50, -50, 50, -50, 50, 50, -50, -50, -50, -50, 50, -50, -50]
-        normal_floats = [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1,0,
-                         0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, -1, 0, 0,
-                         -1, 0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, -1,
-                         0, 0, -1, 0, 0, -1, 0, 0, -1]
-        vert_src = source.FloatSource("cubeverts-array", numpy.array(vert_floats), ('X','Y', 'Z'))
-        normal_src = source.FloatSource("cubenormals-array", numpy.array(normal_floats), ('X', 'Y', 'Z'))
-        geom = geometry.Geometry(mesh, "geometry0", "mycube", [vert_src, normal_src])
-        input_list = source.InputList()
-        input_list.addInput(0, 'VERTEX', "#cubeverts-array")
-        input_list.addInput(1, 'NORMAL', "#cubenormals-array")
-        indices = numpy.array([0, 0, 2, 1, 3, 2, 0, 0, 3, 2, 1, 3, 0, 4, 1, 5, 5, 6, 0,
-                               4, 5, 6, 4, 7, 6, 8, 7, 9, 3, 10, 6, 8, 3, 10, 2, 11, 0, 12,
-                               4, 13, 6, 14, 0, 12, 6, 14, 2, 15, 3, 16, 7, 17, 5, 18, 3,
-                               16, 5, 18, 1, 19, 5, 20, 7, 21, 6, 22, 5, 20, 6, 22, 4, 23])
-        triset = geom.createTriangleSet(indices, input_list, "materialref")
-        geom.primitives.append(triset)
-        mesh.geometries.append(geom)
-        matnode = scene.MaterialNode("materialref", mat, inputs=[])
-        geomnode = scene.GeometryNode(geom, [matnode])
-        node = scene.Node("node0", children=[geomnode])
-        myscene = scene.Scene("myscene", [node])
-        mesh.scenes.append(myscene)
-        mesh.scene = myscene
-        mesh.write(filename)
+        # Define the terrain vertices
+        verticesg = []
+        facesg = []
+        for i, est in enumerate(X):
+            self.progressDialog.setValue(25+70*i/len(X))
+            norte=float(intersect[i][3])
+            este=float(intersect[i][4])
+            azi=float(intersect[i][7])
+            st=prismoide.faces[i].superior
+            stpts=st.getPoints()
+            points=[]
+            for pt in table[1][i]:
+                if pt[0]>stpts[0][0]:
+                    break
+                else:
+                    points.append(pt)
+            points+=[[pt.x(), pt.y()] for pt in stpts]
+            for pt in table[1][i]:
+                if pt[0] > stpts[-1][0]:
+                    points.append(pt)
+
+            if i < len(X) - 1:
+                nst = prismoide.faces[i+1].superior
+                nstpts = nst.getPoints()
+                npoints = []
+                for pt in table[1][i+1]:
+                    if pt[0] > nstpts[0][0]:
+                        break
+                    else:
+                        npoints.append(pt)
+                npoints += [[pt.x(), pt.y()] for pt in nstpts]
+                for pt in table[1][i+1]:
+                    if pt[0] > nstpts[-1][0]:
+                        npoints.append(pt)
+
+            maxinverse=len(npoints)+len(verticesg)-1+len(points)
+            for j, pt in enumerate(points):
+                verticesg.append([est, pt[0], pt[1]])
+                if i<len(X)-1:
+                    index = len(verticesg) - 1
+                    inverse = index + len(points)
+                    if j==0 and inverse<=maxinverse:
+                        facesg.append([index, inverse, inverse + 1])
+                    elif j<len(points)-1 and inverse<=maxinverse:
+                        facesg.append([index-1, inverse, index])
+                        if inverse+1<=maxinverse:
+                            facesg.append([index, inverse, inverse + 1])
+                    elif inverse<=maxinverse:
+                        facesg.append([index-1, inverse, index])
+
+        verticesg = np.array(verticesg)
+        facesg = np.array(facesg)
+
+        # Create the meshes
+
+        greide = mesh.Mesh(np.zeros(facesg.shape[0], dtype=mesh.Mesh.dtype))
+        for i, f in enumerate(facesg):
+            for j in range(3):
+                greide.vectors[i][j] = verticesg[f[j], :]
+        self.progressDialog.setValue(98)
+
+        #combined = mesh.Mesh(np.concatenate([terrain.data, greide.data]))
+        combined=greide
+        self.progressDialog.close()
+        filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo stl(*" + filter + " *" + filter.upper() + ")")[0]
+        if filename in ['', None]:
+            return
+        filename = str(filename) if str(filename).endswith(filter) else str(filename) + filter
+        combined.save(filename)
+
 
 
     def exportTrans(self):

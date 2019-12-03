@@ -129,7 +129,9 @@ class Estacas(object):
 
         filter=".stl"
         X, table, prismoide = self.model.getTrans(self.model.id_filename)
+        self.progressDialog.setValue(5)
         intersect=self.model.load_intersect()
+        self.progressDialog.setValue(10)
         prismoide: QPrismoid
         if not X or not prismoide:
             messageDialog(message="Sessão Transversal não definida!")
@@ -138,16 +140,18 @@ class Estacas(object):
 
         import numpy as np
         from ...stl import mesh
+        import scipy
+
         self.progressDialog.setValue(25)
 
         # Define the terrain vertices
         verticesg = []
-        facesg = []
+        vertices = []
         for i, est in enumerate(X):
             self.progressDialog.setValue(25+70*i/len(X))
             norte=float(intersect[i][3])
             este=float(intersect[i][4])
-            azi=float(intersect[i][7])
+            az=float(intersect[i][7])
             st=prismoide.faces[i].superior
             stpts=st.getPoints()
             points=[]
@@ -161,40 +165,39 @@ class Estacas(object):
                 if pt[0] > stpts[-1][0]:
                     points.append(pt)
 
-            if i < len(X) - 1:
-                nst = prismoide.faces[i+1].superior
-                nstpts = nst.getPoints()
-                npoints = []
-                for pt in table[1][i+1]:
-                    if pt[0] > nstpts[0][0]:
-                        break
-                    else:
-                        npoints.append(pt)
-                npoints += [[pt.x(), pt.y()] for pt in nstpts]
-                for pt in table[1][i+1]:
-                    if pt[0] > nstpts[-1][0]:
-                        npoints.append(pt)
+            perp = az + 90
+            if perp > 360:
+                perp = perp - 360
+            nsign = 1
+            esign = 1
+            if perp < 90:
+                nsign = 1
+                esign = 1
+            elif perp < 180:
+                nsign = -1
+                esign = 1
+            elif perp < 270:
+                nsign = -1
+                esign = -1
+            elif perp < 360:
+                nsign = 1
+                esign = -1
 
-            maxinverse=len(npoints)+len(verticesg)-1+len(points)
             for j, pt in enumerate(points):
-                verticesg.append([est, pt[0], pt[1]])
-                if i<len(X)-1:
-                    index = len(verticesg) - 1
-                    inverse = index + len(points)
-                    if j==0 and inverse<=maxinverse:
-                        facesg.append([index, inverse, inverse + 1])
-                    elif j<len(points)-1 and inverse<=maxinverse:
-                        facesg.append([index-1, inverse, index])
-                        if inverse+1<=maxinverse:
-                            facesg.append([index, inverse, inverse + 1])
-                    elif inverse<=maxinverse:
-                        facesg.append([index-1, inverse, index])
+                x,y,z=est,pt[0],pt[1]
+                yangleE = esign * y * abs(math.sin(perp * math.pi / 180))
+                yangleN = nsign * y * abs(math.cos(perp * math.pi / 180))
+                xPoint = float(este + yangleE)
+                yPoint = float(norte + yangleN)
+                verticesg.append([xPoint, yPoint,z])
+                vertices.append([x,y,z])
 
         verticesg = np.array(verticesg)
-        facesg = np.array(facesg)
+        vertices = np.array(vertices)
+        tri = scipy.spatial.Delaunay(vertices[:, :2])
+        facesg=tri.simplices
 
         # Create the meshes
-
         greide = mesh.Mesh(np.zeros(facesg.shape[0], dtype=mesh.Mesh.dtype))
         for i, f in enumerate(facesg):
             for j in range(3):

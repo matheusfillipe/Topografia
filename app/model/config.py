@@ -330,10 +330,13 @@ class Config(object):
             Config.CSV_DELIMITER = self.CSV_DELIMITER
         shutil.rmtree(Config.instance().TMP_DIR_PATH+'tmp')
 
-    def savefile(self):
-        if self.filename in [None,'']:
-            raise Exception(u'Não é possivel salvar pois não foi aberto ou criado um novo arquivo')
-        extractZIP(self.filename)
+    def savefile(self, fromf=None):
+        if fromf==None:
+            if self.filename in [None,'']:
+                raise Exception(u'Não é possivel salvar pois não foi aberto ou criado um novo arquivo')
+            extractZIP(self.filename)
+        else:
+            extractZIP(fromf)
         con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
         con.execute("UPDATE PROJECT SET crs=?,classeprojeto=?,maxplano=?,maxondulado=?,maxmontanhoso=?,tipomapa=? WHERE id=1",(self.crs,self.class_project,self.dataTopo[1],self.dataTopo[3],self.dataTopo[5],self.tipo_mapa))
         con.commit()

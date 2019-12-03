@@ -123,7 +123,7 @@ class Estacas(object):
         self.viewCv.btnRecalcular.clicked.connect(self.recalcularVerticais)
         self.viewCv.btn3D.clicked.connect(self.export3D)
 
-    def export3D(self):
+    def export3D(self, filename=None, Z=None):
         self.progressDialog.show()
         self.progressDialog.setValue(0)
 
@@ -189,6 +189,7 @@ class Estacas(object):
                 yangleN = nsign * y * abs(math.cos(perp * math.pi / 180))
                 xPoint = float(este + yangleE)
                 yPoint = float(norte + yangleN)
+                z = z if Z is None else Z
                 verticesg.append([xPoint, yPoint,z])
                 vertices.append([x,y,z])
 
@@ -207,7 +208,9 @@ class Estacas(object):
         #combined = mesh.Mesh(np.concatenate([terrain.data, greide.data]))
         combined=greide
         self.progressDialog.close()
-        filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo stl(*" + filter + " *" + filter.upper() + ")")[0]
+
+        if filename is None:
+            filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo stl(*" + filter + " *" + filter.upper() + ")")[0]
         if filename in ['', None]:
             return
         filename = str(filename) if str(filename).endswith(filter) else str(filename) + filter
@@ -292,7 +295,6 @@ class Estacas(object):
 
     @nongui
     def brucknerThread(self, X, est, prismoide, ei, ef):
-
         self.progressDialog.setText("Calculando Volumes acumulados")
         X=[float(x) for x in X]
         X=X[ei:ef+1]

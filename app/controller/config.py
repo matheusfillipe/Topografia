@@ -88,8 +88,15 @@ class Config(object):
 
     def savefile(self):
         self.model.filename = u"{0}".format(self.model.filename)
+        fromf=self.model.filename
         try:
-            self.model.savefile()
+            filename = u"{0}".format(self.conf.new_file()[0])
+            if filename in ["", None]:
+                return
+            if not filename.endswith(".zip"):
+                filename+=".zip"
+            self.model.filename = filename
+            self.model.savefile(fromf=fromf)
             self.update()
         except:
             self.newfile()

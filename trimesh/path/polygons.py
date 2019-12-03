@@ -4,7 +4,14 @@ import numpy as np
 from shapely import vectorized
 from shapely.geometry import Polygon
 
-from rtree import Rtree
+try:
+    from rtree import Rtree
+except:
+    import sys
+    if sys.platform.startswith('win'):
+        from .rtreew import Rtree
+    else:
+        from .rtreel import Rtree
 from collections import deque
 
 from .. import util

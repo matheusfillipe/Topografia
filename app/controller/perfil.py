@@ -1602,7 +1602,7 @@ class Ui_sessaoTipo(Ui_Perfil):
     def volumeCalc(self):
         try:
             diag=VolumeDialog(self)
-            ct, at=self.prismoide.getvolumes(0)
+            ct, at=self.prismoide.getVolumes(0)
             diag.set(ct, at)
             diag.exec_()
         except Exception as e:

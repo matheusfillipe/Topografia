@@ -384,7 +384,7 @@ def roundUpFloat2str(f:float):
 def prog2estacaStr(i :float):
     dist=Config.instance().DIST
     if i%dist != 0:
-        return str(int(i/dist))+"+"+str(i%dist)
+        return str(int(i/dist))+"+"+str(round(i%dist,2))
     else:
         return str(int(i/dist))
 

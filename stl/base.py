@@ -9,7 +9,7 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     import collections as abc
 
-from python_utils import logger
+from .python_utils import logger
 
 from .utils import s
 

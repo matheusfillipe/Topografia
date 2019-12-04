@@ -955,6 +955,7 @@ class Ui_Perfil(QtWidgets.QDialog):
             return False
 
     def exec_(self):
+        self.salvarPerfil()
         if self.isValid:
             return super().exec_()
         else:
@@ -1339,7 +1340,6 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.updateAreaLabels()
         self.isValid=True
 
-
     def vGreideCurve(self, greide):
         ptList = []
         for item in greide:
@@ -1349,7 +1349,8 @@ class Ui_sessaoTipo(Ui_Perfil):
         return greide
 
     def createPrismoid(self, j):
-        self.prismoide.generate(j)
+        if self.prismoide.generate(j) is None:
+            messageDialog(title="Erro", message="Falha ao criar o talude na estaca: "+str(self.progressiva[j])+ " estaca: "+prog2estacaStr(self.progressiva[j]))
         self.updateAreaLabels()
 
 
@@ -1778,7 +1779,8 @@ class Ui_sessaoTipo(Ui_Perfil):
             erros=[]
             for estaca in range(diag.progressivas[0],diag.progressivas[1]+1):
                 try:
-                    self.prismoide.generate(estaca)
+                     if not self.prismoide.generate(estaca) is None:
+                         erros.append(estaca)
                 except Exception as e:
                     import traceback
                     msgLog(str(traceback.format_exception(None, e, e.__traceback__)))

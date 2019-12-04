@@ -130,8 +130,7 @@ class QPrismoid(prismoide, QThread):
             r=len(inter)
         if len(inter)==0:
             msgLog("Erro: Sessão não possui intersessão com o terreno na estaca de número "+str(i))
-            return
-
+            return i
         if type(inter)==list:
             inter=inter[-1]
         pts=tmp.getPoints()
@@ -144,17 +143,13 @@ class QPrismoid(prismoide, QThread):
 
         right.setPoints(rightpts)
 
-#        if self.progressiva[i] == 580.0:
-#            test(plotCurve(tmp), Config.instance().TMP_DIR_PATH+"tmp")
-#            test(plotCurve(right), "right")
-#            test(plotCurve(left), "left")
-
         f=face()
         pista.prependCurve(left)
         pista.appendCurve(right)
         f.from2Curves(pista, terreno)
 
         self.replaceFaceKeepZ(f, i)
+        return None
 
     def getFaces(self):
         """Generator: Iterate through primoid's faces  -> face"""

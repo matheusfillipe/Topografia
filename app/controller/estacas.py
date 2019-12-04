@@ -121,7 +121,7 @@ class Estacas(object):
         self.viewCv.btnCsv.clicked.connect(self.exportCSV)
         #self.viewCv.btnClean.clicked.connect(self.cleanTrans)
         self.viewCv.btnRecalcular.clicked.connect(self.recalcularVerticais)
-        self.viewCv.btn3D.clicked.connect(self.export3D)
+        self.viewCv.btn3D.clicked.connect(lambda: self.export3D())
 
     def export3D(self, filename=None, Z=None):
         self.progressDialog.show()
@@ -140,13 +140,15 @@ class Estacas(object):
 
         import numpy as np
         from ...stl import mesh
-        import scipy
+        from scipy import spatial
 
         self.progressDialog.setValue(25)
 
         # Define the terrain vertices
         verticesg = []
         vertices = []
+        errors=[]
+
         for i, est in enumerate(X):
             self.progressDialog.setValue(25+70*i/len(X))
             norte=float(intersect[i][3])
@@ -155,15 +157,21 @@ class Estacas(object):
             st=prismoide.faces[i].superior
             stpts=st.getPoints()
             points=[]
-            for pt in table[1][i]:
-                if pt[0]>stpts[0][0]:
-                    break
-                else:
-                    points.append(pt)
-            points+=[[pt.x(), pt.y()] for pt in stpts]
-            for pt in table[1][i]:
-                if pt[0] > stpts[-1][0]:
-                    points.append(pt)
+            try:
+                for pt in table[1][i]:
+                    if pt[0]>stpts[0][0]:
+                        break
+                    else:
+                        points.append(pt)
+                points+=[[pt.x(), pt.y()] for pt in stpts]
+                for pt in table[1][i]:
+                    if pt[0] > stpts[-1][0]:
+                        points.append(pt)
+            except Exception as e:
+                import traceback
+                msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
+                errors.append(est)
+                continue
 
             perp = az + 90
             if perp > 360:
@@ -193,9 +201,13 @@ class Estacas(object):
                 verticesg.append([xPoint, yPoint,z])
                 vertices.append([x,y,z])
 
+
+        if errors:
+            messageDialog(title="Erro", message="Erro nas estacas: "+"; ".join([prog2estacaStr(p) for p in errors]))
+
         verticesg = np.array(verticesg)
         vertices = np.array(vertices)
-        tri = scipy.spatial.Delaunay(vertices[:, :2])
+        tri = spatial.Delaunay(vertices[:, :2])
         facesg=tri.simplices
 
         # Create the meshes

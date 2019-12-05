@@ -44,7 +44,7 @@ import tempfile, pathlib
 from . import resources
 
 
-DEBUG=False
+DEBUG=True
 SHORTCUT="Ctrl+Alt+"  # 1,2,3,4,5,6,7 for each item in menu
 PYDEV = ""
 

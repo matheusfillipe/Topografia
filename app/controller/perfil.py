@@ -955,7 +955,6 @@ class Ui_Perfil(QtWidgets.QDialog):
             return False
 
     def exec_(self):
-        self.salvarPerfil()
         if self.isValid:
             return super().exec_()
         else:
@@ -1471,7 +1470,9 @@ class Ui_sessaoTipo(Ui_Perfil):
             elif item == items[1]:
                 self.plotar.emit(-1)
 
-
+    def exec_(self):
+        self.salvarPerfil()
+        return super().exec_()
 
     def calcularGreide(self):
         pass

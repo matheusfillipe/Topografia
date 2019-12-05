@@ -712,8 +712,6 @@ class Estacas(object):
                     tmp_line, progressiva, ponto_anterior = self.gera_estaca_intermediaria(estaca + e + 1, ponto_anterior,
                                                                                            progressiva, az, cosa, cosb)
                     estacas.append(tmp_line)
-
-
                 estaca += qtd_estacas
 
             lastDesc=tipo

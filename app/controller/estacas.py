@@ -1537,7 +1537,7 @@ class Estacas(object):
              self.progressDialog.increment()
              if fptv:
                  dx=dist-dx
-                 dy=point["i1"]*dx
+                 dy=point["i2"]*dx
                  fptv=0
 
              elif fpcv:
@@ -1618,7 +1618,7 @@ class Estacas(object):
                  skip=True
              else:
                  (estaca, descricao, progressiva, cota) = (
-                     est if not (pv or pt) else str(est) + ' + ' + str(dx),
+                     est if not (pv or pt) else str(est) + ' + ' + roundFloat2str(dx),
                      desc,
                      x,
                      y

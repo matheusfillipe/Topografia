@@ -228,6 +228,46 @@ class Estacas(object):
         filename = str(filename) if str(filename).endswith(filter) else str(filename) + filter
         combined.save(filename)
 
+        if Z is None:
+            import shutil
+            exe = shutil.which("blender")
+
+            from pathlib import Path
+            p = Path("C:\Program Files\Blender Foundation\\").rglob("*/*.exe")
+            for file in p:
+                if file.name == "blender.exe":
+                    exe=file.name
+            if exe:
+                def resolve(name, basepath=None):
+                    if not basepath:
+                        basepath = str(Path(__file__).parents[2])
+                    return os.path.join(basepath, name)
+
+                if yesNoDialog(message="O blender foi detectado no sistem. Deseja abrir o modelo?"):
+                    #move template blend to tmp
+                    from tempfile import gettempdir
+                    blend=str(Path(gettempdir()) / "georoadBlender.blend")
+                    shutil.copy(resolve("layout.blend"), blend)
+
+                    #start=?, create dxf starting from 0,0,10
+                    import json
+                    table=intersect
+                    jsonfile=str(Path(gettempdir()) / "georoadBlender.json")
+                    init=table[0]
+                    data={} #x,y,z --> 0,0,0
+                    init=data["start"]=[float(init[4]), float(init[3]), float(init[5])]
+                    data["points"]=[[float(e[4])-init[0],float(e[3])-init[1],float(e[5])-init[2]] for e in table]
+                    with open(jsonfile, "w") as outfile:
+                        json.dump(data, outfile)
+
+                    #launch exe -P with the script and arguments
+                    import subprocess
+                    script=resolve("blender.py")
+                    subprocess.Popen([exe, blend, "--python", script, "--", filename])
+            else:
+                msgLog("Blender não foi encontrado!")
+
+
 
 
     def exportTrans(self):

@@ -268,7 +268,7 @@ class Estacas(object):
             p = Path("C:\Program Files\Blender Foundation\\").rglob("*/*.exe")
             for file in p:
                 if file.name == "blender.exe":
-                    exe=file.name
+                    exe=str(file)
             if exe:
                 def resolve(name, basepath=None):
                     if not basepath:
@@ -298,7 +298,9 @@ class Estacas(object):
                     #launch exe -P with the script and arguments
                     import subprocess
                     script=resolve("blender.py")
-                    subprocess.Popen([exe, blend, "--python", script, "--", filename])
+                    cmd=[exe, blend, "--python", script, "--", filename]
+                    msgLog("Running Command:  "+" ".join(cmd))
+                    subprocess.Popen(cmd)
             else:
                 msgLog("Blender não foi encontrado!")
 

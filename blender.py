@@ -42,17 +42,17 @@ def toggle():
 #start
 print("script: Running Script...")
 bpy.context.view_layer.active_layer_collection = bpy.context.view_layer.layer_collection.children[0]
-filepath=argv[0]#"/home/matheus/tmp/testhighway.stl"
+filepath = argv[0]#"/home/matheus/tmp/testhighway.stl"
 #dxf="/home/matheus/Downloads/Telegram Desktop/highway.dxf"
 #start= [728352.9266,7787532.9365,484.0]
-bpy.ops.preferences.addon_enable(module="io_import_dxf")
-bpy.ops.preferences.addon_enable(module="io_export_dxf")
+#bpy.ops.preferences.addon_enable(module="io_import_dxf")
+#bpy.ops.preferences.addon_enable(module="io_export_dxf")
 jsonfile = str(Path(tempfile.gettempdir()) / "georoadBlender.json")
 with open(jsonfile, "r") as file:
     data = json.load(file)
 start=data["start"]
 points=data["points"]
-
+print("script: json points loaded")
 
 #mesh import
 bpy.ops.import_mesh.stl(filepath=filepath)
@@ -110,6 +110,7 @@ bpy.ops.mesh.select_less()
 bpy.ops.mesh.select_less()
 bpy.ops.mesh.select_less()
 bpy.ops.mesh.select_less()
+print("script: materials applied")
 
 #create path for camera new obj
 bpy.ops.mesh.duplicate_move(MESH_OT_duplicate={"mode":1}, TRANSFORM_OT_translate={"value":(0, 0, 10), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, True), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
@@ -129,6 +130,7 @@ bpy.ops.object.convert(target='CURVE')
 bpy.context.object.hide_viewport = True
 bpy.context.object.data.path_duration = int(data["frames"])
 bpy.context.scene.frame_end = int(data["frames"])
+print("script: animation path set")
 
 
 #apply to camera
@@ -144,6 +146,7 @@ override={'constraint':cam.constraints["Follow Path"]}
 bpy.ops.constraint.followpath_path_animate(override,constraint='Follow Path')
 bpy.context.object.constraints["Follow Path"].use_curve_follow = True
 bpy.ops.transform.rotate(value=1.48353, orient_axis='X', orient_type='LOCAL', orient_matrix=((0.926739, 0.375705, -5.16602e-09), (-0.373651, 0.921672, -0.104428), (-0.039234, 0.0967774, 0.994532)), orient_matrix_type='LOCAL', constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+print("script: camera applied")
 
 
 #add estaca labels
@@ -163,7 +166,7 @@ for pt, est, azi in zip(data["points"], data['estacas'], data['azi']):
                              constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False,
                              proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False,
                              use_proportional_projected=False)
-
+print("script: labels added")
 
 
 #select mesh
@@ -171,6 +174,7 @@ bpy.context.view_layer.active_layer_collection = bpy.context.view_layer.layer_co
 bpy.ops.object.select_all(action='DESELECT')
 bpy.context.view_layer.objects.active = mesh
 mesh.select_set(True)
+print("script: mesh selected")
 
 
 #yellow center
@@ -178,9 +182,15 @@ toggle()
 bpy.ops.mesh.select_mode(type="VERT")
 bpy.ops.mesh.select_all(action='DESELECT')
 toggle()
-
-for v in selverts:
-    v.select = True
+#for v in selverts:
+#    v.select = True
+for i,pt in enumerate(points):
+    v=get_vertex(pt)
+    if v:
+        v.select = True
+        selverts.append(v)
+    else:
+        print("No vertex at index: ", i)
 
 toggle()
 bpy.ops.mesh.select_mode(type="EDGE")
@@ -189,6 +199,7 @@ mesh.data.materials.append(eixo)
 mesh.active_material_index = 2
 bpy.ops.object.material_slot_assign()
 toggle()
+print("script: eixo colored")
 
 
 #rendered
@@ -198,6 +209,5 @@ for area in my_areas:
     for space in area.spaces:
         if space.type == 'VIEW_3D':
             space.shading.type = my_shading
-
 
 print("script: Finished Sucessfully!!")

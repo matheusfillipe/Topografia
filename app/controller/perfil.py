@@ -22,7 +22,6 @@ from ... import PyQtGraph as pg
 #TODO:
 
 #Features to  ADD
-#Cálculo de aterro imbutido
 #ctrl+Z utility
 #add menu interface and grid and printing scale export
 

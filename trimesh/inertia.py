@@ -9,8 +9,7 @@ internal consistency.
 """
 
 import numpy as np
-
-from trimesh import util
+from . import util
 
 # a matrix where all non- diagonal terms are -1.0
 # and all diagonal terms are 1.0

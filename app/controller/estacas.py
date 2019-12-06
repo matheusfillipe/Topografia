@@ -257,6 +257,9 @@ class Estacas(object):
                     data={} #x,y,z --> 0,0,0
                     init=data["start"]=[float(init[4]), float(init[3]), float(init[5])]
                     data["points"]=[[float(e[4])-init[0],float(e[3])-init[1],float(e[5])-init[2]] for e in table]
+                    data['estacas']=[e[0] for e in table]
+                    data['azi']=[e[7] for e in table]
+                    data["frames"]=float(table[-1][2])/200*24
                     with open(jsonfile, "w") as outfile:
                         json.dump(data, outfile)
 

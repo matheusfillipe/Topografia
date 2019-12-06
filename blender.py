@@ -128,19 +128,33 @@ for obj in bpy.context.selected_objects:
 bpy.ops.object.convert(target='CURVE')
 
 cam=bpy.data.objects["Camera"]
+bpy.ops.object.select_all(action='DESELECT')
 bpy.context.view_layer.objects.active = cam
 cam.select_set(True)
 bpy.ops.object.rotation_clear(clear_delta=False)
 bpy.ops.object.location_clear(clear_delta=False)
 bpy.ops.object.constraint_add(type='FOLLOW_PATH')
 bpy.context.object.constraints["Follow Path"].target = path
-bpy.ops.constraint.followpath_path_animate(constraint="Follow Path", owner='OBJECT')
+
+#bpy.ops.constraint.followpath_path_animate(constraint="Follow Path", owner='OBJECT')
+override={'constraint':cam.constraints["Follow Path"]}
+bpy.ops.constraint.followpath_path_animate(override,constraint='Follow Path')
 bpy.context.object.constraints["Follow Path"].use_curve_follow = True
 bpy.ops.transform.rotate(value=1.22173, orient_axis='X', orient_type='LOCAL', orient_matrix=((0.926739, 0.375705, -5.16602e-09), (-0.373651, 0.921672, -0.104428), (-0.039234, 0.0967774, 0.994532)), orient_matrix_type='LOCAL', constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
 
+bpy.ops.object.select_all(action='DESELECT')
 bpy.context.view_layer.objects.active = mesh
 mesh.select_set(True)
 toggle()
 
-bpy.context.space_data.shading.type = 'RENDERED'
 
+
+
+my_areas = bpy.context.workspace.screens[0].areas
+my_shading = 'RENDERED'  # 'WIREFRAME' 'SOLID' 'MATERIAL' 'RENDERED'
+
+
+for area in my_areas:
+    for space in area.spaces:
+        if space.type == 'VIEW_3D':
+            space.shading.type = my_shading

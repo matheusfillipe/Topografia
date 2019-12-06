@@ -122,8 +122,37 @@ class Estacas(object):
         #self.viewCv.btnClean.clicked.connect(self.cleanTrans)
         self.viewCv.btnRecalcular.clicked.connect(self.recalcularVerticais)
         self.viewCv.btn3D.clicked.connect(lambda: self.export3D())
+        self.viewCv.btnCorte.clicked.connect(lambda: self.exportCorte())
 
-    def export3D(self, filename=None, Z=None):
+    def exportCorte(self):
+        import tempfile
+        from pathlib import Path
+        file = str(Path(tempfile.gettempdir()) / "GeoRoadTempMesh.stl")
+        table=self.export3D(filename=file, Z=0, terrain=False)
+        from ... import trimesh
+        import numpy as np
+        from shapely.geometry import LineString
+
+        mesh = trimesh.load_mesh(file)
+        z_extents = mesh.bounds[:, 2]
+        z_levels = np.arange(*z_extents, step=.5)
+        sections = mesh.section_multiplane(plane_origin=mesh.bounds[0],
+                                           plane_normal=[0, 0, 1],
+                                           heights=z_levels)
+        msgLog("Sessões:  " +str(sections)[100:]+" ......")
+        combined = np.sum([s for s in sections if not s is None])
+
+        #use intersect to get runway only best restuts
+        #estacas, labels?
+
+        filter="dxf"
+        filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo dxf(*" + filter + " *" + filter.upper() + ")")[0]
+        if filename in ['', None]:
+            return
+        filename = str(filename) if str(filename).endswith(filter) else str(filename) + filter
+        combined.export(filename)
+
+    def export3D(self, filename=None, Z=None, terrain=True):
         self.progressDialog.show()
         self.progressDialog.setValue(0)
 
@@ -153,20 +182,23 @@ class Estacas(object):
             self.progressDialog.setValue(25+70*i/len(X))
             norte=float(intersect[i][3])
             este=float(intersect[i][4])
+            greide=float(intersect[i][5])
             az=float(intersect[i][7])
             st=prismoide.faces[i].superior
             stpts=st.getPoints()
             points=[]
             try:
-                for pt in table[1][i]:
-                    if pt[0]>stpts[0][0]:
-                        break
-                    else:
-                        points.append(pt)
+                if terrain:
+                    for pt in table[1][i]:
+                        if pt[0]>stpts[0][0]:
+                            break
+                        else:
+                            points.append(pt)
                 points+=[[pt.x(), pt.y()] for pt in stpts]
-                for pt in table[1][i]:
-                    if pt[0] > stpts[-1][0]:
-                        points.append(pt)
+                if terrain:
+                    for pt in table[1][i]:
+                        if pt[0] > stpts[-1][0]:
+                            points.append(pt)
             except Exception as e:
                 import traceback
                 msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
@@ -197,9 +229,9 @@ class Estacas(object):
                 yangleN = nsign * y * abs(math.cos(perp * math.pi / 180))
                 xPoint = float(este + yangleE)
                 yPoint = float(norte + yangleN)
-                z = z if Z is None else Z
-                verticesg.append([xPoint, yPoint,z])
-                vertices.append([x,y,z])
+                z = z if Z is None else z-greide+Z
+                verticesg.append([xPoint, yPoint, z])
+                vertices.append([x, y, z])
 
 
         if errors:
@@ -269,6 +301,9 @@ class Estacas(object):
                     subprocess.Popen([exe, blend, "--python", script, "--", filename])
             else:
                 msgLog("Blender não foi encontrado!")
+
+        else:
+            return [[float(e[4]),float(e[3]),float(e[5])] for e in intersect]
 
 
 

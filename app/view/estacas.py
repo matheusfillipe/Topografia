@@ -791,6 +791,7 @@ class EstacasCv(QtWidgets.QDialog):
         self.btnPerfil.setText("Gerar Perfil \nLongitudinal")
         self.btnPerfil.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
         self.btnPerfil.setWhatsThis("Define o greide")
+        self.btnPerfil.setToolTip("Define o Greide")
         self.btnPerfil.setObjectName(_fromUtf8("btnPerfil"))
         self.gridLayout.addWidget(self.btnPerfil, row, column, 1, 1)
         row+=1
@@ -801,6 +802,7 @@ class EstacasCv(QtWidgets.QDialog):
         self.btnGen.setGeometry(QtCore.QRect(755, 16, 180, 45))
         self.btnGen.setObjectName(_fromUtf8("btnGen"))
         self.gridLayout.addWidget(self.btnGen, row,column, 1,1)
+        self.btnGen.setToolTip("Tabela contendo os dados horizonais e verticais")
         #self.btnGen.clicked.connect(self.generate)
         row+=1
 
@@ -808,8 +810,9 @@ class EstacasCv(QtWidgets.QDialog):
         self.btnTrans.setText("Definir Sessão Tipo")
         self.btnTrans.setGeometry(QtCore.QRect(760, 50+16, 160, 30))
         self.btnTrans.setObjectName(_fromUtf8("btnTrans"))
-        self.btnTrans.setWhatsThis("Inicia interface para a edição do perfil transversal")
+        self.btnTrans.setToolTip("Inicia interface para a edição do perfil transversal")
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+
         self.gridLayout.addWidget(self.btnTrans, row, column, 1,1)
         row+=1
 
@@ -818,30 +821,49 @@ class EstacasCv(QtWidgets.QDialog):
         self.btnBruck.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
         self.btnBruck.setObjectName(_fromUtf8("btnBruck"))
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+        self.btnBruck.setToolTip("Visualizar e editar o diagrama de bruckner para um intervalo de estacas")
         self.gridLayout.addWidget(self.btnBruck, row, column, 1, 1)
         row+=1
 
+        self.btnCsv = QtWidgets.QPushButton(Form)
+        self.btnCsv.setText("Exportar Tabela CSV")
+        self.btnCsv.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
+        self.btnCsv.setObjectName(_fromUtf8("btnCsv"))
+        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+        self.btnCsv.setToolTip("Exportar a tabela em visualização para um arquivo csv")
+        self.gridLayout.addWidget(self.btnCsv, row, column, 1,1)
+        row+=1
+
         self.btnPrint = QtWidgets.QPushButton(Form)
-        self.btnPrint.setText("Exportar DXF")
+        self.btnPrint.setText("Exportar Contornos DXF")
         self.btnPrint.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
         self.btnPrint.setObjectName(_fromUtf8("btnPrint"))
+        self.btnPrint.setToolTip("Extportar os contornos dos perfis transversais e verticais como um arquivo CAD dxf")
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
         self.gridLayout.addWidget(self.btnPrint, row, column, 1,1)
         row+=1
 
-        self.btnCsv = QtWidgets.QPushButton(Form)
-        self.btnCsv.setText("Exportar CSV")
-        self.btnCsv.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
-        self.btnCsv.setObjectName(_fromUtf8("btnCsv"))
+        self.btnCorte = QtWidgets.QPushButton(Form)
+        self.btnCorte.setText("Exportar Corte DXF")
+        self.btnCorte.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
+        self.btnCorte.setObjectName(_fromUtf8("btnCorte"))
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
-        self.gridLayout.addWidget(self.btnCsv, row, column, 1,1)
+        self.btnCorte.setToolTip("Exportar o corte superior do traçado como um arquivo dxf")
+        self.gridLayout.addWidget(self.btnCorte, row, column, 1,1)
         row+=1
 
         self.btn3D = QtWidgets.QPushButton(Form)
-        self.btn3D.setText("Exportar modelo 3D")
+        self.btn3D.setText("Exportar Modelo 3D")
         self.btn3D.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
         self.btn3D.setObjectName(_fromUtf8("btn3D"))
-        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+        toolTip = "<html><head/><body><p>Exportar um modelo tridimensional do projeto como um arquivo de malha triangular." \
+                      "Se o blender <a href='https://www.blender.org/'>(https://www.blender.org/)</a> estiver instalado no sistema uma animação percorrendo " \
+                      "o traçado pode ser gerada automaticamente" \
+                      "</p></body></html>"
+
+        self.btn3D.setToolTip(toolTip)
+        self.btn3D.setWhatsThis(toolTip)
+       #self.btnEstacas.clicked.connect(self.ref_super.tracado)
         self.gridLayout.addWidget(self.btn3D, row, column, 1,1)
         row+=1
 

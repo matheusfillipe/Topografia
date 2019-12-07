@@ -153,6 +153,7 @@ class Estacas(object):
         filename = str(filename) if str(filename).endswith(filter) else str(filename) + filter
         combined.export(filename)
 
+
     def export3D(self, filename=None, Z=None, terrain=True):
         self.progressDialog.show()
         self.progressDialog.setValue(0)

@@ -444,7 +444,7 @@ def messageDialog(iface=None, title="Concluído", info="", message=""):
     msgBox.setInformativeText(info)
     msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
     msgBox.setDefaultButton(QtWidgets.QMessageBox.Ok)
-    msgBox.show()
+  #  msgBox.show()
     return msgBox.exec_() == QtWidgets.QMessageBox.Ok
 
 
@@ -456,7 +456,7 @@ def yesNoDialog(iface=None, title="Atenção", info="", message=""):
     msgBox.setInformativeText(info)
     msgBox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
     msgBox.setDefaultButton(QtWidgets.QMessageBox.No)
-    msgBox.show()
+  #  msgBox.show()
     return msgBox.exec_() == QtWidgets.QMessageBox.Yes
 
 class RasterInterpolator():

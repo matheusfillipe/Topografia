@@ -1,9 +1,16 @@
 import numpy as np
 
 
-from shapely import vectorized
-from shapely.geometry import Polygon
-
+try:
+    from shapely import vectorized
+    from shapely.geometry import Polygon
+except Exception as e:
+    import sys
+    if sys.platform.startswith('win'):
+        from .shapely import vectorized
+        from .shapely.geometry import Polygon
+    else:
+        raise Exception("Shapely library not compatible or not found! Error:  "+str(e))
 try:
     from rtree import Rtree
 except:

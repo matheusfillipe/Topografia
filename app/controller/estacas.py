@@ -146,7 +146,7 @@ class Estacas(object):
         #use intersect to get runway only best restuts
         #estacas, labels?
 
-        filter="dxf"
+        filter=".dxf"
         filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo dxf(*" + filter + " *" + filter.upper() + ")")[0]
         if filename in ['', None]:
             return

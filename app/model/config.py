@@ -353,6 +353,12 @@ class Config(object):
         z = zipfile.ZipFile(u"%s" % self.filename, "w")
         z.write(Config.instance().TMP_DIR_PATH+'tmp/data/data.db','data/data.db',zipfile.ZIP_DEFLATED)
         z.write(Config.instance().TMP_DIR_PATH+'tmp/data/config.json','data/config.json',zipfile.ZIP_DEFLATED)
+        tracs = Path(Config.instance().TMP_DIR_PATH + 'tmp/data/').rglob("*.gpkg*")
+        for trac in tracs:
+            z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
+        tracs = Path(Config.instance().TMP_DIR_PATH + 'tmp/data/').rglob("*.prism")
+        for trac in tracs:
+            z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
         z.close()
         shutil.rmtree(Config.instance().TMP_DIR_PATH+'tmp')
 

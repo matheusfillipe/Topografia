@@ -129,6 +129,7 @@ class Estacas(object):
         from pathlib import Path
         file = str(Path(tempfile.gettempdir()) / "GeoRoadTempMesh.stl")
         table=self.export3D(filename=file, Z=0, terrain=False)
+        if not table: return
         from ... import trimesh
         import numpy as np
         from shapely.geometry import LineString

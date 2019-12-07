@@ -301,8 +301,7 @@ class TopoGrafia(object):
 
 
 
-    def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
+    def unload(self):    
         for action in self.actions:
             self.iface.removePluginMenu(
                 self.tr(u'&GeoRoad'),
@@ -311,26 +310,26 @@ class TopoGrafia(object):
         # remove the toolbar
         del self.toolbar
 
-    def run_tracado(self, forceOpen=True):
-
-        """Removes the plugin menu item and icon from QGIS GUI."""
+    def run_tracado(self, forceOpen=False):      
         if forceOpen:
+            msgLog("Tentando Abrir noveamente")
             filename=self.conf.model.filename = self.conf.openfile(None)
             if filename in [None,'', False, True] or (not type(filename) == str):
                 return
 
         filename = cfg.instance().FILE_PATH
         if filename in [None,'', False, True] or (not type(filename) == str):
-            self.conf.model.filename=self.conf.openfile()
+            msgLog("Abrindo Novo")
+            filename=self.conf.model.filename=self.conf.openfile()
             if filename in [None, '', False, True] or (not type(filename) == str):
                 return
-
         elif (not self.conf.model.filename in [None,'', False, True]) and type(self.conf.model.filename) == str:
             filename = self.conf.model.filename
         elif type(filename) == str and len(filename) > 0:
             self.conf.model.filename = filename
             self.conf.openfile(filename)
 
+        filename=self.conf.model.filename
         if not filename in [None,'', False, True] and type(filename) == str and pathlib.Path(filename).is_file():
             self.run = self.estacas.run()
         else:

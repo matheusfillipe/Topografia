@@ -85,6 +85,7 @@ class Config(object):
         ModelConfig.instance().store("FILE_PATH", filename)
         self.model.openfile(filename)
         self.update()
+        return filename
 
     def savefile(self):
         self.model.filename = u"{0}".format(self.model.filename)

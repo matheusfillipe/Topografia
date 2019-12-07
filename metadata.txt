@@ -11,7 +11,7 @@
 name=GeoRoad
 qgisMinimumVersion=3.0
 description=Geometric Road Design
-version=0.98
+version=1.0
 author=Lucas, Matheus Fillipe
 email=matheusfillipeag@gmail.com
 qgisMaximumVersion=3.99
@@ -34,7 +34,7 @@ homepage=https://github.com/matheusfillipe/Topografia
 category=Plugins
 icon=app/resources/icons/logo.png
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False

@@ -61,6 +61,8 @@ BRUCKNER_SELECT, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/bruckner_select.ui'))
 VOLUME_DIALOG, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), '../view/ui/volume.ui'))
+EXPORTAR_CORTE,_ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), '../view/ui/cortePreview.ui'))
 
 rb = QgsRubberBand(iface.mapCanvas(), 1)
 premuto = False
@@ -2404,3 +2406,64 @@ class VolumeDialog(QtWidgets.QDialog, VOLUME_DIALOG):
         self.corte.setText(roundFloat2str(corte))
         self.aterro.setText(roundFloat2str(aterro))
         self.soma.setText(roundFloat2str(corte+aterro))
+
+
+
+class CorteExport(QtWidgets.QDialog, EXPORTAR_CORTE):
+    def __init__(self, iface, maxprog):
+        super().__init__(iface)
+        self.iface = iface
+        self.setupUi(self)
+        self.ExportarCorte: QtWidgets.QDialog
+        self.btnPreview: QtWidgets.QPushButton
+        self.btnSave: QtWidgets.QPushButton
+        self.buttonBox: QtWidgets.QDialogButtonBox
+        self.checkBox: QtWidgets.QCheckBox
+        self.comboBox: QtWidgets.QComboBox
+        self.espSb: QtWidgets.QDoubleSpinBox
+        self.finalSb: QtWidgets.QSpinBox
+        self.inicialSb: QtWidgets.QSpinBox
+        self.intSp: QtWidgets.QDoubleSpinBox
+        self.label: QtWidgets.QLabel
+        self.label_2: QtWidgets.QLabel
+        self.label_3: QtWidgets.QLabel
+        self.label_4: QtWidgets.QLabel
+        self.label_5: QtWidgets.QLabel
+        self.label_6: QtWidgets.QLabel
+        self.label_7: QtWidgets.QLabel
+        self.label_8: QtWidgets.QLabel
+        self.line: QtWidgets.Line
+        self.line_2: QtWidgets.Line
+        self.line_3: QtWidgets.Line
+        self.planoDb: QtWidgets.QDoubleSpinBox
+        self.typeLbl: QtWidgets.QLabel
+
+        self.inicialSb.setMaximum(maxprog)
+        self.finalSb.setMaximum(maxprog)
+        self.inicialSb.valueChanged.connect(self.finalSb.setMinimum)
+        self.intSp.valueChanged.connect(self.espSb.setMinimum)
+        self.espSb.valueChanged.connect(self.offsetSb.setMaximum)
+
+        self.comboBox.currentIndexChanged.connect(self.updateUi)
+
+        self.types=["H", "V", "T"]
+
+    def getType(self):
+        return self.types[self.comboBox.currentIndex()]
+    
+    def isEstaca(self):
+        return self.checkBox.isChecked()
+
+    def updateUi(self):
+        if self.getType()=="T":
+             self.inicialSb.setEnabled(True)
+             self.finalSb.setEnabled(True)
+             self.espSb.setMaximum(Config.instance().DIST)
+        elif self.getType()=="V":
+            self.inicialSb.setEnabled(False)
+            self.finalSb.setEnabled(False)
+            self.espSb.setMaximum(10000)
+        else: #H
+            self.inicialSb.setEnabled(False)
+            self.finalSb.setEnabled(False)
+            self.espSb.setMaximum(10000)

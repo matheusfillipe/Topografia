@@ -24,7 +24,7 @@ from ..model.knn import KNN
 from ..model.utils import *
 from ..model.curvas import Curvas
 from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv, ProgressDialog, \
-    EstacaRangeSelect
+    EstacaRangeSelect, CorteExport
 from ..view.curvas import Curvas as CurvasView, refreshCanvas
 
 
@@ -124,39 +124,133 @@ class Estacas(object):
         self.viewCv.btn3D.clicked.connect(lambda: self.export3D())
         self.viewCv.btnCorte.clicked.connect(lambda: self.exportCorte())
 
-    def exportCorte(self):
+
+    def createMesh(self, tipo="H"):
         import tempfile
         from pathlib import Path
+        if hasattr(self, "ctExpDiag"):
+            tipo=self.ctExpDiag.getType()
         file = str(Path(tempfile.gettempdir()) / "GeoRoadTempMesh.stl")
-        table=self.export3D(filename=file, Z=0, terrain=False)
+        table=self.export3D(filename=file, tipo=tipo)
+        self.tableCorte=table
+        self.fileCorte=file
+        return table, file
+
+    def exportCorte(self):
+        table, file = self.createMesh()
         if not table: return
+        self.generateCorte()
+        self.ctExpDiag=diag = CorteExport(None, float(table[-1][2]))
+        diag.btnPreview.clicked.connect(lambda: self.corteExport(True))
+        diag.btnSave.clicked.connect(lambda: self.corteExport(False))
+        diag.comboBox.currentIndexChanged.connect(lambda: self.createMesh())
+        diag.show()
+
+
+    def corteExport(self, preview=False):
+        self.generateCorte()
+        if not hasattr(self.combined, "show"):
+            messageDialog(message="Sessão vazia! Nada foi encontrado, tente aumentar a profundidade!")
+        else:
+            if preview:
+                self.combined.show()
+            else:
+                self.saveDxfCorte()
+
+
+    def generateCorte(self, step=1, depth=20, tipo="H"):
+        import numpy as np
+        file=self.fileCorte
+        if hasattr(self, "ctExpDiag"):
+            tipo=self.ctExpDiag.getType()
+            step=self.ctExpDiag.intSp.value()
+            depth=self.ctExpDiag.espSb.value()
+            e1=self.ctExpDiag.inicialSb.value()
+            e2=self.ctExpDiag.finalSb.value()
+            offset=self.ctExpDiag.offsetSb.value()
+        else:
+            e2=float(self.tableCorte[-1][2])
+            e1=0
+            offset=0
+
+        if tipo=="T":
+            plane_normal=[1, 0, 0]
+            for e in self.tableCorte:
+                self.progressDialog.setLoop(100,(e1-e2)/Config.instance().DIST)
+                if estaca2progFloat(e[0]) > e2:
+                    break
+                if estaca2progFloat(e[0])>=e1:
+                    self.progressDialog.increment()
+                    offset=estaca2progFloat(e[0])-e1
+                    sections = self.sliceCorte(file, tipo, step, depth, plane_normal, offset)
+        elif tipo=="H":
+            plane_normal=[0, 0, 1]
+            sections = self.sliceCorte(file, tipo, step, depth, plane_normal, offset)
+        else: #V
+            plane_normal=[0, 1, 0]
+            sections=self.sliceCorte(file, tipo, step, depth, plane_normal, offset)
+        self.combined = np.sum(sections)
+
+        if hasattr(self, "ctExpDiag") and self.ctExpDiag.isEstaca(): #printar estacas
+            from ... import trimesh
+            if tipo=="T":
+                self.progressDialog.show()
+                self.progressDialog.setLoop(100,(e1-e2)/Config.instance().DIST)
+                for e in self.tableCorte: #TODO colocar no range e1 e2
+                    if estaca2progFloat(e[1]) > e2:
+                        break
+                    if estaca2progFloat(e[1]) >= e1:
+                        self.progressDialog.increment()
+                        text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=e[1])
+                        self.combined.entities=np.vstack((self.combined.vertices, [float(e[2]), 0]))
+                        self.combined.entities=np.append(self.combined.entities, text)
+            elif tipo=="H":
+                for e in self.tableCorte:
+                    text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=e[1])
+                    self.combined.entities=np.vstack((self.combined.vertices, [float(e[4]), float(e[3])]))
+                    self.combined.entities=np.append(self.combined.entities, text)
+            else: #V
+                for e in self.tableCorte:
+                    text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=e[1])
+                    self.combined.entities = np.vstack((self.combined.vertices, [float(e[2]), float(e[5])]))
+                    self.combined.entities = np.append(self.combined.entities, text)
+
+    def sliceCorte(self, file, tipo, step, depth, plane_normal, offset=0):
         from ... import trimesh
         import numpy as np
         from shapely.geometry import LineString
-
         mesh = trimesh.load_mesh(file)
-        z_extents = mesh.bounds[:, 2]
-        z_levels = np.arange(*z_extents, step=.5)
+        if tipo=="T":
+            n=0
+        elif tipo=="V":
+            n=1
+        else:
+            n=2
+        z_extents = mesh.bounds[:, n]
+        z_levels = np.arange(*z_extents, step=step)[int(offset/step):int(depth/step)]
         sections = mesh.section_multiplane(plane_origin=mesh.bounds[0],
-                                           plane_normal=[0, 0, 1],
+                                           plane_normal=plane_normal,
                                            heights=z_levels)
-        msgLog("Sessões:  " +str(sections)[100:]+" ......")
-        combined = np.sum([s for s in sections if not s is None])
+        sections=[s for s in sections if not s is None]
+        msgLog("--> Corte: " +str(len(sections))+" sessões válidas encontradas!")
+        return sections
 
-        #use intersect to get runway only best restuts
-        #estacas, labels?
 
+    def saveDxfCorte(self):
         filter=".dxf"
         filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo dxf(*" + filter + " *" + filter.upper() + ")")[0]
         if filename in ['', None]:
             return
         filename = str(filename) if str(filename).endswith(filter) else str(filename) + filter
-        combined.export(filename)
+        self.combined.export(filename)
 
 
-    def export3D(self, filename=None, Z=None, terrain=True):
+    def export3D(self, filename=None, terrain=True, tipo="3D"): # H, V, T
         self.progressDialog.show()
         self.progressDialog.setValue(0)
+
+        Z=0 if tipo in "HT" else None
+        reto=True if tipo in "VT" else None
 
         filter=".stl"
         X, table, prismoide = self.model.getTrans(self.model.id_filename)
@@ -227,17 +321,21 @@ class Estacas(object):
 
             for j, pt in enumerate(points):
                 x,y,z=est,pt[0],pt[1]
-                yangleE = esign * y * abs(math.sin(perp * math.pi / 180))
-                yangleN = nsign * y * abs(math.cos(perp * math.pi / 180))
-                xPoint = float(este + yangleE)
-                yPoint = float(norte + yangleN)
-                z = z if Z is None else z-greide+Z
-                verticesg.append([xPoint, yPoint, z])
+                z = z if Z is None else z - greide + Z
+                if reto is None:
+                    yangleE = esign * y * abs(math.sin(perp * math.pi / 180))
+                    yangleN = nsign * y * abs(math.cos(perp * math.pi / 180))
+                    xPoint = float(este + yangleE)
+                    yPoint = float(norte + yangleN)
+                    verticesg.append([xPoint, yPoint, z])
+                else:
+                    verticesg.append([x, y, z])
+
                 vertices.append([x, y, z])
 
 
         if errors:
-            messageDialog(title="Erro", message="Erro nas estacas: "+"; ".join([prog2estacaStr(p) for p in errors]))
+            messageDialog(title="Erro", message="Erro nas estacas: "+";  ".join([prog2estacaStr(p) for p in errors]))
 
         verticesg = np.array(verticesg)
         vertices = np.array(vertices)
@@ -262,12 +360,12 @@ class Estacas(object):
         filename = str(filename) if str(filename).endswith(filter) else str(filename) + filter
         combined.save(filename)
 
-        if Z is None:
+        if tipo == "3D":
             import shutil
-            exe = shutil.which("blender")
+            exe = shutil.which("blender") #maybe this works on windows someday?
 
             from pathlib import Path
-            p = Path("C:\Program Files\Blender Foundation\\").rglob("*/*.exe")
+            p = Path("C:\Program Files\Blender Foundation\\").rglob("*/*.exe")  #blender's default path on windows
             for file in p:
                 if file.name == "blender.exe":
                     exe=str(file)
@@ -307,9 +405,7 @@ class Estacas(object):
                 msgLog("Blender não foi encontrado!")
 
         else:
-            return [[float(e[4]),float(e[3]),float(e[5])] for e in intersect]
-
-
+            return intersect
 
 
     def exportTrans(self):

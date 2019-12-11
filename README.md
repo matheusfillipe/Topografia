@@ -33,21 +33,16 @@ Vertical data can be set and edited with a pyqtgraph interface. The cross sectio
 * Cálculo de Volumes
 * Diagrama de Bruckner
 * Extração dos dados em CSV e DXF
+* Extração de Modelo tridimensional
 
 
 ### Planejados
 * Melhor suporte à layers com fonte Angular (ex: WGS 64)
-* Superlargura e Superelevação
+* Superlargura e Superelevação automáticos
 * Cotas a partir de arquivo de pontos cotados(dxf)
-* Melhor Extração DXF
+* Extração DXF mais detalhada
 
 ### Como Instalar
-
-#### Instalação: Pelo QGIS plugin manager 
-
-Abra o gerenciador de plugins em "Plugins -> Gerenciar e instalar plugins", aguarde a atualização, clique na opção Todos (All), Digite "GeoRoad", clique em instalar. 
-
-[Qgis: Install plugins online(English)](https://docs.qgis.org/3.4/en/docs/training_manual/qgis_plugins/fetching_plugins.html)
 
 
 #### Instalação Manual

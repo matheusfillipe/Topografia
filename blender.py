@@ -45,8 +45,8 @@ bpy.context.view_layer.active_layer_collection = bpy.context.view_layer.layer_co
 filepath = argv[0]#"/home/matheus/tmp/testhighway.stl"
 #dxf="/home/matheus/Downloads/Telegram Desktop/highway.dxf"
 #start= [728352.9266,7787532.9365,484.0]
-#bpy.ops.preferences.addon_enable(module="io_import_dxf")
-#bpy.ops.preferences.addon_enable(module="io_export_dxf")
+bpy.ops.preferences.addon_enable(module="io_import_dxf")
+bpy.ops.preferences.addon_enable(module="io_export_dxf")
 jsonfile = str(Path(tempfile.gettempdir()) / "georoadBlender.json")
 with open(jsonfile, "r") as file:
     data = json.load(file)

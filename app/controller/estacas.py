@@ -440,12 +440,13 @@ class Estacas(object):
 
         if not table:  # if non existent, compute
             X, est, prismoide=self.loadTrans()
+            fh=QtWidgets.QInputDialog.getDouble(None, "Fator de Homogeneização", "Defina o fator de Homegeneização. Você deverá apagar o diagrama de bruckner se quiser mudar esse valor futuramente.", value=1.05, min=0, max=10)
             if not X:
                 messageDialog(message="Sessão Transversal não definida!")
+                self.progressDialog.close()
                 return
             self.progressDialog.setValue(10)
-            X, V = self.brucknerThread(X, est, prismoide, 0, len(X)-1)
-
+            X, V = self.brucknerThread(X, est, prismoide, 0, len(X)-1, fh)
         else:
             X, V = zip(*table)
             X = [float(x) for x in X]
@@ -454,12 +455,14 @@ class Estacas(object):
         self.progressDialog.setValue(90)
         dialog=EstacaRangeSelect(None, X)
         if not dialog.exec_():
+            self.progressDialog.close()
             return
         ei=dialog.inicial.currentIndex()
         ef=dialog.final_2.currentIndex()
         X=X[ei:ef+1]
         V=V[ei:ef+1]
-
+        dist=Config.instance().DIST
+        X=[x*dist for x in X]
         bruck = Ui_Bruckner(X, V)
         bruck.showMaximized()
         bruck.save.connect(lambda: self.bruckner2DXF(bruck.X, bruck.V))
@@ -484,7 +487,7 @@ class Estacas(object):
 
 
     @nongui
-    def brucknerThread(self, X, est, prismoide, ei, ef):
+    def brucknerThread(self, X, est, prismoide, ei, ef, fh):
         self.progressDialog.setText("Calculando Volumes acumulados")
         X=[float(x) for x in X]
         X=X[ei:ef+1]
@@ -492,7 +495,7 @@ class Estacas(object):
         vAcumulado=0
         self.progressDialog.setLoop(30, len(X))
         for x in range(1,len(X)+1):
-            vAcumulado+=-prismoide.getVolume(ei+x-1,ei+x)
+            vAcumulado+=-prismoide.getVolume(ei+x-1, ei+x)
             V.append(vAcumulado)
             self.progressDialog.increment()
 
@@ -512,14 +515,16 @@ class Estacas(object):
         filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save dxf",filter="Arquivo DXF (*.dxf)")
         if filename[0] in ["", None]: return
         estacas=self.viewCv.get_estacas()
-
+        terreno=self.model.load_terreno_long()
         Lpoints=[]
         if self.viewCv.mode=="CV":
             points=[]
             for e in estacas:
                 points.append(p2QgsPoint(float(e[-2]), float(e[-1])))
             Lpoints.append(points)
-
+            prog=float(e[-2])
+            points=[p2QgsPoint(float(e[-2])-prog, float(e[-1])) for e in terreno]
+            Lpoints.append(points)
         elif self.viewCv.mode=="T":
             points=[]
             for e in estacas:
@@ -528,25 +533,34 @@ class Estacas(object):
 
         self.saveDXF(filename[0], Lpoints)
 
-        if yesNoDialog(title="Plotar Transversais?", message="Deseja plotar os perfis transversais? (Se ainda não foram definidos não serão plotados)"):
+        if yesNoDialog(title="Plotar Transversais?", message="Deseja exportar os perfis transversais? (Se ainda não foram definidos não serão salvos)"):
             self.progressDialog.show()
 
-            X,prog,prismoide=self.loadTrans()
+            X,table,prismoide=self.loadTrans()
 
             filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save dxf", filter="Arquivo DXF (*.dxf)")
             if filename[0] in ["", None]: return
-
             LPoints=[]
-            for face in prismoide.getFaces():
+            for i,face in enumerate(prismoide.getFaces()):
+                st = face.superior
+                stpts = st.getPoints()
                 points=[]
-                for line in face.superior.lines:
-                    points.append(p2QgsPoint(line.point1.x(), line.point1.y()))
-                for line in face.inferior.lines:
-                    points.append(p2QgsPoint(line.point1.x(), line.point1.y()))
+                for pt in table[1][i]:
+                    if pt[0] > stpts[0][0]:
+                        break
+                    else:
+                        points.append(p2QgsPoint([float(pt[0]),float(pt[1])]))
+                points += [p2QgsPoint([pt.x(), pt.y()]) for pt in stpts]
+                for pt in table[1][i]:
+                    if pt[0] > stpts[-1][0]:
+                        points.append(p2QgsPoint([float(pt[0]),float(pt[1])]))
+#                for line in face.superior.lines:
+#                    points.append(p2QgsPoint(line.point1.x(), line.point1.y()))
+#                for line in face.inferior.lines:
+#                    points.append(p2QgsPoint(line.point1.x(), line.point1.y()))
                 LPoints.append(points)
 
             self.saveDXF(filename[0], LPoints)
-
             self.progressDialog.close()
 
     def saveDXF(self, filename, listOfListOfPoints):   #[ [ p2QgsPoint[ x,y], [x,y] ...] , [ [ x,y] , [x,y] ...] ....] Each list is a feature

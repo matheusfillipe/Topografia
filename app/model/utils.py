@@ -233,7 +233,10 @@ class ClickTool(QgsMapTool):
 def p2QgsPoint(pt, pt2=None):  #Qgis 3.10.0 has a bug where the QgsPoint doesn't accept a QgsPointXY as a constructor
     if pt2 is None:
         try:
-            return QgsPoint(pt.x(), pt.y())
+            if type(pt) is list:
+                return QgsPoint(pt[0], pt[1])
+            else:
+                return QgsPoint(pt.x(), pt.y())
         except:
             return QgsPoint(pt)
     else:

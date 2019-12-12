@@ -9,7 +9,7 @@ from qgis.PyQt.QtCore import QSettings, Qt
 from qgis.PyQt.QtWidgets import QAbstractItemView
 from qgis._core import QgsCoordinateReferenceSystem, QgsProject, QgsRasterLayer, QgsMapLayer, QgsRectangle, QgsVectorFileWriter, QgsVectorLayer
 
-from ..model.utils import yesNoDialog
+from ..model.utils import yesNoDialog, msgLog
 from ..model.config import Config, extractZIP, compactZIP
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -123,8 +123,11 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
             cfg=Config.instance()
             try:
                 self.dataAssociationRead[d](getattr(cfg, d))
-            except:
-                pass
+            except Exception as e:
+                import traceback
+                msgLog("Erro ao ler configurações: "+str(d))
+                msgLog("Erro: " + str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
+
         return super(TopoConfig, self).show()
 
     def setUnits(self, s:str):

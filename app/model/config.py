@@ -48,7 +48,7 @@ class Config(object):
     DIST=20
     RANDOM="__ix35-_-xxx901381asdioADJ398(__"
     TMP_FOLDER="GeoRoadPluginTemporaryLayers/"
-    T_SPACING=30
+    T_SPACING=50
     CLASSE_INDEX=4
     crs = 2676
     planoMin = 0.0
@@ -59,7 +59,7 @@ class Config(object):
     montanhosoMax = 100.0
     TMP_DIR_PATH = RANDOM
     T_OFFSET = 6
-    interpol=0
+    interpol="True"
     velproj=100.0
     emax=0.08
 

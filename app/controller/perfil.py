@@ -499,7 +499,7 @@ class CustomPolyLineROI(pg.PolyLineROI):
         self.labels=[]
         self.setPlotWidget(kwds.get('plot', False))
         pg.PolyLineROI.__init__(self,*args,**kwds)
-
+        self.ismodifying=False
 
     def setPlotWidget(self, plotWidget):
         if plotWidget:
@@ -639,7 +639,9 @@ class CustomPolyLineROI(pg.PolyLineROI):
         if ev.button() == QtCore.Qt.RightButton:
             i = self.segments.index(segment)
             d = rampaDialog(self, segment, pos, i+2)
+            self.ismodifying=True
             d.exec_()
+            self.ismodifying=False
             self.wasModified.emit()
             self.sigRegionChangeFinished.emit(self)
 
@@ -730,8 +732,18 @@ class CustomPolyLineROI(pg.PolyLineROI):
                     #self.plotWidget.addItem(self.handles[i]['item'].curve.curve)
         except:
             pass
-                
-        
+
+
+    def removeRect(self, handle):
+        try:
+            self.plotWidget.removeItem(handle.leg1)
+            self.plotWidget.removeItem(handle.leg2)
+            self.plotWidget.removeItem(handle.rect1)
+            self.plotWidget.removeItem(handle.rect2)
+        except:
+            pass
+        pg.QtGui.QGuiApplication.processEvents()
+
 
 class ssRoi(CustomPolyLineROI):
     wasModified=QtCore.pyqtSignal()
@@ -931,9 +943,9 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.initVars(ref_estaca, tipo, classeProjeto, greide, cvList, wintitle)
         self.setupUi(self)
 
-
     def initVars(self, ref_estaca, tipo, classeProjeto, greide, cvList, wintitle):
         self.everPloted=False
+        self.showDistances=False
         self.ref_estaca = ref_estaca
         self.tipo = tipo
         self.classeProjeto = classeProjeto
@@ -986,12 +998,14 @@ class Ui_Perfil(QtWidgets.QDialog):
        
         x,y=list(zip(*pontos))
         x=list(x)
-        y=list(y)       
-                
+        y=list(y)
+        self.V=y
+        self.X=x
+        self.ymed = np.average(y)
         self.perfilPlot.plot(x=x, y=y, symbol='o')
         self.perfilPlot.setWindowTitle('Perfil Vertical')
-        A = np.array([x,np.ones(len(x))])
-        w = np.linalg.lstsq(A.T,y)[0]
+        #A = np.array([x,np.ones(len(x))])
+        #w = np.linalg.lstsq(A.T,y)[0]
         if self.greide:
            # i=0
             lastHandleIndex=len(self.greide)-1
@@ -1008,8 +1022,8 @@ class Ui_Perfil(QtWidgets.QDialog):
                 L[-1]=final
             self.roi = CustomPolyLineROI(L, plot=self.perfilPlot)
         else:
-            self.roi = CustomPolyLineROI([(x[0],w[0]*x[0]+w[1]), (x[len(x)-1],w[0]*x[len(x)-1]+w[1])], plot=self.perfilPlot)
-
+            #self.roi = CustomPolyLineROI([(x[0], w[0]*x[0]+w[1]), (x[len(x)-1],w[0]*x[len(x)-1]+w[1])], plot=self.perfilPlot)
+            self.roi = CustomPolyLineROI([(x[0],y[0]), (x[-1],y[-1])], plot=self.perfilPlot)
         self.roi.perfil=self
         self.roi.wasModified.connect(self.__setAsNotSaved)
         self.roi.setAcceptedMouseButtons(QtCore.Qt.RightButton)
@@ -1019,12 +1033,83 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.lastCurvas=self.getCurvas()
         self.roi.setPlotWidget(self.perfilPlot)
         self.roi.addCvs(self.cvList)
-
         self.roi.sigRegionChangeFinished.connect(self.modifiedRoi)
-
-
+        self.roi.sigRegionChangeFinished.connect(self.updater)
         
        # self.perfilPlot.plot(y,x)
+    def updater(self):
+        if not self.showDistances:
+            for h in self.roi.getHandles():
+                self.roi.removeRect(h)
+            return
+        if not self.roi.ismodifying:
+            handles = [self.roi.getHandlePos(i) for i in range(self.roi.countHandles())]
+            for j, handlePos in enumerate(handles[1:]):  # para cada segmento
+                I = (handles[j+1].y()-handles[j].y())/(handles[j+1].x()-handles[j].x())
+                greideStart=[handles[j].x(), handles[j].y()]
+                distsY=[]
+                Xs=[]
+                terreno=[]
+                greides=[]
+                endX=handlePos.x()
+                lx = greideStart[0]
+                i1=max([i for i, ix in enumerate(self.X) if ix <= lx])
+                i2=min([i for i, ix in enumerate(self.X) if ix >= endX])
+                for i, pt in enumerate(zip(self.X[i1:i2], self.V[i1:i2])):  # para cada estaca
+                    x=pt[0]
+                    y=pt[1]
+                    greideY=greideStart[1]+I*(x-greideStart[0])
+                    distsY.append(y-greideY)
+                    Xs.append(x)
+                    terreno.append([x,y])
+                    greides.append([x,greideY])
+                ymax=max(distsY)
+                ymin=min(distsY)
+                if ymax>0 and ymin>0:
+                    ymin=0
+                else:
+                    indexMin = distsY.index(ymin)
+                    xmin = Xs[indexMin]
+                    tmin = terreno[indexMin][1]
+                    gmin = greides[indexMin][1]
+                if ymin<0 and ymax<0:
+                    ymax=0
+                else:
+                    indexMax = distsY.index(ymax)
+                    xmax=Xs[indexMax]
+                    tmax=terreno[indexMax][1]
+                    gmax=greides[indexMax][1]
+
+                #  Plotar cota
+                handle = self.roi.handles[j + 1]['item']
+                self.roi.removeRect(handle)
+                if ymin!=0:
+                    handle.rect1 = pg.PlotCurveItem()
+                    handle.rect1.setData([xmin, xmin],
+                                         [gmin, tmin],
+                                         pen=pg.mkPen('b', width=2, style=QtCore.Qt.SolidLine))
+                    handle.leg1 = pg.TextItem(color=(200, 200, 200))
+                    handle.leg1.setHtml("%s m" % (str(roundFloatShort(ymin))))
+                    handle.leg1.setAnchor((0, 0))
+                    handle.leg1.setPos(xmin, gmin+(ymin)/2)
+                    self.roi.plotWidget.addItem(handle.rect1)
+                    self.roi.plotWidget.addItem(handle.leg1)
+
+                if ymax!=0:
+                    handle.rect2 = pg.PlotCurveItem()
+                    handle.rect2.setData([xmax, xmax],
+                                         [gmax, tmax],
+                                         pen=pg.mkPen('b', width=2, style=QtCore.Qt.SolidLine))
+                    handle.leg2 = pg.TextItem(color=(200, 200, 200))
+                    handle.leg2.setHtml("%s m" % (str(roundFloatShort(ymax))))
+                    handle.leg2.setAnchor((0, 0))
+                    handle.leg2.setPos(xmax, gmax+(ymax)/2)
+                    self.roi.plotWidget.addItem(handle.rect2)
+                    self.roi.plotWidget.addItem(handle.leg2)
+
+                handle.sigRemoveRequested.connect(self.roi.removeRect)
+
+            pg.QtGui.QGuiApplication.processEvents()
 
     def calcularGreide(self):
         self.roi.getMenu()
@@ -1130,6 +1215,9 @@ class Ui_Perfil(QtWidgets.QDialog):
     def estaca2(self,ind):
         self.estaca2txt = ind-1
 
+    def toggleDistances(self):
+        self.showDistances = not self.showDistances
+        self.updater()
 
     def setupUi(self, PerfilTrecho):
         PerfilTrecho.setObjectName(_fromUtf8("PerfilTrecho"))
@@ -1152,6 +1240,10 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.btnAutoRange.setText("Escala")
         self.btnAutoRange.clicked.connect(self.showEscalaDialog)
 
+        self.btnDistances=QtWidgets.QPushButton(PerfilTrecho)
+        self.btnDistances.setGeometry(QtCore.QRect(260, 80, 99, 27))
+        self.btnDistances.setText("Distâncias")
+        self.btnDistances.clicked.connect(self.toggleDistances)
 
         self.btnSave=QtWidgets.QPushButton(PerfilTrecho)
         self.btnSave.setGeometry(QtCore.QRect(260, 80, 99, 27))
@@ -1174,7 +1266,8 @@ class Ui_Perfil(QtWidgets.QDialog):
         QtCore.QMetaObject.connectSlotsByName(PerfilTrecho)
         
         Hlayout.addWidget(self.btnCalcular)
-        Hlayout.addWidget(self.btnAutoRange) 
+        Hlayout.addWidget(self.btnAutoRange)
+        Hlayout.addWidget(self.btnDistances)
         Hlayout.addWidget(self.btnSave)
         Hlayout.addWidget(self.btnReset)
         Hlayout.addWidget(self.btnCancel)
@@ -1338,6 +1431,9 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.updateAreaLabels()
         self.isValid=True
 
+    def updater(self):
+        pass
+
     def vGreideCurve(self, greide):
         ptList = []
         for item in greide:
@@ -1347,7 +1443,7 @@ class Ui_sessaoTipo(Ui_Perfil):
         return greide
 
     def createPrismoid(self, j):
-        if self.prismoide.generate(j) is None:
+        if not self.prismoide.generate(j) is None:
             messageDialog(title="Erro", message="Falha ao criar o talude na estaca: "+str(self.progressiva[j])+ " estaca: "+prog2estacaStr(self.progressiva[j]))
         self.updateAreaLabels()
 
@@ -1851,10 +1947,10 @@ class Ui_Bruckner(Ui_Perfil):
     def updater(self):
         if not self.roi.ismodifying:
             handles=[self.roi.getHandlePos(i).x() for i in range(self.roi.countHandles())]
-            lx=handles[0]
             v0=self.roi.pos().y()+self.roi.ymed
             dist=Config.instance().DIST
             for j, x in enumerate(handles[1:]):  #para cada segmento
+                lx = handles[j]
                 A=0
                 vmax=0
                 xmax=(lx+x)/2

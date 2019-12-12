@@ -803,7 +803,7 @@ class EstacasCv(QtWidgets.QDialog):
         self.btnGen.setText("Tabela de interseção")
         self.btnGen.setGeometry(QtCore.QRect(755, 16, 180, 45))
         self.btnGen.setObjectName(_fromUtf8("btnGen"))
-        self.gridLayout.addWidget(self.btnGen, row,column, 1,1)
+        self.gridLayout.addWidget(self.btnGen, row, column, 1,1)
         self.btnGen.setToolTip("Tabela contendo os dados horizonais e verticais")
         #self.btnGen.clicked.connect(self.generate)
         row+=1
@@ -825,6 +825,15 @@ class EstacasCv(QtWidgets.QDialog):
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
         self.btnBruck.setToolTip("Visualizar e editar o diagrama de bruckner para um intervalo de estacas")
         self.gridLayout.addWidget(self.btnBruck, row, column, 1, 1)
+        row+=1
+
+        self.btnDxfBruck = QtWidgets.QPushButton(Form)
+        self.btnDxfBruck.setText("Importar Bruckner")
+        self.btnDxfBruck.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
+        self.btnDxfBruck.setObjectName(_fromUtf8("btnDxfBruck"))
+        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+        self.btnDxfBruck.setToolTip("Visualizar e editar o diagrama de bruckner importado a partir de um arquivo dxf")
+        self.gridLayout.addWidget(self.btnDxfBruck, row, column, 1, 1)
         row+=1
 
         self.btnCsv = QtWidgets.QPushButton(Form)

@@ -859,7 +859,7 @@ class EstacasCv(QtWidgets.QDialog):
         self.btnCorte.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
         self.btnCorte.setObjectName(_fromUtf8("btnCorte"))
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
-        self.btnCorte.setToolTip("Exportar o corte superior do traçado como um arquivo dxf")
+        self.btnCorte.setToolTip("Exportar curvas de nível do traçado como um arquivo dxf")
         self.gridLayout.addWidget(self.btnCorte, row, column, 1,1)
         row+=1
 
@@ -2452,6 +2452,7 @@ class CorteExport(QtWidgets.QDialog, EXPORTAR_CORTE):
         self.inicialSb.valueChanged.connect(self.finalSb.setMinimum)
         self.intSp.valueChanged.connect(self.espSb.setMinimum)
         self.espSb.valueChanged.connect(self.offsetSb.setMaximum)
+        self.btnPreview.setFocus()
 
         self.comboBox.currentIndexChanged.connect(self.updateUi)
 

@@ -11,8 +11,8 @@ import platform
 import collections
 import numpy as np
 
-import pyglet
-import pyglet.gl as gl
+import .pyglet
+import .pyglet.gl as gl
 
 from .trackball import Trackball
 

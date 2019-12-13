@@ -175,14 +175,15 @@ class Estacas(object):
 
         if tipo=="T":
             plane_normal=[1, 0, 0]
+            self.progressDialog.setLoop(100, (e1 - e2) / Config.instance().DIST, 0)
             for e in self.tableCorte:
-                self.progressDialog.setLoop(100,(e1-e2)/Config.instance().DIST)
                 if estaca2progFloat(e[0]) > e2:
                     break
                 if estaca2progFloat(e[0])>=e1:
                     self.progressDialog.increment()
                     offset=estaca2progFloat(e[0])-e1
                     sections = self.sliceCorte(file, tipo, step, depth, plane_normal, offset)
+            self.progressDialog.close()
         elif tipo=="H":
             plane_normal=[0, 0, 1]
             sections = self.sliceCorte(file, tipo, step, depth, plane_normal, offset)
@@ -196,39 +197,58 @@ class Estacas(object):
             if tipo=="T":
                 self.progressDialog.show()
                 self.progressDialog.setLoop(100,(e1-e2)/Config.instance().DIST)
-                for e in self.tableCorte: #TODO colocar no range e1 e2
+                for e in self.tableCorte:
                     if estaca2progFloat(e[1]) > e2:
                         break
                     if estaca2progFloat(e[1]) >= e1:
                         self.progressDialog.increment()
-                        text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=e[1])
-                        self.combined.entities=np.vstack((self.combined.vertices, [float(e[2]), 0]))
+                        text = trimesh.path.entities.Text(origin=len(self.combined.vertices),text=str(e[0]) + "  " + str(e[1]), height=18)
+                        self.combined.vertices=np.vstack((self.combined.vertices, self.combined.bounds.mean(axis=0)))
                         self.combined.entities=np.append(self.combined.entities, text)
+
+                self.progressDialog.close()
+
             elif tipo=="H":
                 for e in self.tableCorte:
-                    text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=e[1])
-                    self.combined.entities=np.vstack((self.combined.vertices, [float(e[4]), float(e[3])]))
+                    azi=np.deg2rad(float(e[7])+90)
+                    l=50
+                    text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=str(e[0])+"  "+str(e[1]), height=18)
+                    self.combined.vertices=np.vstack((self.combined.vertices, np.array([float(e[4]), float(e[3])])))
                     self.combined.entities=np.append(self.combined.entities, text)
+                    line=trimesh.path.entities.Line(np.array([len(self.combined.vertices), len(self.combined.vertices)+1]))
+                    self.combined.vertices=np.vstack((self.combined.vertices, np.array([float(e[4])+l*np.sin(azi), float(e[3])+l*np.cos(azi)])))
+                    self.combined.vertices=np.vstack((self.combined.vertices, np.array([float(e[4])-l*np.sin(azi), float(e[3])-l*np.cos(azi)])))
+                    self.combined.entities = np.append(self.combined.entities, line)
             else: #V
                 for e in self.tableCorte:
-                    text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=e[1])
-                    self.combined.entities = np.vstack((self.combined.vertices, [float(e[2]), float(e[5])]))
+                    text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=str(e[0])+"  "+str(e[1]), height=18)
+                    self.combined.vertices = np.vstack((self.combined.vertices, np.array([float(e[2]), float(e[5])])))
                     self.combined.entities = np.append(self.combined.entities, text)
+                    line=trimesh.path.entities.Line(np.array([len(self.combined.vertices), len(self.combined.vertices)+1]))
+                    self.combined.vertices = np.vstack((self.combined.vertices, np.array([float(e[2]), float(e[5])-5])))
+                    self.combined.vertices = np.vstack((self.combined.vertices, np.array([float(e[2]), float(e[5])+5])))
+                    self.combined.entities = np.append(self.combined.entities, line)
+
+
+            msgLog("Foram adicionados "+str(len(self.combined.entities))+" elementos para o tipo "+tipo)
 
     def sliceCorte(self, file, tipo, step, depth, plane_normal, offset=0):
         from ... import trimesh
         import numpy as np
-        from shapely.geometry import LineString
         mesh = trimesh.load_mesh(file)
         if tipo=="T":
             n=0
+            plane_origin=[0,0,mesh.bounds[0][2]]
         elif tipo=="V":
             n=1
+            plane_origin=[0,0,-2*mesh.bounds[0][1]]
         else:
             n=2
+            plane_origin=[0,0,mesh.bounds[0][2]]
         z_extents = mesh.bounds[:, n]
+        depth=min(z_extents[1]-z_extents[0],depth)
         z_levels = np.arange(*z_extents, step=step)[int(offset/step):int(depth/step)]
-        sections = mesh.section_multiplane(plane_origin=mesh.bounds[0],
+        sections = mesh.section_multiplane(plane_origin=plane_origin,
                                            plane_normal=plane_normal,
                                            heights=z_levels)
         sections=[s for s in sections if not s is None]
@@ -330,9 +350,7 @@ class Estacas(object):
                     verticesg.append([xPoint, yPoint, z])
                 else:
                     verticesg.append([x, y, z])
-
                 vertices.append([x, y, z])
-
 
         if errors:
             messageDialog(title="Erro", message="Erro nas estacas: "+";  ".join([prog2estacaStr(p) for p in errors]))
@@ -401,12 +419,24 @@ class Estacas(object):
                     cmd=[exe, blend, "--python", script, "--", filename]
                     msgLog("Running Command:  "+" ".join(cmd))
                     subprocess.Popen(cmd)
+                else:
+                   # self.showModelo3D(filename)
+                    pass
             else:
                 msgLog("Blender não foi encontrado!")
-
+               # self.showModelo3D(filename)
         else:
             return intersect
 
+    def showModelo3D(self, filename):
+        if yesNoDialog(message="Deseja visualizar o modelo gerado?"):
+            try:
+                import trimesh
+                mesh=trimesh.load(filename)
+                mesh.show()
+            except Exception as e:
+                import traceback
+                msgLog("Erro: " + str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
 
     def exportTrans(self):
         filename = QtWidgets.QFileDialog.getSaveFileName(caption="Save dxf", filter="Arquivo DXF (*.dxf)")

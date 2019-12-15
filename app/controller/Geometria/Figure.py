@@ -1097,6 +1097,32 @@ class prismoide(figure):
 
         return vct, vat
 
+    def getBruckVols(self, i1=0, i2=None, fh=1):
+        data=[]
+        try:
+            if i2 is None:
+                i2 = len(self.faces) - 1
+            vat = vct = 0
+            for i, face in enumerate(self.faces[i1:i2]):
+                # semisoma
+                nextFace = self.faces[i + 1]
+                nct, nat = nextFace.getAreas()
+                ct, at = face.getAreas()
+                dist = abs(face.position.z() - nextFace.position.z())
+                vct += (ct + nct) * dist / 2
+                vat += (at + nat) * dist / 2*fh
+                data.append({"corte": abs(ct), "aterro": abs(at), "at.cor.": abs(at*fh), "soma":at+ct, "semi-distancia": dist,
+                             "vol.corte":vct, "vol.aterro":vat, "volume":-(vat+vct)})
+        except:
+            msgLog("Erro na estaca de número " + str(i))
+            dist=0
+            ct=at=vct=vat=0
+            data.append(
+            {"corte": abs(ct), "aterro": abs(at), "at.cor.": abs(at * fh), "soma": at + ct, "semi-distancia": dist,
+             "vol.corte": vct, "vol.aterro": vat, "volume": -(vat + vct)})
+
+        return data
+
 
 class square(curve):
 

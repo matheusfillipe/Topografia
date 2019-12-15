@@ -2,6 +2,7 @@
 import csv
 import math
 import sqlite3
+import json
 from builtins import object
 from builtins import range
 from builtins import str
@@ -176,8 +177,8 @@ class Estacas(object):
         con.execute("VACUUM")
         con.isolation_level = ''
         con.commit()
-
         con.close()
+        Path(Config.instance().TMP_DIR_PATH+"tmp/data/"+str(self.id_filename)+".bruck").unlink()
         compactZIP(Config.fileName)
         return True
 
@@ -313,6 +314,7 @@ class Estacas(object):
         con.close()
         from pathlib import Path
         [p.unlink() for p in Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable)).rglob(".prism")]
+        [p.unlink() for p in Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable)).rglob(".bruck")]
         compactZIP(Config.fileName)
 
 
@@ -430,7 +432,6 @@ class Estacas(object):
 
         con.commit()
         con.close()
-
         prismoid.save(Config.instance().TMP_DIR_PATH+"tmp/data/"+str(id_filename)+".prism")
         compactZIP(Config.fileName)
 
@@ -455,6 +456,7 @@ class Estacas(object):
         con.close()
         from pathlib import Path
         [p.unlink() for p in Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable)).rglob(".prism")]
+        [p.unlink() for p in Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable)).rglob(".bruck")]
         compactZIP(Config.fileName)
 
 
@@ -811,3 +813,53 @@ class Estacas(object):
             except:
                 msgLog("Failed to erase "+str(p)+"  at model/estacas.py saveLayer")
         compactZIP(Config.fileName)
+
+    def bruckfilename(self):
+        name=str(self.id_filename)
+        return Config.instance().TMP_DIR_PATH+'tmp/data/'+name+".bruck"
+
+    '''
+    bruck file format reference
+    cat 1.bruck (json file)
+    
+    {"table":[{"estaca":prog2estacaStr(X[0]), "corte": abs(ct), "aterro": abs(at), "at.cor.": abs(at*fh), "soma": "", "semi-distancia": "",
+                             "vol.corte":"", "vol.aterro":"", "volume":"", "vol.acum":""}, ......,....],
+    "5-30+1.2345":   [], #--> pontos da linha de terra (roi)
+    "30+1.2345-50+1":  [],
+    "Estaca_interval_string_separated_by_"-"": [],
+    .....,....,
+    } == bruck
+
+    '''
+
+
+    def save_bruck(self, bruck):
+        msgLog("Salvando arquivo bruckner")
+        data=self.load_bruck(True)
+        extractZIP(Config.fileName)
+        data.update(bruck)
+        with open(self.bruckfilename(), 'w') as outfile:
+            json.dump(data, outfile)
+        compactZIP(Config.fileName)
+
+    def load_bruck(self, retry=False):
+        from pathlib import Path
+        msgLog("Carregando arquivo bruckner")
+        extractZIP(Config.fileName)
+        data={}
+        if Path(self.bruckfilename()).is_file():
+            with open(self.bruckfilename()) as json_file:
+                data = json.load(json_file)
+            compactZIP(Config.fileName)
+            return data
+        else:
+            with open(self.bruckfilename(), 'w') as outfile:
+                json.dump(data, outfile)
+            compactZIP(Config.fileName)
+            if retry:
+                msgLog("Falha ao carregar arquivo!")
+                return {}
+            else:
+                return self.load_bruck(retry=True)
+
+

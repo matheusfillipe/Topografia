@@ -827,15 +827,6 @@ class EstacasCv(QtWidgets.QDialog):
         self.gridLayout.addWidget(self.btnBruck, row, column, 1, 1)
         row+=1
 
-        self.btnDxfBruck = QtWidgets.QPushButton(Form)
-        self.btnDxfBruck.setText("Importar Bruckner")
-        self.btnDxfBruck.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
-        self.btnDxfBruck.setObjectName(_fromUtf8("btnDxfBruck"))
-        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
-        self.btnDxfBruck.setToolTip("Visualizar e editar o diagrama de bruckner importado a partir de um arquivo dxf")
-        self.gridLayout.addWidget(self.btnDxfBruck, row, column, 1, 1)
-        row+=1
-
         self.btnCsv = QtWidgets.QPushButton(Form)
         self.btnCsv.setText("Exportar Tabela CSV")
         self.btnCsv.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
@@ -2075,6 +2066,26 @@ class brucknerRampaDialog(rampaDialog):
         except ValueError:
             pass
 
+    def update(self):
+        self.h2.setPos(self.abscissa, self.h2.pos().y())
+        if self.firstHandle == self.h2:
+            self.firstHandle.setPos(self.initialPos[1].x(),self.cota)   
+            self.Incl=round(100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x())   , 2)
+            self.compr=round(np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)   , 2)
+            self.cota=round(self.h2.pos().y(), 2)
+            self.abscissa=round(self.h2.pos().x(), 2)
+            self.cotaText.setValue(float(self.cota))
+            self.abscissaText.setValue(float(self.abscissa))
+
+        if self.lastHandle == self.h2:
+            self.lastHandle.setPos(self.initialPos[1].x(),self.cota)
+            self.Incl=round(100*(self.h2.pos().y()-self.h1.pos().y())/(self.h2.pos().x()-self.h1.pos().x()), 2)
+            self.compr=round(np.sqrt((self.h2.pos().y()-self.h1.pos().y())**2+(self.h2.pos().x()-self.h1.pos().x())**2)   , 2)
+            self.cota=round(self.h2.pos().y(), 2)
+            self.abscissa=round(self.h2.pos().x(), 2)
+            self.cotaText.setValue(float(self.cota))
+            self.abscissaText.setValue(float(self.abscissa))
+
 
 class cvEdit(QtWidgets.QDialog, VERTICE_EDIT_DIALOG):
     def __init__(self, iface):
@@ -2366,7 +2377,7 @@ class ProgressDialog():#QtWidgets.QProgressDialog):  #, PROGRESS_DIALOG):
 
 class EstacaRangeSelect(QtWidgets.QDialog, BRUCKNER_SELECT):
 
-    def __init__(self, iface, estacas):
+    def __init__(self, iface, estacas, bruck=[]):
         super().__init__(iface)
         self.iface=iface
         self.setupUi(self)
@@ -2376,6 +2387,8 @@ class EstacaRangeSelect(QtWidgets.QDialog, BRUCKNER_SELECT):
         self.inicial : QtWidgets.QComboBox
         self.label : QtWidgets.QLabel
         self.label_2 : QtWidgets.QLabel
+        self.listWidget : QtWidgets.QListWidget
+        self.btnApagar : QtWidgets.QPushButton
 
         estacas=[str(e) for e in estacas]
         self.inicial.addItems(estacas)
@@ -2387,6 +2400,26 @@ class EstacaRangeSelect(QtWidgets.QDialog, BRUCKNER_SELECT):
 
         self.ei=float(self.inicial.currentText())
         self.ef=float(self.final_2.currentText())
+        self.listWidget.itemClicked.connect(self.itemClick)
+        self.bruck=bruck
+        self.fill_list(self.bruck)
+        self.btnApagar.clicked.connect(self.apagar)
+
+    def apagar(self):
+        self.listWidget : QtWidgets.QListWidget
+        for s in self.listWidget.selectedItems():
+            self.listWidget.removeItemWidget(s)
+            del self.bruck[s.text()]
+            msgLog("Erasing "+str(s.text()))
+        self.fill_list(self.bruck)
+
+    def itemClick(self, item):
+        ests=item.text().split("-")
+        index = self.inicial.findText(ests[0])
+        self.inicial.setCurrentIndex(index)
+        index = self.final_2.findText(ests[1])
+        self.final_2.setCurrentIndex(index)
+        msgLog("Setting range "+str(ests))
 
     def change1(self):
         self.inicial : QtWidgets.QComboBox
@@ -2400,6 +2433,13 @@ class EstacaRangeSelect(QtWidgets.QDialog, BRUCKNER_SELECT):
         self.final_2 : QtWidgets.QComboBox
         if self.final_2.currentIndex() <= self.inicial.currentIndex():
             self.final_2.setCurrentIndex(self.inicial.currentIndex()+1)
+
+    def fill_list(self, data):
+        self.listWidget : QtWidgets.QListWidget
+        self.listWidget.clear()
+        for key in list(data.keys()):
+            if "-" in key:
+                self.listWidget.addItem(str(key))
 
 
 class VolumeDialog(QtWidgets.QDialog, VOLUME_DIALOG):

@@ -1897,20 +1897,46 @@ class Ui_Bruckner(Ui_Perfil):
     save = QtCore.pyqtSignal()
     plotar = QtCore.pyqtSignal(int)
 
-    def __init__(self, X, V):
+    def __init__(self, X, V, key="", bruck=[], bruckData=[], interval=[]):
         self.editMode=True
         self.X=X
        # self.V=[v/1000000 for v in V]
         self.V=V
+        self.bruck=bruck
+        self.key=key
+        self.interval=interval
+        self.bruckData=bruckData
         super(Ui_Bruckner, self).__init__(0, 0, 0, [], [], wintitle="Diagrama de Bruckner")
 #        self.btnCalcular.setDisabled(True)
+        self.btnDistances.hide()
         self.btnReset.clicked.disconnect()
         self.btnReset.clicked.connect(self.resetGeometry)
+        self.btnReset.setText("Recalcular")
+        self.btnReset.setToolTip("Recalcular o diagrama de bruckner redefinindo o Fh com os novos dados de sessão transversal")
         self.setWindowTitle("Diagrama de Bruckner")
         self.btnSave.setText("Exportar")
+        self.btnSave.setToolTip("Exportar planilha em formato csv")
+        self.btnSave.clicked.connect(self.csvExport)
         self.btnCalcular.disconnect()
         self.btnCalcular.setText("Limpar Alterações")
+        self.btnCalcular.setToolTip("Apaga os dados relacionados à linha de terra para esse intervalo")
         self.btnCalcular.clicked.connect(self.resetView)
+        if not bruckData:
+            self.setBruckData()
+        else:
+            self.roi.setPos(QPointF(self.roi.pos().x(), float(bruckData[0][1])))#+self.roi.ymed))
+            self.updater()
+
+
+    def setBruckData(self):
+        r = []
+        for handle in self.roi.getHandles():
+            x = []
+            x.append(str(handle.pos().x()))
+            x.append(str(handle.pos().y()))
+            r.append(x)
+        self.bruckData=r
+#        self.bruckData = [[self.roi.getHandlePos(i).x(), self.roi.getHandlePos(i).y()] for i in range(self.roi.countHandles())]
 
 
     def resetView(self):
@@ -1918,7 +1944,7 @@ class Ui_Bruckner(Ui_Perfil):
             h.sigRemoveRequested.emit(h)
         self.roi.removeRect(self.roi.getHandles()[-1])
         self.roi.removeRect(self.roi.getHandles()[0])
-
+        self.setBruckData()
 
     def salvarPerfil(self):
         self.save.emit()
@@ -1933,7 +1959,10 @@ class Ui_Bruckner(Ui_Perfil):
         self.perfilPlot.setWindowTitle('Diagrama de Bruckner (m³)')
 #        self.createLabels()
         ymed=np.average(self.V)
-        self.roi = brucknerRoi([[self.X[0], ymed], [self.X[-1], ymed]])
+        if self.bruckData:
+            self.roi=brucknerRoi(self.bruckData)
+        else:
+            self.roi = brucknerRoi([[self.X[0], ymed], [self.X[-1], ymed]])
         self.roi.ymed=ymed
         self.roi.wasModified.connect(self.setAsNotSaved)
         self.roi.setAcceptedMouseButtons(QtCore.Qt.RightButton)
@@ -1947,6 +1976,7 @@ class Ui_Bruckner(Ui_Perfil):
     def updater(self):
         if not self.roi.ismodifying:
             handles=[self.roi.getHandlePos(i).x() for i in range(self.roi.countHandles())]
+          #  self.setBruckData()
             v0=self.roi.pos().y()+self.roi.ymed
             dist=Config.instance().DIST
             for j, x in enumerate(handles[1:]):  #para cada segmento
@@ -1955,7 +1985,7 @@ class Ui_Bruckner(Ui_Perfil):
                 vmax=0
                 xmax=(lx+x)/2
                 i1=max([i for i, ix in enumerate(self.X) if ix <= lx])
-                i2=min([i for i, ix in enumerate(self.X) if ix >= x ])
+                i2=min([i for i, ix in enumerate(self.X) if ix >= x])
 
                 for i, v in enumerate(self.V[i1:i2]):  #para cada Volume
                     dx=self.X[i+1+i1] - self.X[i+i1]
@@ -2000,3 +2030,42 @@ class Ui_Bruckner(Ui_Perfil):
 
     def reject(self):
         pass
+
+    def resetGeometry(self):
+        reset=yesNoDialog(self, message="Realmente recalcular todo o Diagrama?")
+        self.reseted=reset
+        if reset:
+            self.reset.emit()
+
+    def csvExport(self):
+        import csv
+        filter = ".csv"
+        filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo csv(*" + filter + " *" + filter.upper() + ")")[0]
+        if filename in ['', None]:
+            return
+        filename = str(filename) if str(filename).endswith(filter) else str(filename) + filter
+        delimiter = str(Config.CSV_DELIMITER.strip()[0])
+        table=self.bruck["table"]
+
+        ei, ef=self.key.split("-")
+        if not ei or not ef or not self.interval:
+            msgLog("Algo de errado com o intervalo de estacas: "+ei+"-"+ef+" !!!")
+            return
+        ei,ef=self.interval
+        table=table[ei:ef+1]
+        header=["estaca", "corte", "aterro", "at.cor.", "soma", "semi-distancia", "vol.corte", "vol.aterro",
+                "volume", "vol.acum"]
+        with open(filename, "w") as fo:
+            writer = csv.writer(fo, delimiter=delimiter, dialect='excel')
+            if type(header)==list:
+                writer.writerow(header)
+            for d in table:
+                r=[d[k] for k in header]
+                for i,c in enumerate(r):
+                    try:
+                        c=round(float(c),4)
+                        r[i]=str(c).replace(".",",")
+                    except:
+                        r[i] = str(c)
+                writer.writerow(r)
+

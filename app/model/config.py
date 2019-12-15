@@ -32,6 +32,9 @@ def compactZIP(filename):
     tracs = Path(Config.instance().TMP_DIR_PATH+'tmp/data/').rglob("*.prism")
     for trac in tracs:
         z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
+    tracs = Path(Config.instance().TMP_DIR_PATH+'tmp/data/').rglob("*.bruck")
+    for trac in tracs:
+        z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
 
     z.close()
     shutil.rmtree(Config.instance().TMP_DIR_PATH+'tmp')
@@ -357,6 +360,9 @@ class Config(object):
         for trac in tracs:
             z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
         tracs = Path(Config.instance().TMP_DIR_PATH + 'tmp/data/').rglob("*.prism")
+        for trac in tracs:
+            z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
+        tracs = Path(Config.instance().TMP_DIR_PATH + 'tmp/data/').rglob("*.bruck")
         for trac in tracs:
             z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
         z.close()

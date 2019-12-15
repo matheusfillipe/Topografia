@@ -234,7 +234,10 @@ def p2QgsPoint(pt, pt2=None):  #Qgis 3.10.0 has a bug where the QgsPoint doesn't
     if pt2 is None:
         try:
             if type(pt) is list:
-                return QgsPoint(pt[0], pt[1])
+                if len(pt)==3:
+                    return QgsPoint(pt[0], pt[1], pt[2])
+                else:
+                    return QgsPoint(pt[0], pt[1])
             else:
                 return QgsPoint(pt.x(), pt.y())
         except:

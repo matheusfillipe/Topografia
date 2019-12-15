@@ -467,43 +467,68 @@ class Estacas(object):
         self.progressDialog.show()
         self.progressDialog.setValue(0)
         table = self.model.load_bruckner()
-
-        if not table:  # if non existent, compute
+        bruck=self.model.load_bruck()
+        if not table or not bruck:  # if non existent, compute
             X, est, prismoide=self.loadTrans()
-            fh=QtWidgets.QInputDialog.getDouble(None, "Fator de Homogeneização", "Defina o fator de Homegeneização. Você deverá apagar o diagrama de bruckner se quiser mudar esse valor futuramente.", value=1.05, min=0, max=10)
             if not X:
                 messageDialog(message="Sessão Transversal não definida!")
                 self.progressDialog.close()
                 return
+            fh,ok=QtWidgets.QInputDialog.getDouble(None, "Fator de Homogeneização", "Defina o Fh:", value=1.05, min=0, max=10, decimals=4)
+            if not ok:
+                return
             self.progressDialog.setValue(10)
-            X, V = self.brucknerThread(X, est, prismoide, 0, len(X)-1, fh)
+            X, V = self.brucknerThread(X, est, prismoide, 0, len(X), fh)
         else:
             X, V = zip(*table)
             X = [float(x) for x in X]
             V = [float(v) for v in V]
-
         self.progressDialog.setValue(90)
-        dialog=EstacaRangeSelect(None, X)
-        if not dialog.exec_():
-            self.progressDialog.close()
-            return
-        ei=dialog.inicial.currentIndex()
-        ef=dialog.final_2.currentIndex()
-        X=X[ei:ef+1]
-        V=V[ei:ef+1]
-        dist=Config.instance().DIST
-        X=[x*dist for x in X]
-        bruck = Ui_Bruckner(X, V)
-        bruck.showMaximized()
-        bruck.save.connect(lambda: self.bruckner2DXF(bruck.X, bruck.V))
-        bruck.reset.connect(self.brucknerReset)
-        self.brucknerView=bruck
+        Xests=X
+        Vests=V
+        dialog=EstacaRangeSelect(None, Xests, bruck=bruck)
         self.progressDialog.close()
-        bruck.exec_()
+        while dialog.exec_():
+            self.bruck=dialog.bruck
+            ei=dialog.inicial.currentIndex()
+            ef=dialog.final_2.currentIndex()
+            key=str(dialog.inicial.itemText(ei))+"-"+str(dialog.final_2.itemText(ef))
+            X=Xests[ei:ef+1]
+            V=Vests[ei:ef+1]
+            dist=Config.instance().DIST
+            X=[x*dist for x in X]
+
+            if key in self.bruck:
+                bruckD = Ui_Bruckner(X, V, key=key, bruck=self.bruck, bruckData=self.bruck[key], interval=[ei,ef])
+            else:
+                bruckD = Ui_Bruckner(X, V, key=key, bruck=self.bruck, interval=[ei,ef])
+
+            msgLog("Abrindo intervalo: " + key)
+            bruckD.showMaximized()
+            #bruckD.save.connect(lambda: self.bruckner2DXF(bruckD.X, bruckD.V))
+            bruckD.reset.connect(self.brucknerReset)
+            self.brucknerView=bruckD
+            bruckD.exec_()
+            bruckD.setBruckData()
+            if hasattr(self,"bruckReseted") and self.bruckReseted: #loop do reset
+                self.bruckReseted=False
+            elif (hasattr(self,"bruckReseted") and not self.bruckReseted) or (hasattr(bruckD, "reseted") and bruckD.reseted): #primeiro loop
+                self.bruckReseted=False
+                del self.bruckReseted
+                return
+            self.bruck[key]=bruckD.bruckData
+            self.model.save_bruck(self.bruck)
+            dialog=EstacaRangeSelect(None, Xests, bruck=self.bruck)
+
+        self.model.save_bruck(dialog.bruck)
+        msgLog("Edição bruckner finalizada")
+
 
     def brucknerReset(self):
         self.brucknerView.close()
+        self.bruckReseted=True
         self.model.cleanBruckner()
+        self.bruck={}
         self.bruckner()
 
     def matplot(self, X, V, title="Diagrama de Bruckner", xlabel=u'Estacas', ylabel=u'Volume m³'):
@@ -519,16 +544,28 @@ class Estacas(object):
     @nongui
     def brucknerThread(self, X, est, prismoide, ei, ef, fh):
         self.progressDialog.setText("Calculando Volumes acumulados")
+        msgLog("Calculando tabela de volumes acumulados")
         X=[float(x) for x in X]
+        x1=X[ei]
         X=X[ei:ef+1]
         V=[]
         vAcumulado=0
+        face=prismoide.faces[ei]
+        ct, at = face.getAreas()
         self.progressDialog.setLoop(30, len(X))
-        for x in range(1,len(X)+1):
-            vAcumulado+=-prismoide.getVolume(ei+x-1, ei+x)
+        bruck=[{"estaca":prog2estacaStr(x1), "corte": abs(ct), "aterro": abs(at), "at.cor.": abs(at*fh), "soma": "", "semi-distancia": "",
+                             "vol.corte":"", "vol.aterro":"", "volume":"", "vol.acum":""}]
+        for x in range(1,len(X)):
+            data=prismoide.getBruckVols(ei+x-1, ei+x, fh=fh)[0]
+            data['estaca']=prog2estacaStr(X[x])
+            if data["volume"]==0 and data['semi-distancia']==0:
+                msgLog("Erro na estaca "+data['estaca'])
+            vAcumulado+=data["volume"]
+            data["vol.acum"]=vAcumulado
             V.append(vAcumulado)
+            bruck.append(data)
             self.progressDialog.increment()
-
+        self.model.save_bruck({'table':bruck})
         V=[v + abs(min(V))+1000 for v in V]
         X=[x/Config.instance().DIST for x in X]
         self.progressDialog.setValue(80)
@@ -558,7 +595,7 @@ class Estacas(object):
         elif self.viewCv.mode=="T":
             points=[]
             for e in estacas:
-                points.append(p2QgsPoint(float(e[4]), float(e[3]), float(e[-3])))
+                points.append(p2QgsPoint([float(e[4]), float(e[3]), float(e[-3])]))
             Lpoints.append(points)
 
         self.saveDXF(filename[0], Lpoints)
@@ -664,7 +701,7 @@ class Estacas(object):
         else:
             self.progressDialog.close()
             msgLog("Não há sessão transversal!")
-            return
+            return False, False, False
         self.progressDialog.setValue(100)
         prismoide: QPrismoid
         prismoide = self.trans.prismoide
@@ -753,10 +790,23 @@ class Estacas(object):
             return None
         self.openEstaca()
         estacas = self.view.get_estacas()
+        bruck = self.model.load_bruck()
         id_filename=self.model.id_filename
         self.model = self.model.saveEstacas(filename, estacas)
-        self.model.id_filename=self.model.ultimo
+        if trans:
+            try:
+                prog, est, prism = self.model.getTrans(self.model.id_filename)
+                if prog:
+                    self.trans=Ui_sessaoTipo(self.iface, est[1], self.model.load_intersect(), prog, est[0], prism=prism, greide=self.model.getGreide(self.model.id_filename), title="Transversal: " + str(self.model.getNameFromId(self.model.id_filename)))
+                    self.model.id_filename = self.model.ultimo
+                    self.saveTrans()
+            except Exception as e:
+                msgLog("Falha ao duplicar Transversais: ")
+                msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
 
+        self.model.id_filename=self.model.ultimo
+        if bruck:
+            self.model.save_bruck(bruck)
         try:
             self.view.openLayers()
             l = self.view.curvaLayers[0]
@@ -785,16 +835,6 @@ class Estacas(object):
             msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
 
        #self.geraCurvas(self.model.id_filename)
-
-        if trans:
-            try:
-                prog, est, prism = self.model.getTrans(self.model.id_filename)
-                if prog:
-                    self.trans=Ui_sessaoTipo(self.iface, est[1], self.model.load_intersect(), prog, est[0], prism=prism, greide=self.model.getGreide(self.model.id_filename), title="Transversal: " + str(self.model.getNameFromId(self.model.id_filename)))
-                    self.saveTrans()
-            except Exception as e:
-                msgLog("Falha ao duplicar Transversais: ")
-                msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
 
         self.update()
         self.view.clear()
@@ -1070,13 +1110,11 @@ class Estacas(object):
         self.trans.exec_()
         self.raiseWindow(self.viewCv)
 
-
     def saveTrans(self):
         if self.model.id_filename == -1: return
         self.model.table = self.trans.getMatrixVertices()
         self.model.xList = self.trans.getxList()
         self.model.saveTrans(self.model.id_filename, self.trans.prismoide.getPrismoide())
-
 
     def recalcular(self, curva=False):
         msgLog("Recalculando")

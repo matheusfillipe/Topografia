@@ -171,7 +171,6 @@ class QPrismoid(prismoide, QThread):
         return prismoid
 
     def getAreasCtAt(self,i):
-
         f=self.getFace(i)
         sup=f.superior
         inf=f.inferior

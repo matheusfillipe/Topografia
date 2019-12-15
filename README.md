@@ -41,6 +41,7 @@ Vertical data can be set and edited with a pyqtgraph interface. The cross sectio
 * Superlargura e Superelevação automáticos
 * Cotas a partir de arquivo de pontos cotados(dxf)
 * Extração DXF mais detalhada
+* Suporte a multithreading e cancelamento de tarefas.
 
 ### Como Instalar
 

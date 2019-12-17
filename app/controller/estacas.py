@@ -1325,10 +1325,12 @@ class Estacas(object):
                 if plotTrans:
                     if index==-1:
                         self.drawPoints(pointsList, str(i))
-                        self.drawPoint(pointsList[0], str(i))
+                        for ind in range(len(pointsList)):
+                            self.drawPoint(pointsList[ind], str(i))
                     if index==i:
                         self.drawPoints(pointsList, str(i))
-                        self.drawPoint(pointsList[0], str(i))
+                        for ind in range(len(pointsList)):
+                            self.drawPoint(pointsList[ind], str(i))
                         return
 
         except e:

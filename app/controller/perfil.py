@@ -1660,6 +1660,7 @@ class Ui_sessaoTipo(Ui_Perfil):
         dist=Config.instance().DIST
         self.selectEstacaComboBox.addItems(list(map(lambda i: fastProg2EstacaStr(i, dist), self.progressiva)))
         self.selectEstacaComboBox.currentIndexChanged.connect(self.changeEstaca)
+        self.selectEstacaComboBox.view().setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
 
         self.applyBtn=QtWidgets.QPushButton(PerfilTrecho)
         self.applyBtn.setGeometry(QtCore.QRect(260, 80, 99, 27))

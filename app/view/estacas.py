@@ -628,6 +628,7 @@ class EstacasCv(QtWidgets.QDialog):
         self.spinBox.hide()
         self.comboBox: QtWidgets.QComboBox
         self.comboBox.currentTextChanged.connect(self.search)
+        self.comboBox.view().setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.spinBox.valueChanged.connect(self.changeSearchResult)
         self.searchResults=[]
         self.curvaLayers=[]
@@ -1101,6 +1102,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
                 QTableWidgetSelectionRange(0, 0, 0, self.tableWidget.columnCount() - 1), True)
             )
         self.comboBox.currentTextChanged.connect(self.search)
+        self.comboBox.view().setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.spinBox.valueChanged.connect(self.changeSearchResult)
         self.searchResults = []
         self.btnDuplicar.hide()
@@ -2397,6 +2399,8 @@ class EstacaRangeSelect(QtWidgets.QDialog, BRUCKNER_SELECT):
         self.final_2.setCurrentIndex(1)
         self.inicial.currentIndexChanged.connect(self.change1)
         self.final_2.currentIndexChanged.connect(self.change2)
+        self.inicial.view().setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.final_2.view().setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
 
         self.ei=float(self.inicial.currentText())
         self.ef=float(self.final_2.currentText())

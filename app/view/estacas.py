@@ -586,7 +586,7 @@ class EstacasIntersec(QtWidgets.QDialog):
         #self.btnGen.clicked.connect(self.generate)
 
         self.btnTrans = QtWidgets.QPushButton(Form)
-        self.btnTrans.setText("Definir Sessão Tipo")
+        self.btnTrans.setText("Definir Seção Tipo")
         self.btnTrans.setGeometry(QtCore.QRect(760, 50+16, 160, 30))
         self.btnTrans.setObjectName(_fromUtf8("btnTrans"))
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
@@ -810,7 +810,7 @@ class EstacasCv(QtWidgets.QDialog):
         row+=1
 
         self.btnTrans = QtWidgets.QPushButton(Form)
-        self.btnTrans.setText("Definir Sessão Tipo")
+        self.btnTrans.setText("Definir Seção Tipo")
         self.btnTrans.setGeometry(QtCore.QRect(760, 50+16, 160, 30))
         self.btnTrans.setObjectName(_fromUtf8("btnTrans"))
         self.btnTrans.setToolTip("Inicia interface para a edição do perfil transversal")
@@ -869,6 +869,13 @@ class EstacasCv(QtWidgets.QDialog):
        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
         self.gridLayout.addWidget(self.btn3D, row, column, 1,1)
         row+=1
+
+        self.btn3DView = QtWidgets.QPushButton(Form)
+        self.btn3DView.setText("Visualizar 3D")
+        self.btn3DView.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
+        self.btn3DView.setObjectName(_fromUtf8("btn3DView"))
+        self.gridLayout.addWidget(self.btn3DView, row, column, 1, 1)
+        row+=3
 
         self.btnClean = QtWidgets.QPushButton(Form)
         self.btnClean.setText("Apagar Dados Transversais")

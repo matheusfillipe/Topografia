@@ -51,7 +51,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Aplicar sessão tipo"))
+        Dialog.setWindowTitle(_translate("Dialog", "Aplicar seção tipo"))
         self.label_2.setText(_translate("Dialog", "Partindo da estaca:"))
         self.label.setText(_translate("Dialog", "Até estaca:"))
 

@@ -4,7 +4,7 @@ import functools
 from builtins import zip
 
 import numpy as np
-from PyQt5.QtCore import QPointF
+from PyQt5.QtCore import QPointF, QThread
 from qgis.PyQt import QtGui
 from copy import deepcopy
 
@@ -1458,7 +1458,7 @@ class Ui_sessaoTipo(Ui_Perfil):
 
     def perfil_grafico(self, reseting=False):
         if not reseting:
-            self.perfilPlot.setWindowTitle('Sessao Tipo')
+            self.perfilPlot.setWindowTitle('Seção Tipo')
             self.createLabels()
 
         if self.greide:
@@ -1602,7 +1602,7 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.btnImportDxf.setGeometry(QtCore.QRect(260, 80, 99, 27))
         self.btnImportDxf.setObjectName(_fromUtf8("btnImportDxf"))
         self.btnImportDxf.setText("Importar")
-        self.btnImportDxf.setToolTip("Importar DXF com a sessão tipo")
+        self.btnImportDxf.setToolTip("Importar DXF com a seção tipo")
 
         self.btnAutoRange=QtWidgets.QPushButton(PerfilTrecho)
         self.btnAutoRange.setGeometry(QtCore.QRect(260, 80, 99, 27))
@@ -1623,9 +1623,9 @@ class Ui_sessaoTipo(Ui_Perfil):
 
         self.btnReset=QtWidgets.QPushButton(PerfilTrecho)
         self.btnReset.setGeometry(QtCore.QRect(260, 80, 99, 27))
-        self.btnReset.setText("Restaurar sessão")
+        self.btnReset.setText("Restaurar seção")
         self.btnReset.clicked.connect(self.resetSS)
-        self.btnReset.setToolTip("Descarta as modificações na sessão atual")
+        self.btnReset.setToolTip("Descarta as modificações na seção atual")
 
         self.btnVolume=QtWidgets.QPushButton(PerfilTrecho)
         self.btnVolume.setGeometry(QtCore.QRect(260, 80, 99, 27))
@@ -1913,7 +1913,7 @@ class Ui_Bruckner(Ui_Perfil):
         self.btnReset.clicked.disconnect()
         self.btnReset.clicked.connect(self.resetGeometry)
         self.btnReset.setText("Recalcular")
-        self.btnReset.setToolTip("Recalcular o diagrama de bruckner redefinindo o Fh com os novos dados de sessão transversal")
+        self.btnReset.setToolTip("Recalcular o diagrama de bruckner redefinindo o Fh com os novos dados de seção transversal")
         self.setWindowTitle("Diagrama de Bruckner")
         self.btnSave.setText("Exportar")
         self.btnSave.setToolTip("Exportar planilha em formato csv")

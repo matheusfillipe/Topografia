@@ -123,6 +123,11 @@ class Estacas(object):
         self.viewCv.btnRecalcular.clicked.connect(self.recalcularVerticais)
         self.viewCv.btn3D.clicked.connect(lambda: self.export3D())
         self.viewCv.btnCorte.clicked.connect(lambda: self.exportCorte())
+        self.viewCv.btn3DView.clicked.connect(lambda: self.view3D)
+
+    def view3D(self):
+        pass
+
 
 
     def createMesh(self, tipo="H"):
@@ -150,7 +155,7 @@ class Estacas(object):
     def corteExport(self, preview=False):
         self.generateCorte()
         if not hasattr(self.combined, "show"):
-            messageDialog(message="Sessão vazia! Nada foi encontrado, tente aumentar a profundidade!")
+            messageDialog(message="Seção vazia! Nada foi encontrado, tente aumentar a profundidade!")
         else:
             if preview:
                 self.combined.show()
@@ -265,7 +270,7 @@ class Estacas(object):
         self.combined.export(filename)
 
 
-    def export3D(self, filename=None, terrain=True, tipo="3D"): # H, V, T
+    def export3D(self, filename=None, terrain=True, tipo="3D", pointsOnly=False): # H, V, T
         self.progressDialog.show()
         self.progressDialog.setValue(0)
 
@@ -279,7 +284,7 @@ class Estacas(object):
         self.progressDialog.setValue(10)
         prismoide: QPrismoid
         if not X or not prismoide:
-            messageDialog(message="Sessão Transversal não definida!")
+            messageDialog(message="Seção Transversal não definida!")
             self.progressDialog.close()
             return
 
@@ -359,6 +364,9 @@ class Estacas(object):
         vertices = np.array(vertices)
         tri = spatial.Delaunay(vertices[:, :2])
         facesg=tri.simplices
+
+        if pointsOnly:
+            return intersect, verticesg, facesg
 
         # Create the meshes
         greide = mesh.Mesh(np.zeros(facesg.shape[0], dtype=mesh.Mesh.dtype))
@@ -448,13 +456,13 @@ class Estacas(object):
         filename = QtWidgets.QFileDialog.getOpenFileName(caption="Open dxf", filter="Arquivo DXF (*.dxf)")
         if filename[0] in ["", None]: return
         uri = filename[0]+"|layername=entities|geometrytype=Line"
-        vlayer = QgsVectorLayer(uri, "Sessão tipo", "ogr")
+        vlayer = QgsVectorLayer(uri, "Seção tipo", "ogr")
         features = [f for f in vlayer.getFeatures()]
         v = self.trans.verticais.getY(self.trans.progressiva[self.trans.current])
         pl=featureToPolyline(features[0])
         from collections import OrderedDict
         pl=list(OrderedDict.fromkeys(pl))
-        msgLog("Sessão :"+str([[p.x(),p.y()] for p in pl]))
+        msgLog("Seção :"+str([[p.x(),p.y()] for p in pl]))
         self.trans.st[self.trans.current]=[[pt.x(), pt.y()+v] for pt in pl]
         self.trans.prismoide.st = self.trans.st
         try:
@@ -471,7 +479,7 @@ class Estacas(object):
         if not table or not bruck:  # if non existent, compute
             X, est, prismoide=self.loadTrans()
             if not X:
-                messageDialog(message="Sessão Transversal não definida!")
+                messageDialog(message="Seção Transversal não definida!")
                 self.progressDialog.close()
                 return
             fh,ok=QtWidgets.QInputDialog.getDouble(None, "Fator de Homogeneização", "Defina o Fh:", value=1.05, min=0, max=10, decimals=4)
@@ -700,7 +708,7 @@ class Estacas(object):
             self.trans=Ui_sessaoTipo(self.iface, est[1], self.model.load_intersect(), X, est[0], prism=prism, greide=self.model.getGreide(self.model.id_filename), title="Transversal: "+str(self.model.getNameFromId(self.model.id_filename)))
         else:
             self.progressDialog.close()
-            msgLog("Não há sessão transversal!")
+            msgLog("Não há seção transversal!")
             return False, False, False
         self.progressDialog.setValue(100)
         prismoide: QPrismoid
@@ -1251,7 +1259,7 @@ class Estacas(object):
 
             estacas = self.estacas = self.model.load_intersect()
             if not estacas:
-                if yesNoDialog(message="Você ainda não calculou a interseção das estacas! Quer que a sessão transversal contenha somente estacas do perfil Horizontal?"):
+                if yesNoDialog(message="Você ainda não calculou a interseção das estacas! Quer que a seção transversal contenha somente estacas do perfil Horizontal?"):
                     estacas = self.estacas = self.view.get_estacas()
                 else:
                     return
@@ -1324,13 +1332,13 @@ class Estacas(object):
 
                 if plotTrans:
                     if index==-1:
-                        self.drawPoints(pointsList, str(i))
-                        for ind in range(len(pointsList)):
-                            self.drawPoint(pointsList[ind], str(i))
+                        self.drawPoints(pointsList, str(i+1))
+                       # for ind in range(len(pointsList)):
+                       #     self.drawPoint(pointsList[ind], str(i+1))
                     if index==i:
-                        self.drawPoints(pointsList, str(i))
+                        self.drawPoints(pointsList, str(i+1))
                         for ind in range(len(pointsList)):
-                            self.drawPoint(pointsList[ind], str(i))
+                            self.drawPoint(pointsList[ind], str(i+1))
                         return
 
         except e:

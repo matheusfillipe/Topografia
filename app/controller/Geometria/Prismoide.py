@@ -129,7 +129,7 @@ class QPrismoid(prismoide, QThread):
             inter=tmp.getInversed().intersect(terreno)
             r=len(inter)
         if len(inter)==0:
-            msgLog("Erro: Sessão não possui intersessão com o terreno na estaca de número "+str(i))
+            msgLog("Erro: Seção não possui interseção com o terreno na estaca de número "+str(i))
             return i
         if type(inter)==list:
             inter=inter[-1]

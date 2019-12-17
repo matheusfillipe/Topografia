@@ -331,9 +331,9 @@ class Ui_TopoDialogBase(object):
         self.label_5.setText(_translate("TopoDialogBase", "at&é"))
         self.label_7.setText(_translate("TopoDialogBase", "até"))
         self.label_12.setText(_translate("TopoDialogBase", "Espa&çamento transversal de cada lado (m)"))
-        self.transversal.setWhatsThis(_translate("TopoDialogBase", "<html><head/><body><p>Espaçamento transversal em metros de cada lado da sessão transversal</p></body></html>"))
+        self.transversal.setWhatsThis(_translate("TopoDialogBase", "<html><head/><body><p>Espaçamento transversal em metros de cada lado da seção transversal</p></body></html>"))
         self.label_13.setText(_translate("TopoDialogBase", "N&º de pontos                "))
-        self.offsetSpinBox.setWhatsThis(_translate("TopoDialogBase", "<html><head/><body><p>Número de pontos para interpolar na sessão transversal, incluindo o ponto central</p><p><br/></p><p><br/></p></body></html>"))
+        self.offsetSpinBox.setWhatsThis(_translate("TopoDialogBase", "<html><head/><body><p>Número de pontos para interpolar na seção transversal, incluindo o ponto central</p><p><br/></p><p><br/></p></body></html>"))
         self.actionOpenFolderAction.setText(_translate("TopoDialogBase", "openFolderAction"))
 
 

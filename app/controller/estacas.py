@@ -26,6 +26,7 @@ from ..model.curvas import Curvas
 from ..view.estacas import Estacas as EstacasView, EstacasUI, EstacasCv, ProgressDialog, \
     EstacaRangeSelect, CorteExport
 from ..view.curvas import Curvas as CurvasView, refreshCanvas
+from ..view.glmesh import view3D_Ui
 
 
 DIALOGS_TO_CLOSE_ON_LOOP=["curvaView"]
@@ -123,12 +124,15 @@ class Estacas(object):
         self.viewCv.btnRecalcular.clicked.connect(self.recalcularVerticais)
         self.viewCv.btn3D.clicked.connect(lambda: self.export3D())
         self.viewCv.btnCorte.clicked.connect(lambda: self.exportCorte())
-        self.viewCv.btn3DView.clicked.connect(lambda: self.view3D)
+        self.viewCv.btn3DView.clicked.connect(lambda: self.view3DView())
 
-    def view3D(self):
-        pass
-
-
+    def view3DView(self):
+        msgLog("Iniciando visão 3D")
+        intersect, vertices, faces = self.export3D(pointsOnly=True)
+        msgLog("Pontos da malha carregados")
+        view3d=view3D_Ui(intersect, vertices, faces)
+        view3d.showMaximized()
+        view3d.exec_()
 
     def createMesh(self, tipo="H"):
         import tempfile
@@ -180,6 +184,7 @@ class Estacas(object):
 
         if tipo=="T":
             plane_normal=[1, 0, 0]
+            self.progressDialog.show()
             self.progressDialog.setLoop(100, (e1 - e2) / Config.instance().DIST, 0)
             for e in self.tableCorte:
                 if estaca2progFloat(e[0]) > e2:
@@ -252,12 +257,13 @@ class Estacas(object):
             plane_origin=[0,0,mesh.bounds[0][2]]
         z_extents = mesh.bounds[:, n]
         depth=min(z_extents[1]-z_extents[0],depth)
-        z_levels = np.arange(*z_extents, step=step)[int(offset/step):int(depth/step)]
+        #z_levels = np.arange(*z_extents, step=step)[int(offset/step):int(depth/step)]
+        z_levels = np.linspace(offset, depth, num=int(depth/step))#[int(offset/step):]#int(depth/step)]
+        msgLog(str(z_levels))
         sections = mesh.section_multiplane(plane_origin=plane_origin,
                                            plane_normal=plane_normal,
                                            heights=z_levels)
         sections=[s for s in sections if not s is None]
-        msgLog("--> Corte: " +str(len(sections))+" sessões válidas encontradas!")
         return sections
 
 
@@ -315,11 +321,14 @@ class Estacas(object):
                             break
                         else:
                             points.append(pt)
+
                 points+=[[pt.x(), pt.y()] for pt in stpts]
+
                 if terrain:
                     for pt in table[1][i]:
                         if pt[0] > stpts[-1][0]:
                             points.append(pt)
+
             except Exception as e:
                 import traceback
                 msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
@@ -366,6 +375,7 @@ class Estacas(object):
         facesg=tri.simplices
 
         if pointsOnly:
+            self.progressDialog.close()
             return intersect, verticesg, facesg
 
         # Create the meshes

@@ -1822,6 +1822,7 @@ class Ui_sessaoTipo(Ui_Perfil):
         self.btnNext.setDisabled(self.current >= len(self.progressiva)-1)
         self.btnPrevious.setDisabled(self.current == 0)
         self.updateAreaLabels()
+        pg.QtGui.QGuiApplication.processEvents()
         self.changingEstaca = False
 
 

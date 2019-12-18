@@ -46,6 +46,7 @@ dtypes = {
 def load_ply(file_obj,
              resolver=None,
              fix_texture=True,
+             prefer_color=None,
              *args,
              **kwargs):
     """
@@ -61,6 +62,8 @@ def load_ply(file_obj,
       If True, will re- index vertices and faces
       so vertices with different UV coordinates
       are disconnected.
+    prefer_color : None, 'vertex', or 'face'
+      Which kind of color to prefer if both defined
 
     Returns
     ---------
@@ -90,7 +93,8 @@ def load_ply(file_obj,
 
     kwargs = elements_to_kwargs(elements,
                                 fix_texture=fix_texture,
-                                image=image)
+                                image=image,
+                                prefer_color=prefer_color)
 
     return kwargs
 
@@ -287,19 +291,31 @@ def parse_header(file_obj):
     return elements, is_ascii, image_name
 
 
-def elements_to_kwargs(elements, fix_texture, image):
+def elements_to_kwargs(elements,
+                       fix_texture,
+                       image,
+                       prefer_color=None):
     """
     Given an elements data structure, extract the keyword
     arguments that a Trimesh object constructor will expect.
 
     Parameters
     ------------
-    elements: OrderedDict object, with fields and data loaded
+    elements : OrderedDict object
+      With fields and data loaded
+    fix_texture : bool
+      If True, will re- index vertices and faces
+      so vertices with different UV coordinates
+      are disconnected.
+    image : PIL.Image
+      Image to be viewed
+    prefer_color : None, 'vertex', or 'face'
+      Which kind of color to prefer if both defined
 
     Returns
     -----------
-    kwargs: dict, with keys for Trimesh constructor.
-            eg: mesh = trimesh.Trimesh(**kwargs)
+    kwargs : dict
+      Keyword arguments for Trimesh constructor
     """
 
     kwargs = {'metadata': {'ply_raw': elements}}
@@ -406,21 +422,29 @@ def elements_to_kwargs(elements, fix_texture, image):
     kwargs['vertices'] = vertices
 
     # if both vertex and face color are defined pick the one
-    # with the most going on
+    # with the most "signal," i.e. which one is not all zeros
     colors = []
     signal = []
     if faces is not None:
+        # extract face colors or None
         f_color, f_signal = element_colors(elements['face'])
         colors.append({'face_colors': f_color})
         signal.append(f_signal)
-
+        # extract vertex colors or None
         v_color, v_signal = element_colors(elements['vertex'])
         colors.append({'vertex_colors': v_color})
         signal.append(v_signal)
 
-        # add the winning colors to the result
-        kwargs.update(colors[np.argmax(signal)])
-
+        if prefer_color is None:
+            # if we are in "auto-pick" mode take the one with the
+            # largest  standard deviation of colors
+            kwargs.update(colors[np.argmax(signal)])
+        elif 'vert' in prefer_color and v_color is not None:
+            # vertex colors are preferred and defined
+            kwargs['vertex_colors'] = v_color
+        elif 'face' in prefer_color and f_color is not None:
+            # face colors are preferred and defined
+            kwargs['face_colors'] = f_color
     else:
         kwargs['colors'] = element_colors(elements['vertex'])
 
@@ -447,7 +471,7 @@ def element_colors(element):
 
     if len(candidate_colors) >= 3:
         colors = np.column_stack(candidate_colors)
-        signal = colors.ptp(axis=0).sum()
+        signal = colors.std(axis=0).sum()
         return colors, signal
 
     return None, 0.0
@@ -481,35 +505,34 @@ def ply_ascii(elements, file_obj):
 
     # loop through data we need
     for key, values in elements.items():
+        # if the element is empty ignore it
+        if 'length' not in values or values['length'] == 0:
+            continue
         # will store (start, end) column index of data
         columns = collections.deque()
         # will store the total number of rows
         rows = 0
 
         for name, dtype in values['properties'].items():
+            # we need to know how many elements are in this dtype
             if '$LIST' in dtype:
                 # if an element contains a list property handle it here
-
                 row = array[position]
                 list_count = int(row[rows])
-
                 # ignore the count and take the data
                 columns.append([rows + 1,
                                 rows + 1 + list_count])
                 rows += list_count + 1
                 # change the datatype to just the dtype for data
-
                 values['properties'][name] = dtype.split('($LIST,)')[-1]
             else:
                 # a single column data field
                 columns.append([rows, rows + 1])
                 rows += 1
-
         # get the lines as a 2D numpy array
         data = np.vstack(array[position:position + values['length']])
         # offset position in file
         position += values['length']
-
         # store columns we care about by name and convert to data type
         elements[key]['data'] = {n: data[:, c[0]:c[1]].astype(dt)
                                  for n, dt, c in zip(
@@ -524,11 +547,13 @@ def ply_binary(elements, file_obj):
 
     Parameters
     ------------
-    elements: OrderedDict object, populated from the file header.
-              object will be modified to add data by this function.
+    elements : OrderedDict
+      Populated from the file header.
+      Object will be modified to add data by this function.
 
-    file_obj: open file object, with current position at the start
-              of the data section (past the header)
+    file_obj : open file object
+      With current position at the start
+      of the data section (past the header)
     """
 
     def populate_listsize(file_obj, elements):
@@ -629,7 +654,7 @@ def ply_binary(elements, file_obj):
     populate_data(file_obj, elements)
 
 
-def export_draco(mesh):
+def export_draco(mesh, bits=28):
     """
     Export a mesh using Google's Draco compressed format.
 
@@ -639,6 +664,10 @@ def export_draco(mesh):
     Parameters
     ----------
     mesh : Trimesh object
+      Mesh to export
+    bits : int
+      Bits of quantization for position
+      tol.merge=1e-8 is roughly 25 bits
 
     Returns
     ----------
@@ -650,10 +679,8 @@ def export_draco(mesh):
         temp_ply.flush()
         with tempfile.NamedTemporaryFile(suffix='.drc') as encoded:
             subprocess.check_output([draco_encoder,
-                                     '-qp',  # bits of quantization for position
-                                     '28',  # since our tol.merge is 1e-8, 25 bits
-                                            # more has a machine epsilon
-                                            # smaller than that
+                                     '-qp',
+                                     str(int(bits)),
                                      '-i',
                                      temp_ply.name,
                                      '-o',
@@ -669,7 +696,7 @@ def load_draco(file_obj, **kwargs):
 
     Parameters
     ----------
-    file_obj  : file- like object
+    file_obj : file- like object
       Contains data
 
     Returns

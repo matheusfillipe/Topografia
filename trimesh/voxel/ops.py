@@ -152,7 +152,7 @@ def matrix_to_marching_cubes(matrix, pitch=1.0):
         vertices, faces, normals, vals = meshed
 
     # Return to the origin, add in the pad_width
-    vertices = np.subtract(vertices, pad_width)
+    vertices = np.subtract(vertices, pad_width * pitch)
     # create the mesh
     mesh = Trimesh(vertices=vertices,
                    faces=faces,
@@ -255,7 +255,7 @@ def multibox(centers, pitch=1.0, colors=None):
     # get a basic box
     b = primitives.Box()
     # apply the pitch
-    b.vertices *= float(pitch)
+    b.apply_scale(float(pitch))
     # tile into one box vertex per center
     v = np.tile(
         centers,

@@ -47,6 +47,7 @@ class GLMeshItem(GLGraphicsItem):
             'shader': None,
             'smooth': True,
             'computeNormals': True,
+            'faceColors': kwds['faceColors']
         }
         
         GLGraphicsItem.__init__(self)

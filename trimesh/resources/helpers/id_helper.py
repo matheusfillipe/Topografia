@@ -11,7 +11,7 @@ changes. We use this to generate the arbitrary sigfig thresholds.
 """
 
 import numpy as np
-import ..trimesh
+import trimesh
 
 import time
 import json

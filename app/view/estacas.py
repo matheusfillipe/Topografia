@@ -871,11 +871,11 @@ class EstacasCv(QtWidgets.QDialog):
         row+=1
 
         self.btn3DView = QtWidgets.QPushButton(Form)
-        self.btn3DView.setText("Visualizar 3D")
+        self.btn3DView.setText("Visualizar Modelo")
         self.btn3DView.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
         self.btn3DView.setObjectName(_fromUtf8("btn3DView"))
         self.gridLayout.addWidget(self.btn3DView, row, column, 1, 1)
-        row+=3
+        row+=1
 
         self.btnClean = QtWidgets.QPushButton(Form)
         self.btnClean.setText("Apagar Dados Transversais")

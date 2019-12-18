@@ -19,6 +19,7 @@ except:
         from .rtreew import Rtree
     else:
         from .rtreel import Rtree
+
 from collections import deque
 
 from .. import util

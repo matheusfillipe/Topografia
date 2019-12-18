@@ -9,6 +9,7 @@ internal consistency.
 """
 
 import numpy as np
+
 from . import util
 
 # a matrix where all non- diagonal terms are -1.0

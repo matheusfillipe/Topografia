@@ -111,21 +111,47 @@ bpy.ops.mesh.select_less()
 bpy.ops.mesh.select_less()
 bpy.ops.mesh.select_less()
 print("script: materials applied")
+toggle()
+bpy.ops.object.select_all(action='DESELECT')
 
 #create path for camera new obj
-bpy.ops.mesh.duplicate_move(MESH_OT_duplicate={"mode":1}, TRANSFORM_OT_translate={"value":(0, 0, 10), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, True), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
+#bpy.ops.mesh.duplicate_move(MESH_OT_duplicate={"mode":1}, TRANSFORM_OT_translate={"value":(0, 0, 10), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, True), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
 #bpy.ops.mesh.duplicate_move(MESH_OT_duplicate={"mode":1}, TRANSFORM_OT_translate={"value":(0, 0, 0), "orient_type":'GLOBAL', "orient_matrix":((0, 0, 0), (0, 0, 0), (0, 0, 0)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
 
-bpy.ops.mesh.separate(type="SELECTED")
-toggle()
-#bpy.ops.object.select_all(action='DESELECT')
+#bpy.ops.mesh.separate(type="SELECTED")
+
+
+coords=[pt for i,pt in enumerate(points)]
+curveData = bpy.data.curves.new('myCurve', type='CURVE')
+curveData.dimensions = '3D'
+curveData.resolution_u = 2
+
+# map coords to spline
+polyline = curveData.splines.new('NURBS')
+polyline.points.add(len(coords))
+for i, coord in enumerate(coords):
+    x,y,z = coord
+    polyline.points[i].co = (x, y, z+10, 1)
+
+# create Object
+curveOB = bpy.data.objects.new('myCurve', curveData)
+
+# attach to scene and validate context
+#scn = bpy.context.scene
+#scn.objects.link(curveOB)
+bpy.context.collection.objects.link(curveOB)
+#scn.objects.active = curveOB
+#curveOB.select = True
+path=curveOB
+path.select_set(True)
+
 #select path obj
-for obj in bpy.context.selected_objects:
-    if obj.type == 'MESH' and obj.name!=mesh.name:
-        bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.view_layer.objects.active = obj
-        obj.select_set(True)
-        path=obj
+#for obj in bpy.context.selected_objects:
+#    if obj.type == 'MESH' and obj.name!=mesh.name:
+#        bpy.ops.object.select_all(action='DESELECT')
+#        bpy.context.view_layer.objects.active = obj
+#        obj.select_set(True)
+#        path=obj
 bpy.context.view_layer.objects.active = path
 path.select_set(True)
 bpy.ops.object.convert(target='CURVE')
@@ -148,7 +174,10 @@ bpy.context.object.constraints["Follow Path"].target = path
 override={'constraint': cam.constraints["Follow Path"]}
 bpy.ops.constraint.followpath_path_animate(override,constraint='Follow Path')
 bpy.context.object.constraints["Follow Path"].use_curve_follow = True
-bpy.ops.transform.rotate(value=1.48353, orient_axis='X', orient_type='LOCAL', orient_matrix=((0.926739, 0.375705, -5.16602e-09), (-0.373651, 0.921672, -0.104428), (-0.039234, 0.0967774, 0.994532)), orient_matrix_type='LOCAL', constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+#bpy.ops.transform.rotate(value=1.48353, orient_axis='X', orient_type='LOCAL', orient_matrix=((0.926739, 0.375705, -5.16602e-09), (-0.373651, 0.921672, -0.104428), (-0.039234, 0.0967774, 0.994532)), orient_matrix_type='LOCAL', constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+bpy.data.objects["Camera"].rotation_euler[0]=75
+bpy.data.objects["Camera"].rotation_euler[1]=0
+bpy.data.objects["Camera"].rotation_euler[2]=0
 print("script: camera applied")
 
 
@@ -178,6 +207,7 @@ bpy.ops.object.select_all(action='DESELECT')
 bpy.context.view_layer.objects.active = mesh
 mesh.select_set(True)
 print("script: mesh selected")
+
 
 
 #yellow center

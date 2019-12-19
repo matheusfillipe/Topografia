@@ -204,6 +204,7 @@ class Estacas(object):
 
         if hasattr(self, "ctExpDiag") and self.ctExpDiag.isEstaca(): #printar estacas
             from ... import trimesh
+            textHeight=5
             if tipo=="T":
                 self.progressDialog.show()
                 self.progressDialog.setLoop(100,(e1-e2)/Config.instance().DIST)
@@ -212,7 +213,7 @@ class Estacas(object):
                         break
                     if estaca2progFloat(e[1]) >= e1:
                         self.progressDialog.increment()
-                        text = trimesh.path.entities.Text(origin=len(self.combined.vertices),text=str(e[0]) + "  " + str(e[1]), height=18)
+                        text = trimesh.path.entities.Text(origin=len(self.combined.vertices),text=str(e[0]) + "  " + str(e[1]), height=textHeight)
                         self.combined.vertices=np.vstack((self.combined.vertices, self.combined.bounds.mean(axis=0)))
                         self.combined.entities=np.append(self.combined.entities, text)
 
@@ -222,7 +223,7 @@ class Estacas(object):
                 for e in self.tableCorte:
                     azi=np.deg2rad(float(e[7])+90)
                     l=50
-                    text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=str(e[0])+"  "+str(e[1]), height=18)
+                    text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=str(e[0])+"  "+str(e[1]), height=textHeight)
                     self.combined.vertices=np.vstack((self.combined.vertices, np.array([float(e[4]), float(e[3])])))
                     self.combined.entities=np.append(self.combined.entities, text)
                     line=trimesh.path.entities.Line(np.array([len(self.combined.vertices), len(self.combined.vertices)+1]))
@@ -231,7 +232,7 @@ class Estacas(object):
                     self.combined.entities = np.append(self.combined.entities, line)
             else: #V
                 for e in self.tableCorte:
-                    text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=str(e[0])+"  "+str(e[1]), height=18)
+                    text = trimesh.path.entities.Text(origin=len(self.combined.vertices), text=str(e[0])+"  "+str(e[1]), height=textHeight)
                     self.combined.vertices = np.vstack((self.combined.vertices, np.array([float(e[2]), float(e[5])])))
                     self.combined.entities = np.append(self.combined.entities, text)
                     line=trimesh.path.entities.Line(np.array([len(self.combined.vertices), len(self.combined.vertices)+1]))
@@ -618,6 +619,9 @@ class Estacas(object):
 
         self.saveDXF(filename[0], Lpoints)
 
+        if self.viewCv.mode=="CV":
+            self.addVerticalEstacas(filename[0], estacas)
+
         if yesNoDialog(title="Plotar Transversais?", message="Deseja exportar os perfis transversais? (Se ainda não foram definidos não serão salvos)"):
             self.progressDialog.show()
 
@@ -645,17 +649,52 @@ class Estacas(object):
 #                    points.append(p2QgsPoint(line.point1.x(), line.point1.y()))
                 LPoints.append(points)
 
-            self.saveDXF(filename[0], LPoints)
+            self.addTransEstacas(filename[0], self.model.load_intersect(), self.saveDXF(filename[0], LPoints))
             self.progressDialog.close()
 
+    def addVerticalEstacas(self, filename, estacas):
+        from ... import trimesh
+        import numpy as np
+        combined=trimesh.load(filename)
+        textHeight=5
+        l=20
+        for e in estacas:
+            p=np.array([float(e[-2]), float(e[-1])])
+            text = trimesh.path.entities.Text(origin=len(combined.vertices), text=str(e[0]) + "  " + str(e[1]),
+                                              height=textHeight)
+            combined.vertices = np.vstack((combined.vertices, p))
+            combined.entities = np.append(combined.entities, text)
+            line = trimesh.path.entities.Line(np.array([len(combined.vertices), len(combined.vertices) + 1]))
+            combined.vertices = np.vstack(
+                (combined.vertices, np.array([p[0], p[1]+l])))
+            combined.vertices = np.vstack(
+                (combined.vertices, np.array([p[0], p[1]-l])))
+            combined.entities = np.append(combined.entities, line)
+
+        combined.export(filename)
+
+    def addTransEstacas(self, filename, estacas, coords):
+        from ... import trimesh
+        import numpy as np
+        combined = trimesh.load(filename)
+        textHeight = 5
+        for e, c in zip(estacas, coords):
+            text = trimesh.path.entities.Text(origin=len(combined.vertices), text=str(e[0]) + "  " + str(e[1]),
+                                              height=textHeight)
+            combined.vertices = np.vstack((combined.vertices, c))
+            combined.entities = np.append(combined.entities, text)
+        combined.export(filename)
+
     def saveDXF(self, filename, listOfListOfPoints):   #[ [ p2QgsPoint[ x,y], [x,y] ...] , [ [ x,y] , [x,y] ...] ....] Each list is a feature
+        import numpy as np
+        coords=[]
         layer=QgsVectorLayer("LineStringZ?crs=%s"%(QgsProject.instance().crs().authid()), "Perfil: " if self.viewCv.mode=="CV" else "Traçado Horizontal: "
                                                                                             + self.model.getNameFromId(self.model.id_filename), "memory")
         layer.setCrs(QgsCoordinateReferenceSystem(QgsProject.instance().crs()))
         features=[]
         DX=0
         DY=0
-        MAX_COLUMNS=5
+        MAX_COLUMNS=10
         ncolumns=1
         for points in listOfListOfPoints:
             feat=QgsFeature()
@@ -667,6 +706,7 @@ class Estacas(object):
             rect=g.boundingBox()
             feat.setGeometry(QgsGeometry.fromRect(rect))
             features.append(QgsFeature(feat))
+            coords.append(np.array([np.average(rect.center().x()), rect.center().y()+5]))
             
             if ncolumns<MAX_COLUMNS:
                 DX+=abs(rect.xMaximum()-rect.xMinimum())
@@ -684,16 +724,19 @@ class Estacas(object):
         dxfExport.setMapSettings(self.iface.mapCanvas().mapSettings())
         dxfExport.addLayers([QgsDxfExport.DxfLayer(layer)])
         dxfExport.setSymbologyScale(1)
-        dxfExport.setSymbologyExport(QgsDxfExport.SymbolLayerSymbology)
+        #dxfExport.setSymbologyExport(QgsDxfExport.SymbolLayerSymbology)
         dxfExport.setLayerTitleAsName(True)
         dxfExport.setDestinationCrs(layer.crs())
         dxfExport.setForce2d(False)
         dxfExport.setExtent(layer.dataProvider().extent())
 
         error=dxfExport.writeToFile(QFile(filename), "UTF-8")
-        if error:
+        if error!=QgsDxfExport.ExportResult.Success:
             msgLog(str(error))
-            messageDialog(title="Erro!", message="Não foi possível realizar a conversão para DXF!")
+            messageDialog(title="Erro!", message="Não foi possível realizar a conversão para DXF ou salvar o arquivo!")
+
+        return coords
+
 
     def exportCSV(self):
         filename = self.view.saveEstacasCSV()

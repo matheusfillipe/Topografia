@@ -45,10 +45,15 @@ Vertical data can be set and edited with a pyqtgraph interface. The cross sectio
 
 ### Como Instalar
 
+#### Instalação Ideal
+
+Procure pelo nome GeoRoad no repositório oficial do Qgis (Plugins -> Intalar plugins) e clique em instalar. 
+
+No momento isso pode ainda não ser possivel.
 
 #### Instalação Manual
 
-1. Baixe o arquivo daqui ou clique nesse [link](https://github.com/matheusfillipe/Topografia/archive/master.zip)
+1. Baixe o arquivo GeoRoad.zip daqui ou clique nesse [link](https://github.com/matheusfillipe/Topografia/releases)
 
 2. Abra o qgis 3, entre no menu Plugins->Manage and Install Plugins->Install From Zip File
 
@@ -56,12 +61,18 @@ Vertical data can be set and edited with a pyqtgraph interface. The cross sectio
 
 #### Instalação "Forçada"
 
-Coloque a estes arquivos dentro da pasta Topograph, no caminho .qgis/plugins/python/Topograph
+Coloque a estes arquivos dentro da pasta GeoRoad ou crie essa pasta, no caminho:
+ 
+Linux: ~/.qgis/plugins/python/
+
+Windows:  C:\Users\USER\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins
+
+onde USER é seu nome de usuário
 
 
 ## Uso
 
-...
+Um tutorial simplificado de como usar esse complemento: [Wiki](https://github.com/matheusfillipe/Topografia/wiki/Uso-B%C3%A1sico)
 
 
 ## Reportar erros ou bugs

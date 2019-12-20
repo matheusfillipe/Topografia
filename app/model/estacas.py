@@ -170,6 +170,7 @@ class Estacas(object):
             return False
 
     def cleanBruckner(self):
+        from pathlib import Path
         extractZIP(Config.fileName)
         con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         con.execute("DELETE FROM BRUCKNER_TABLE WHERE TABLEESTACA_id=?", (self.id_filename,))
@@ -263,13 +264,15 @@ class Estacas(object):
         compactZIP(Config.fileName)
         return est
 
-    def load_intersect(self):
-        if self.id_filename == -1: return None
+    def load_intersect(self, id_filename=None):
+        if id_filename is None:
+            id_filename=self.id_filename
+        if id_filename == -1: return None
         extractZIP(Config.fileName)
         con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
         est = con.execute(
             "SELECT estaca,descricao,progressiva,norte,este,greide,cota,azimute FROM INTERSECT_TABLE WHERE TABLEESTACA_id = ?",
-            (int(self.id_filename),)).fetchall()
+            (int(id_filename),)).fetchall()
         con.close()
         compactZIP(Config.fileName)
         return est
@@ -313,8 +316,12 @@ class Estacas(object):
         con.commit()
         con.close()
         from pathlib import Path
-        [p.unlink() for p in Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable)).rglob(".prism")]
-        [p.unlink() for p in Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable)).rglob(".bruck")]
+        p=Path(Config.instance().TMP_DIR_PATH + "tmp/data/"+str(idEstacaTable)+".prism")
+        if p.is_file():
+            p.unlink()
+        p=Path(Config.instance().TMP_DIR_PATH + "tmp/data/"+str(idEstacaTable)+".bruck")
+        if p.is_file():
+            p.unlink()
         compactZIP(Config.fileName)
 
 
@@ -455,8 +462,12 @@ class Estacas(object):
         con.commit()
         con.close()
         from pathlib import Path
-        [p.unlink() for p in Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable)).rglob(".prism")]
-        [p.unlink() for p in Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable)).rglob(".bruck")]
+        p = Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable) + ".prism")
+        if p.is_file():
+            p.unlink()
+        p = Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + str(idEstacaTable) + ".bruck")
+        if p.is_file():
+            p.unlink()
         compactZIP(Config.fileName)
 
 
@@ -837,9 +848,10 @@ class Estacas(object):
         msgLog("Salvando arquivo bruckner")
         data=self.load_bruck(True)
         extractZIP(Config.fileName)
-        data.update(bruck)
+        #data.update(bruck)
+        bruck['table']=data["table"]
         with open(self.bruckfilename(), 'w') as outfile:
-            json.dump(data, outfile)
+            json.dump(bruck, outfile)
         compactZIP(Config.fileName)
 
     def load_bruck(self, retry=False):

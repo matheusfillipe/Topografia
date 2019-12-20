@@ -703,6 +703,8 @@ class EstacasCv(QtWidgets.QDialog):
             pass
         self.tableWidget.cellClicked.connect(self.zoom)
         self.btnGen.setText("Tabela de verticais")
+        self.btnCorte.setText("Exportar Traçado")
+        self.btnCorte.setToolTip("Exportar curvas de nível do traçado como um arquivo dxf")
         self.mode="T"
         self.stretchTable()
 
@@ -719,6 +721,8 @@ class EstacasCv(QtWidgets.QDialog):
             pass
         self.tableWidget.setHorizontalHeaderLabels((u"Estaca",u"Descrição",u"Progressiva",u"Greide"))
         self.btnGen.setText("Tabela de Interseção")
+        self.btnCorte.setText("Exportar Greide")
+        self.btnCorte.setToolTip("Exportar o greide e o terreno do traçado como um arquivo dxf")
         self.mode="CV"
         self.stretchTable()
 
@@ -826,7 +830,7 @@ class EstacasCv(QtWidgets.QDialog):
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
         self.btnBruck.setToolTip("Visualizar e editar o diagrama de bruckner para um intervalo de estacas")
         self.gridLayout.addWidget(self.btnBruck, row, column, 1, 1)
-        row+=1
+        row+=3
 
         self.btnCsv = QtWidgets.QPushButton(Form)
         self.btnCsv.setText("Exportar Tabela CSV")
@@ -837,45 +841,47 @@ class EstacasCv(QtWidgets.QDialog):
         self.gridLayout.addWidget(self.btnCsv, row, column, 1,1)
         row+=1
 
-        self.btnPrint = QtWidgets.QPushButton(Form)
-        self.btnPrint.setText("Exportar Contornos DXF")
-        self.btnPrint.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
-        self.btnPrint.setObjectName(_fromUtf8("btnPrint"))
-        self.btnPrint.setToolTip("Extportar os contornos dos perfis transversais e verticais como um arquivo CAD dxf")
-        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
-        self.gridLayout.addWidget(self.btnPrint, row, column, 1,1)
-        row+=1
-
         self.btnCorte = QtWidgets.QPushButton(Form)
-        self.btnCorte.setText("Exportar Corte DXF")
+        self.btnCorte.setText("Exportar Greide")
         self.btnCorte.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
         self.btnCorte.setObjectName(_fromUtf8("btnCorte"))
         #self.btnEstacas.clicked.connect(self.ref_super.tracado)
-        self.btnCorte.setToolTip("Exportar curvas de nível do traçado como um arquivo dxf")
+        self.btnCorte.setToolTip("Exportar o greide e o terreno do traçado como um arquivo dxf")
         self.gridLayout.addWidget(self.btnCorte, row, column, 1,1)
         row+=1
 
-        self.btn3D = QtWidgets.QPushButton(Form)
-        self.btn3D.setText("Exportar Modelo 3D")
-        self.btn3D.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
-        self.btn3D.setObjectName(_fromUtf8("btn3D"))
-        toolTip = "<html><head/><body><p>Exportar um modelo tridimensional do projeto como um arquivo de malha triangular." \
-                      "Se o blender <a href='https://www.blender.org/'>(https://www.blender.org/)</a> estiver instalado no sistema uma animação percorrendo " \
-                      "o traçado pode ser gerada automaticamente" \
-                      "</p></body></html>"
-
-        self.btn3D.setToolTip(toolTip)
-        self.btn3D.setWhatsThis(toolTip)
-       #self.btnEstacas.clicked.connect(self.ref_super.tracado)
-        self.gridLayout.addWidget(self.btn3D, row, column, 1,1)
+        self.btnCrossSectionExport = QtWidgets.QPushButton(Form)
+        self.btnCrossSectionExport.setText("Exportar Transversais")
+        self.btnCrossSectionExport.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
+        self.btnCrossSectionExport.setObjectName(_fromUtf8("btnCrossSectionExport"))
+        self.btnCrossSectionExport.setToolTip("Extportar os contornos dos perfis transversais e verticais como um arquivo CAD dxf")
+        #self.btnEstacas.clicked.connect(self.ref_super.tracado)
+        self.gridLayout.addWidget(self.btnCrossSectionExport, row, column, 1,1)
         row+=1
 
         self.btn3DView = QtWidgets.QPushButton(Form)
         self.btn3DView.setText("Visualizar Modelo")
+        self.btn3DView.setToolTip("Visualiza o modelo tridimensional em uma estaca")
         self.btn3DView.setGeometry(QtCore.QRect(760, 16 + 34 * 7, 160, 30))
         self.btn3DView.setObjectName(_fromUtf8("btn3DView"))
         self.gridLayout.addWidget(self.btn3DView, row, column, 1, 1)
         row+=1
+
+        self.btn3D = QtWidgets.QPushButton(Form)
+        self.btn3D.setText("Exportar Modelo")
+        self.btn3D.setGeometry(QtCore.QRect(760, 16 + 34 * 6, 160, 30))
+        self.btn3D.setObjectName(_fromUtf8("btn3D"))
+        toolTip = "<html><head/><body><p>Exportar um modelo tridimensional do projeto como um arquivo de malha triangular." \
+                  "Se o blender <a href='https://www.blender.org/'>(https://www.blender.org/)</a> estiver instalado no sistema uma animação percorrendo " \
+                  "o traçado pode ser gerada automaticamente" \
+                  "</p></body></html>"
+
+        self.btn3D.setToolTip(toolTip)
+        self.btn3D.setWhatsThis(toolTip)
+        # self.btnEstacas.clicked.connect(self.ref_super.tracado)
+        self.gridLayout.addWidget(self.btn3D, row, column, 1, 1)
+        row += 1
+
 
         self.btnClean = QtWidgets.QPushButton(Form)
         self.btnClean.setText("Apagar Dados Transversais")
@@ -2052,8 +2058,8 @@ class brucknerRampaDialog(rampaDialog):
         self.isBeingModified = False
 
         Incl.setDisabled(True)
-        posabscissaLbl.setText(" Estacas")
-        poscomprLbl.setText(" Estacas")
+        posabscissaLbl.setText(" m")
+        poscomprLbl.setText(" m")
         cotaLbl.setText(" Eixo")
         poscotaLbl.setText(u' 10⁶ m³')
         InclLbl.setDisabled(True)

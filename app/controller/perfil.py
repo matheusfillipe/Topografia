@@ -831,6 +831,7 @@ class brucknerRoi(CustomPolyLineROI):
     def __init__(self, *args, **kwds):
         super(brucknerRoi, self).__init__(*args, **kwds)
         self.ismodifying=False
+        self.ypos=self.pos().y()
     def removeRect(self, handle):
         try:
             self.plotWidget.removeItem(handle.leg)
@@ -842,6 +843,7 @@ class brucknerRoi(CustomPolyLineROI):
 
     def moveCota(self, y):
         self.setPos(QPointF(self.pos().x(), y-self.ymed))
+        self.ypos=y-self.ymed
         for handle in self.getHandles()[1:-1]:
             handle.sigRemoveRequested.emit(handle)
         self.removeRect(self.getHandles()[0])
@@ -863,7 +865,6 @@ class brucknerRoi(CustomPolyLineROI):
             self.ismodifying=False
             self.wasModified.emit()
             self.sigRegionChangeFinished.emit(self)
-
 
         elif ev.button() == QtCore.Qt.LeftButton:
             h1 = segment.handles[0]['item']
@@ -1935,10 +1936,10 @@ class Ui_Bruckner(Ui_Perfil):
         for handle in self.roi.getHandles():
             x = []
             x.append(str(handle.pos().x()))
-            x.append(str(handle.pos().y()))
+            x.append(str(self.roi.ypos))
             r.append(x)
         self.bruckData=r
-#        self.bruckData = [[self.roi.getHandlePos(i).x(), self.roi.getHandlePos(i).y()] for i in range(self.roi.countHandles())]
+        #        self.bruckData = [[self.roi.getHandlePos(i).x(), self.roi.getHandlePos(i).y()] for i in range(self.roi.countHandles())]
 
 
     def resetView(self):
@@ -1962,7 +1963,7 @@ class Ui_Bruckner(Ui_Perfil):
 #        self.createLabels()
         ymed=np.average(self.V)
         if self.bruckData:
-            self.roi=brucknerRoi(self.bruckData)
+            self.roi=brucknerRoi([[p[0], ymed] for p in self.bruckData])
         else:
             self.roi = brucknerRoi([[self.X[0], ymed], [self.X[-1], ymed]])
         self.roi.ymed=ymed
@@ -1978,7 +1979,7 @@ class Ui_Bruckner(Ui_Perfil):
     def updater(self):
         if not self.roi.ismodifying:
             handles=[self.roi.getHandlePos(i).x() for i in range(self.roi.countHandles())]
-          #  self.setBruckData()
+            self.setBruckData()
             v0=self.roi.pos().y()+self.roi.ymed
             dist=Config.instance().DIST
             for j, x in enumerate(handles[1:]):  #para cada segmento

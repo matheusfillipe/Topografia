@@ -11,7 +11,7 @@
 name=GeoRoad
 qgisMinimumVersion=3.0
 description=Geometric Road Design
-version=1.0
+version=1.1
 author=Lucas, Matheus Fillipe
 email=matheusfillipeag@gmail.com
 qgisMaximumVersion=3.99
@@ -25,10 +25,10 @@ repository=https://github.com/matheusfillipe/Topografia
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog=extração 3D (stl), extrair traçado, talude error
+changelog=Improved and detailed dxf extraction, level curves extraction, embed PyQtGraph 3D viewer added, many bug fixes
 
 # Tags are comma separated with spaces allowed
-tags=topography, road, design, python, raster, vector, interpolation, export, layers, cad, table, csv, terrain, stl
+tags=topography, road, design, python, raster, vector, interpolation, export, layers, cad, table, csv, terrain, stl, 3D, mesh, blender
 
 homepage=https://github.com/matheusfillipe/Topografia
 category=Plugins

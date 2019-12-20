@@ -87,7 +87,7 @@ class Estacas(object):
         self.preview.tableEstacas.itemSelectionChanged.connect(self.itemClickTableEstacas)
         self.preview.btnOpenCv.clicked.connect(self.openCv)
         self.preview.deleted.connect(self.deleteEstaca)
-        self.preview.btnDuplicar.clicked.connect(lambda: self.duplicarEstaca())
+        self.preview.btnDuplicar.clicked.connect(lambda: self.duplicarEstaca(True))
         self.preview.btnGerarCurvas.clicked.connect(self.geraCurvas)
 
         '''
@@ -118,7 +118,7 @@ class Estacas(object):
         self.viewCv.btnGen.clicked.connect(self.generateIntersec)
         self.viewCv.btnTrans.clicked.connect(self.generateTrans)
         self.viewCv.btnBruck.clicked.connect(self.bruckner)
-        self.viewCv.btnPrint.clicked.connect(self.exportDXF)
+        self.viewCv.btnCrossSectionExport.clicked.connect(self.exportCS)
         self.viewCv.btnCsv.clicked.connect(self.exportCSV)
         #self.viewCv.btnClean.clicked.connect(self.cleanTrans)
         self.viewCv.btnRecalcular.clicked.connect(self.recalcularVerticais)
@@ -146,14 +146,26 @@ class Estacas(object):
         return table, file
 
     def exportCorte(self):
-        table, file = self.createMesh()
-        if not table: return
-        self.generateCorte()
-        self.ctExpDiag=diag = CorteExport(None, float(table[-1][2]))
-        diag.btnPreview.clicked.connect(lambda: self.corteExport(True))
-        diag.btnSave.clicked.connect(lambda: self.corteExport(False))
-        diag.comboBox.currentIndexChanged.connect(lambda: self.createMesh())
-        diag.show()
+        if self.viewCv.mode=="CV":
+            self.exportDXF()
+        else:
+            table, file = self.createMesh()
+            if not table: return
+            self.generateCorte()
+            self.ctExpDiag=diag = CorteExport(None, float(table[-1][2]))
+            diag.btnPreview.clicked.connect(lambda: self.corteExport(True))
+            diag.btnSave.clicked.connect(lambda: self.corteExport(False))
+            diag.comboBox.currentIndexChanged.connect(lambda: self.createMesh())
+            diag.label_4.hide()
+            diag.inicialSb.hide()
+            diag.finalSb.hide()
+            diag.label_3.hide()
+            diag.buttonBox.hide()
+            diag.line.hide()
+            diag.comboBox.hide()
+            diag.label_8.hide()
+            diag.btnSave.clicked.connect(diag.accept)
+            diag.exec_()
 
 
     def corteExport(self, preview=False):
@@ -196,7 +208,7 @@ class Estacas(object):
             self.progressDialog.close()
         elif tipo=="H":
             plane_normal=[0, 0, 1]
-            sections = self.sliceCorte(file, tipo, step, depth, plane_normal, offset)
+            sections = self.sliceCorte(file, tipo, step, depth, plane_normal, offset, float(self.tableCorte[0][5]))
         else: #V
             plane_normal=[0, 1, 0]
             sections=self.sliceCorte(file, tipo, step, depth, plane_normal, offset)
@@ -243,7 +255,7 @@ class Estacas(object):
 
             msgLog("Foram adicionados "+str(len(self.combined.entities))+" elementos para o tipo "+tipo)
 
-    def sliceCorte(self, file, tipo, step, depth, plane_normal, offset=0):
+    def sliceCorte(self, file, tipo, step, depth, plane_normal, offset=0, cota=0.0):
         from ... import trimesh
         import numpy as np
         mesh = trimesh.load_mesh(file)
@@ -260,12 +272,24 @@ class Estacas(object):
         depth=min(z_extents[1]-z_extents[0],depth)
         #z_levels = np.arange(*z_extents, step=step)[int(offset/step):int(depth/step)]
         z_levels = np.linspace(offset, depth, num=int(depth/step))#[int(offset/step):]#int(depth/step)]
-        msgLog(str(z_levels))
         sections = mesh.section_multiplane(plane_origin=plane_origin,
                                            plane_normal=plane_normal,
                                            heights=z_levels)
-        sections=[s for s in sections if not s is None]
-        return sections
+        #sections=[s for s in sections if not s is None]
+        labeled_sections=[]
+        textHeight=2
+        for s in sections:
+            if s is None:
+                cota += step
+                continue
+            for vi, v in enumerate(s.vertices):
+                if vi%30==0:
+                    text = trimesh.path.entities.Text(origin=vi, text=cota, height=textHeight)
+                    s.entities = np.append(s.entities, text)
+            labeled_sections.append(s)
+            cota+=step
+
+        return labeled_sections
 
 
     def saveDxfCorte(self):
@@ -622,7 +646,8 @@ class Estacas(object):
         if self.viewCv.mode=="CV":
             self.addVerticalEstacas(filename[0], estacas)
 
-        if yesNoDialog(title="Plotar Transversais?", message="Deseja exportar os perfis transversais? (Se ainda não foram definidos não serão salvos)"):
+    def exportCS(self):
+#        if yesNoDialog(title="Plotar Transversais?", message="Deseja exportar os perfis transversais? (Se ainda não foram definidos não serão salvos)"):
             self.progressDialog.show()
 
             X,table,prismoide=self.loadTrans()
@@ -844,28 +869,36 @@ class Estacas(object):
         self.duplicarEstaca(False)
 
     def duplicarEstaca(self, trans=True):
+        msgLog("---------Iniciando cópia--------")
         import traceback
         if self.model.id_filename == -1: return
         filename=self.fileName(suggestion="Cópia de " + self.model.getNameFromId(self.model.id_filename))
         if not filename:
             return None
+        self.progressDialog.show()
         self.openEstaca()
+        self.progressDialog.setValue(10)
         estacas = self.view.get_estacas()
         bruck = self.model.load_bruck()
-        id_filename=self.model.id_filename
+        id_filename=deepcopy(self.model.id_filename)
         self.model = self.model.saveEstacas(filename, estacas)
         if trans:
             try:
-                prog, est, prism = self.model.getTrans(self.model.id_filename)
+                msgLog("Carregando Transversais: ")
+                prog, est, prism = self.model.getTrans(id_filename)
                 if prog:
-                    self.trans=Ui_sessaoTipo(self.iface, est[1], self.model.load_intersect(), prog, est[0], prism=prism, greide=self.model.getGreide(self.model.id_filename), title="Transversal: " + str(self.model.getNameFromId(self.model.id_filename)))
+                    self.trans=Ui_sessaoTipo(self.iface, est[1], self.model.load_intersect(id_filename),
+                                prog, est[0], prism=prism, greide=self.model.getGreide(id_filename),
+                                title="Transversal: " + str(self.model.getNameFromId(id_filename)))
                     self.model.id_filename = self.model.ultimo
                     self.saveTrans()
+                    msgLog("Tranversais Salvas!")
             except Exception as e:
                 msgLog("Falha ao duplicar Transversais: ")
                 msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
 
         self.model.id_filename=self.model.ultimo
+        self.progressDialog.setValue(40)
         if bruck:
             self.model.save_bruck(bruck)
         try:
@@ -880,7 +913,7 @@ class Estacas(object):
         except Exception as e:
             msgLog("---------------------------------\n\nFalha ao duplicar curvas: ")
             msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
-
+        self.progressDialog.setValue(60)
         try:
             tipo, class_project = self.model.tipo()
             estacas = self.model.load_terreno_long()
@@ -894,7 +927,7 @@ class Estacas(object):
         except Exception as e:
             msgLog("Falha ao duplicar Greide: ")
             msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
-
+        self.progressDialog.setValue(80)
        #self.geraCurvas(self.model.id_filename)
 
         self.update()
@@ -904,6 +937,7 @@ class Estacas(object):
         for e in estacas:
             self.view.fill_table(tuple(e), True)
             self.estacasHorizontalList.append(tuple(e))
+        self.progressDialog.setValue(99)
         self.nextView = self.view
         self.view.setCopy()
         self.updateTables()
@@ -912,6 +946,7 @@ class Estacas(object):
             self.viewCv.closeLayers()
         except:
             msgLog("Failed to close layers!")
+        self.progressDialog.close()
 
     def cleanTrans(self):
         if yesNoDialog(None, message="Tem certeza que quer excluir os dados transversais?"):

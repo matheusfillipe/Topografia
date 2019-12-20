@@ -115,6 +115,10 @@ class Estacas(object):
 #        self.view.layerUpdated.connect(self.joinFeatures)
         self.view.btnPerfil.clicked.connect(self.perfilView)
 
+        '''
+            ------------------------------------------------
+        '''
+
         self.viewCv.btnGen.clicked.connect(self.generateIntersec)
         self.viewCv.btnTrans.clicked.connect(self.generateTrans)
         self.viewCv.btnBruck.clicked.connect(self.bruckner)
@@ -511,7 +515,7 @@ class Estacas(object):
         self.progressDialog.setValue(0)
         table = self.model.load_bruckner()
         bruck=self.model.load_bruck()
-        if not table or not bruck:  # if non existent, compute
+        if not table or not ("table" in bruck and bruck['table']):  # if non existent, compute
             X, est, prismoide=self.loadTrans()
             if not X:
                 messageDialog(message="Seção Transversal não definida!")
@@ -570,8 +574,8 @@ class Estacas(object):
     def brucknerReset(self):
         self.brucknerView.close()
         self.bruckReseted=True
-        self.model.cleanBruckner()
-        self.bruck={}
+        self.model.cleanBruckner(keepLines=yesNoDialog(message="Deseja manter as linhas de terra?"))
+        self.bruck=self.model.load_bruck()
         self.bruckner()
 
     def matplot(self, X, V, title="Diagrama de Bruckner", xlabel=u'Estacas', ylabel=u'Volume m³'):

@@ -169,7 +169,7 @@ class Estacas(object):
         except sqlite3.OperationalError:
             return False
 
-    def cleanBruckner(self):
+    def cleanBruckner(self, keepLines=False):
         from pathlib import Path
         extractZIP(Config.fileName)
         con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
@@ -179,8 +179,18 @@ class Estacas(object):
         con.isolation_level = ''
         con.commit()
         con.close()
-        Path(Config.instance().TMP_DIR_PATH+"tmp/data/"+str(self.id_filename)+".bruck").unlink()
         compactZIP(Config.fileName)
+        if keepLines:
+            bruck=self.load_bruck()
+            extractZIP(Config.fileName)
+            Path(Config.instance().TMP_DIR_PATH+"tmp/data/"+str(self.id_filename)+".bruck").unlink()
+            compactZIP(Config.fileName)
+            del bruck['table']
+            self.save_bruck(bruck)
+        else:
+            extractZIP(Config.fileName)
+            Path(Config.instance().TMP_DIR_PATH+"tmp/data/"+str(self.id_filename)+".bruck").unlink()
+            compactZIP(Config.fileName)
         return True
 
     def getCurvas(self, id_filename):
@@ -849,7 +859,8 @@ class Estacas(object):
         data=self.load_bruck(True)
         extractZIP(Config.fileName)
         #data.update(bruck)
-        bruck['table']=data["table"]
+        if "table" in data:
+            bruck['table'] = data["table"]
         with open(self.bruckfilename(), 'w') as outfile:
             json.dump(bruck, outfile)
         compactZIP(Config.fileName)

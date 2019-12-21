@@ -53,7 +53,7 @@ No momento isso pode ainda não ser possivel.
 
 #### Instalação Manual
 
-1. Baixe o arquivo GeoRoad.zip daqui ou clique nesse [link](https://github.com/matheusfillipe/Topografia/releases)
+1. Baixe o arquivo GeoRoad.zip na página de [releases](https://github.com/matheusfillipe/Topografia/releases) ou nesse [link](https://github.com/matheusfillipe/Topografia/releases/download/v1.1/GeoRoad.zip) 
 
 2. Abra o qgis 3, entre no menu Plugins->Manage and Install Plugins->Install From Zip File
 

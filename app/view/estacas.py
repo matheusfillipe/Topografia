@@ -2135,6 +2135,8 @@ class ApplyTransDialog(QtWidgets.QDialog, APLICAR_TRANSVERSAL_DIALOG):
         self.dist=Config.instance().DIST
         self.firstCb.currentIndexChanged.connect(self.setSecondCb)
         self.secondCb.currentIndexChanged.connect(self.setIndexes)
+        self.firstCb.combobox.view().setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.secondCb.combobox.view().setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.setupUi2()
 
     def setupUi2(self):

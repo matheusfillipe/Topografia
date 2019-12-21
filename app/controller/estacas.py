@@ -602,7 +602,7 @@ class Estacas(object):
         self.progressDialog.setLoop(30, len(X))
         bruck=[{"estaca":prog2estacaStr(x1), "corte": abs(ct), "aterro": abs(at), "at.cor.": abs(at*fh), "soma": "", "semi-distancia": "",
                              "vol.corte":"", "vol.aterro":"", "volume":"", "vol.acum":""}]
-        for x in range(1,len(X)):
+        for x in range(1,len(X)+1):
             data=prismoide.getBruckVols(ei+x-1, ei+x, fh=fh)[0]
             data['estaca']=prog2estacaStr(X[x])
             if data["volume"]==0 and data['semi-distancia']==0:

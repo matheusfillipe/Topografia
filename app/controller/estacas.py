@@ -517,6 +517,7 @@ class Estacas(object):
         bruck=self.model.load_bruck()
         if not table or not ("table" in bruck and bruck['table']):  # if non existent, compute
             X, est, prismoide=self.loadTrans()
+            msgLog(str(len(X))+" Estacas na transversal")
             if not X:
                 messageDialog(message="Seção Transversal não definida!")
                 self.progressDialog.close()
@@ -548,7 +549,8 @@ class Estacas(object):
             if key in self.bruck:
                 bruckD = Ui_Bruckner(X, V, key=key, bruck=self.bruck, bruckData=self.bruck[key], interval=[ei,ef])
             else:
-                bruckD = Ui_Bruckner(X, V, key=key, bruck=self.bruck, interval=[ei,ef])
+                size=min(len(X), len(V))
+                bruckD = Ui_Bruckner(X[:size], V[:size], key=key, bruck=self.bruck, interval=[ei,ef])
 
             msgLog("Abrindo intervalo: " + key)
             bruckD.showMaximized()

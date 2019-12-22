@@ -72,7 +72,7 @@ onde USER é seu nome de usuário
 
 ## Uso
 
-Um tutorial simplificado de como usar esse complemento: [Wiki](https://github.com/matheusfillipe/Topografia/wiki/Uso-B%C3%A1sico)
+Um tutorial simplificado de como usar esse complemento: [Wiki](https://github.com/matheusfillipe/Topografia/wiki)
 
 
 ## Reportar erros ou bugs

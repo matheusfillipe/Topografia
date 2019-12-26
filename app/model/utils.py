@@ -396,7 +396,7 @@ def prog2estacaStr(i :float):
 
 def fastProg2EstacaStr(i, dist):
     if i%dist != 0:
-        return str(int(i/dist))+"+"+str(i%Config.instance().DIST)
+        return str(int(i/dist))+"+"+str(round(i%Config.instance().DIST,2))
     else:
         return str(int(i/dist))
 

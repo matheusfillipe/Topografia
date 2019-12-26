@@ -65,6 +65,7 @@ class Config(object):
     interpol="True"
     velproj=100.0
     emax=0.08
+    PREC=0.1 # 10cm default precisão
 
     #   DADOS para serem armazenados no projeto do qgis.
     #   Cada string nessa lista é criada como um atributo de Config.instance() que pode ser lida por
@@ -89,10 +90,9 @@ class Config(object):
           "velproj",
           'emax',
          "TMP_FOLDER",
-         "TMP_DIR_PATH"
+         "TMP_DIR_PATH",
+         "PREC"
           ]
-
-
 
     def __init__(self):
         self.crs = 2676

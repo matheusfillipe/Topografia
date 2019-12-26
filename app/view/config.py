@@ -81,7 +81,8 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                                 Config.data[12]: self.offsetSpinBox.value,
                                 Config.data[14]: self.interpol.isChecked,
                                 Config.data[15]: self.velProj.value,
-                                Config.data[16]: self.emax.value
+                                Config.data[16]: self.emax.value,
+                                Config.data[17]: self.prec.value
         }
 
         self.dataAssociationRead = {Config.data[0]: self.setUnits,
@@ -99,7 +100,8 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                                  Config.data[12]: self.offsetSpinBox.setValue,
                                  Config.data[14]: self.interpol.setChecked,
                                  Config.data[15]: self.velProj.setValue,
-                                 Config.data[16]: self.emax.setValue
+                                 Config.data[16]: self.emax.setValue,
+                                 Config.data[17]: self.prec.setValue
                                 }
 
         self.dbBuild: QtWidgets.QPushButton

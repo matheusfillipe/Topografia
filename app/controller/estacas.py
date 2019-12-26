@@ -1071,9 +1071,11 @@ class Estacas(object):
         msgLog("Organizar: "+ str(time.time()-startTime)+" seconds")
         self.progressDialog.setValue(90)
 
-        DIST=Config.instance().DIST
         progAnt=float(table[0][2])
         anterior=[table[0][-2],table[0][-3]] #cota, greide
+        cfg=Config.instance()
+        DIST=cfg.DIST
+        PREC=cfg.PREC
         for i,t in enumerate(table):  #Interpolar greides e cotas desconhecidos
             atual=[t[-2],t[-3]] #cota, greide
             if None in atual:
@@ -1101,16 +1103,29 @@ class Estacas(object):
                     table[i][-2]=0
                     table[i][-3]=0
 
-
             if float(t[2])%DIST==0: #se é uma estaca inteira se torna a anterior
                 anterior=atual
                 progAnt=float(t[2])
 
-        self.model.saveIntersect(table)
+        # unir estacas muito próximas
+        intersec=[]
+        join=False
+        e=table[0]
+        for e1, e2 in zip(table[:-1], table[1:]):
+            dist=float(e2[2])-float(e1[2])
+            if dist<=PREC:
+                e1[1]=e[1]+" + "+e2[1]
+                e=e1
+            else:
+                intersec.append(e)
+                e=e2
+        intersec.append(e2)
+
+        self.model.saveIntersect(intersec)
 
         msgLog("Verticais: "+ str(time.time()-startTime)+" seconds")
         QgsMessageLog.logMessage("Fim comparação", "GeoRoad", level=0)
-        return table
+        return intersec
 
 
 

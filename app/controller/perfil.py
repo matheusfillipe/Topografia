@@ -1619,7 +1619,7 @@ class Ui_sessaoTipo(Ui_Perfil):
 
         self.btnClean=QtWidgets.QPushButton(PerfilTrecho)
         self.btnClean.setGeometry(QtCore.QRect(260, 80, 99, 27))
-        self.btnClean.setText("Apagar")
+        self.btnClean.setText("Recalcular")
         self.btnClean.setToolTip("Apaga todas as modificações e retorna com o perfil padrão para todo o traçado")
 
         self.btnReset=QtWidgets.QPushButton(PerfilTrecho)

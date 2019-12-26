@@ -22,6 +22,7 @@
  ***************************************************************************/
 """
 from __future__ import absolute_import
+from . import install_deps
 
 import shutil
 from builtins import object

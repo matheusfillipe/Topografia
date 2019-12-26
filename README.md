@@ -18,29 +18,6 @@ The basic workflow of this software would be creating a table of segmented point
 
 Vertical data can be set and edited with a pyqtgraph interface. The cross section setup and volume computations are computing intensive and its recomended 8 GB of ram or more. Most tables can be exported or imported in the formats *.csv for tables and *.dxf.
 
-### Dependências
-
-A partir da versão 1.1 a biblioteca PyOpenGL é requerida. O plugin tentará a instalar automaticamente, mas caso isso falhar, abra o OSGeo4W Shell da pasta de atalhos Qgis e entre com:
-
-```bash
-py3_env
-python -m pip install PyOpenGL PyOpenGL_accelerate
-```
-
-Se tiver algum erro do tipo: "PermissionError: [WinError 5] Access is denied", tente abrir o OsGeo Shell come administrador.
-
-Para que a instalação automática funcione, basta executar o qgis como administrador e instalar o plugin. 
-
-Para Linux e OSX, use o seguinte:
-
-```bash
-#Se tiver somente o python3 no sistema:
-pip install PyOpenGL PyOpenGL_accelerate
-
-
-#Se tiver python 2 e 3 juntos:
-pip3 install PyOpenGL PyOpenGL_accelerate
-```
 
 ## Recursos
 
@@ -67,6 +44,30 @@ pip3 install PyOpenGL PyOpenGL_accelerate
 * Suporte a multithreading e cancelamento de tarefas.
 
 ### Como Instalar
+
+#### Dependências
+
+A partir da versão 1.1 a biblioteca PyOpenGL é requerida. O plugin tentará a instalar automaticamente, mas caso isso falhar, abra o OSGeo4W Shell da pasta de atalhos Qgis e entre com:
+
+```bash
+py3_env
+python -m pip install PyOpenGL PyOpenGL_accelerate
+```
+
+Se tiver algum erro do tipo: "PermissionError: [WinError 5] Access is denied", tente abrir o OsGeo Shell come administrador.
+
+Para que a instalação automática funcione, basta executar o qgis como administrador e instalar o plugin. 
+
+Para Linux e OSX, use o seguinte:
+
+```bash
+#Se tiver somente o python3 no sistema:
+pip install PyOpenGL PyOpenGL_accelerate
+
+
+#Se tiver python 2 e 3 juntos:
+pip3 install PyOpenGL PyOpenGL_accelerate
+```
 
 #### Instalação Ideal
 

@@ -1039,9 +1039,12 @@ class Ui_Perfil(QtWidgets.QDialog):
         
        # self.perfilPlot.plot(y,x)
     def updater(self):
+        self.computingLabel.setText("Processando....")
         if not self.showDistances:
             for h in self.roi.getHandles():
                 self.roi.removeRect(h)
+            pg.QtGui.QGuiApplication.processEvents()
+            self.computingLabel.clear()
             return
         if not self.roi.ismodifying:
             handles = [self.roi.getHandlePos(i) for i in range(self.roi.countHandles())]
@@ -1111,6 +1114,7 @@ class Ui_Perfil(QtWidgets.QDialog):
                 handle.sigRemoveRequested.connect(self.roi.removeRect)
 
             pg.QtGui.QGuiApplication.processEvents()
+        self.computingLabel.clear()
 
     def calcularGreide(self):
         self.roi.getMenu()
@@ -1261,7 +1265,12 @@ class Ui_Perfil(QtWidgets.QDialog):
         self.btnReset.setText("Apagar")
         self.btnReset.clicked.connect(self.resetGeometry)
 
+        self.computingLabel=QtWidgets.QLabel("Processando...")
+        self.computingLabel.setAlignment(QtCore.Qt.AlignRight)
+        self.computingLabel.clear()
+
         Hlayout=QtWidgets.QHBoxLayout()
+        Hlayout2=QtWidgets.QHBoxLayout()
         Vlayout=QtWidgets.QVBoxLayout()
 
         QtCore.QMetaObject.connectSlotsByName(PerfilTrecho)
@@ -1272,7 +1281,9 @@ class Ui_Perfil(QtWidgets.QDialog):
         Hlayout.addWidget(self.btnSave)
         Hlayout.addWidget(self.btnReset)
         Hlayout.addWidget(self.btnCancel)
+        Hlayout2.addWidget(self.computingLabel)
         Vlayout.addLayout(Hlayout)
+        Vlayout.addLayout(Hlayout2)
         Vlayout.addWidget(self.lblTipo)
         Vlayout.addWidget(self.perfilPlot)
        

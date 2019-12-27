@@ -1109,7 +1109,6 @@ class Estacas(object):
 
         # unir estacas muito próximas
         intersec=[]
-        join=False
         e=table[0]
         for e1, e2 in zip(table[:-1], table[1:]):
             dist=float(e2[2])-float(e1[2])

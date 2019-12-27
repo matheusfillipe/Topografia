@@ -102,7 +102,9 @@ class view3D_Ui(QtWidgets.QDialog):
         self.hl.addItem(spacer2)
         self.vl.addLayout(self.hl)
         self.setLayout(self.vl)
+
         self.changeEstaca(0)
+
 
     def colorChanged(self):
        color = QtWidgets.QColorDialog.getColor()
@@ -140,6 +142,8 @@ class view3D_Ui(QtWidgets.QDialog):
         campos=self.w.cameraPosition()
         self.w.pan(float(intersect[index][4])-campos.x(), float(intersect[index][3])-campos.y(),
                    float(intersect[index][5])-campos.z()+40)
+      #  az = float(intersect[index][7])
+       # self.w.orbit(az, 20)
 
     def addMesh(self, verts, faces, colors=[]):
         m1 = gl.GLMeshItem(vertexes=verts, faces=faces, faceColors=colors, smooth=False, drawEdges=True, edgeColor=(0, 0, 0, 1), shader='shaded')

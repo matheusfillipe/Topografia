@@ -17,7 +17,7 @@ except:
     #with open(str(plugin_dir / 'requirements.txt'), "r") as requirements:
     requirements=["PyOpenGL" "PyOpenGL_accelerate"]
     for dep in requirements.readlines():
-        dep = dep.strip().split("==")[0]
+        #dep = dep.strip().split("==")[0]
         try:
             __import__(dep)
         except:

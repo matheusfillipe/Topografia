@@ -2024,7 +2024,7 @@ class Ui_Bruckner(Ui_Perfil):
                                                          pen=pg.mkPen('r', width=3, style=QtCore.Qt.SolidLine))
 
                 handle.leg=pg.TextItem(color=(200,200,200))
-                handle.leg.setHtml("A = %s m⁴<br>Vmax = %s m³<br>Dm = %s m" % (str(roundFloatShort(A*dist)),
+                handle.leg.setHtml("A = %s  \u33A1 <br>Vmax = %s m³<br>Dm = %s m" % (str(roundFloatShort(A*dist)),
                                                                                str(roundFloatShort(vmax)),
                                                                                str(roundFloatShort(dm*dist))))
                 handle.leg.setAnchor((.5, abs(vmax)/vmax))

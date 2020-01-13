@@ -1105,7 +1105,7 @@ class prismoide(figure):
             vat = vct = 0
             for i, face in enumerate(self.faces[i1:i2]):
                 # semisoma
-                nextFace = self.faces[i + 1]
+                nextFace = self.faces[i + 1+i1]
                 nct, nat = nextFace.getAreas()
                 ct, at = face.getAreas()
                 dist = abs(face.position.z() - nextFace.position.z())

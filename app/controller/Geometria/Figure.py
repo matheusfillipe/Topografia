@@ -1108,7 +1108,7 @@ class prismoide(figure):
                 nextFace = self.faces[i + 1+i1]
                 nct, nat = nextFace.getAreas()
                 ct, at = face.getAreas()
-                dist = abs(face.position.z() - nextFace.position.z())
+                dist = abs(face.position.z() - nextFace.position.z())/2
                 vct += (ct + nct) * dist / 2
                 vat += (at + nat) * dist / 2*fh
                 data.append({"corte": abs(ct), "aterro": abs(at), "at.cor.": abs(at*fh), "soma":at+ct, "semi-distancia": dist,

@@ -1,27 +1,28 @@
-#####TODO make threading work
+# TODO make threading work
+import time
+from PyQt5.QtWidgets import *
 from qgis._core import QgsApplication
 from qgis._core import QgsTask
 
 
 def nongui(fun):
-#    """Decorator running the function in non-gui thread while
-#    processing the gui events."""
-#    from multiprocessing.pool import ThreadPool
-#    from PyQt5.QtWidgets import QApplication
-#
-#    def wrap(*args, **kwargs):
-#        pool = ThreadPool(processes=1)
-#        asynchronous = pool.apply_async(fun, args, kwargs)
-#        while not asynchronous.ready():
-#            asynchronous.wait(0.01)
-#            QApplication.processEvents()
-#        return asynchronous.get()
-#
-    return fun#wrap
+    #    """Decorator running the function in non-gui thread while
+    #    processing the gui events."""
+    #    from multiprocessing.pool import ThreadPool
+    #    from PyQt5.QtWidgets import QApplication
+    #
+    #    def wrap(*args, **kwargs):
+    #        pool = ThreadPool(processes=1)
+    #        asynchronous = pool.apply_async(fun, args, kwargs)
+    #        while not asynchronous.ready():
+    #            asynchronous.wait(0.01)
+    #            QApplication.processEvents()
+    #        return asynchronous.get()
+    #
+    return fun  # wrap
 
 
-
-#def nongui(func):
+# def nongui(func):
 #    """Decorator running the function in non-gui thread while
 #    processing the gui events."""
 #    from qgis._core import QgsTask, QgsApplication, QgsMessageLog, Qgis
@@ -47,26 +48,26 @@ def nongui(fun):
 #
 #    return wrap
 #
-from PyQt5.QtWidgets import *
-import time
+
 
 class TestTask(QgsTask):
     """Here we subclass QgsTask"""
-    def __init__(self, desc,iface):
+
+    def __init__(self, desc, iface):
         QgsTask.__init__(self, desc)
-        self.iface=iface
+        self.iface = iface
 
     def run(self):
         """This function is where you do the 'heavy lifting' or implement
         the task which you want to run in a background thread. This function
         must return True or False and should only interact with the main thread
         via signals"""
-        for i in range (21):
+        for i in range(21):
             time.sleep(0.5)
             val = i * 5
-            #report progress which can be received by the main thread
+            # report progress which can be received by the main thread
             self.setProgress(val)
-            #check to see if the task has been cancelled
+            # check to see if the task has been cancelled
             if self.isCanceled():
                 return False
         return True
@@ -78,6 +79,7 @@ class TestTask(QgsTask):
             self.iface.messageBar().pushMessage('Task was cancelled')
         else:
             self.iface.messageBar().pushMessage('Task Complete')
+
 
 class My_Dialog(QDialog):
     def __init__(self, parent=None):
@@ -95,22 +97,23 @@ class My_Dialog(QDialog):
         btn_OK = QPushButton('OK', self)
         btn_OK.move(300, 300)
         btn_OK.clicked.connect(self.newTask)
-        btn_close = QPushButton('Close',self)
+        btn_close = QPushButton('Close', self)
         btn_close.move(400, 300)
         btn_close.clicked.connect(self.close_win)
         btn_cancel = QPushButton('Cancel Task', self)
         btn_cancel.move(50, 300)
         btn_cancel.clicked.connect(self.cancelTask)
 
-
     def newTask(self):
         """Create a task and add it to the Task Manager"""
         self.task = TestTask('Custom Task')
-        #connect to signals from the background threads to perform gui operations
-        #such as updating the progress bar
+        # connect to signals from the background threads to perform gui operations
+        # such as updating the progress bar
         self.task.begun.connect(lambda: self.edit_info.setText('Working...'))
-        self.task.progressChanged.connect(lambda: self.prog.setValue(self.task.progress()))
-        self.task.taskCompleted.connect(lambda: self.edit_info.setText('Task Complete'))
+        self.task.progressChanged.connect(
+            lambda: self.prog.setValue(self.task.progress()))
+        self.task.taskCompleted.connect(
+            lambda: self.edit_info.setText('Task Complete'))
         self.task.taskTerminated.connect(self.TaskCancelled)
         QgsApplication.taskManager().addTask(self.task)
 
@@ -123,5 +126,3 @@ class My_Dialog(QDialog):
 
     def close_win(self):
         My_Dialog.close(self)
-
-

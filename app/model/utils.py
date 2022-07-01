@@ -1,4 +1,26 @@
 from __future__ import print_function
+import urllib.error
+import urllib.parse
+import urllib.request
+import tempfile
+import json
+import http.client
+import os
+from urllib.request import urlopen
+import sys
+from qgis.core import QgsRectangle, QgsGeometry, QgsVectorLayer, QgsPoint, QgsFeature, QgsPointXY, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsField, QgsFields, QgsMessageLog, QgsWkbTypes
+from qgis.PyQt import QtWidgets
+from qgis.gui import *
+from qgis._core import QgsVectorLayer
+from qgis._core import QgsPoint
+from qgis._core import QgsProject
+from qgis._core import QgsGeometry
+from qgis._core import QgsFeature
+from qgis.PyQt.QtCore import qDebug
+import math
+from builtins import object
+from builtins import range
+from builtins import str
 
 from PyQt5.QtCore import QVariant
 from PyQt5.QtGui import QPixmap
@@ -8,33 +30,19 @@ from future import standard_library
 from ..model.config import Config
 
 standard_library.install_aliases()
-from builtins import str
-from builtins import range
-from builtins import object
 # -*- coding: utf-8 -*-
-import math
-
-from qgis.PyQt.QtCore import qDebug
-from qgis._core import QgsFeature
-from qgis._core import QgsGeometry
-from qgis._core import QgsProject
-from qgis._core import QgsPoint
-from qgis._core import QgsVectorLayer
-from qgis.gui import *
-import sys, os, http.client, json, tempfile, urllib.request, urllib.parse, urllib.error
-from qgis.PyQt import QtWidgets
-from qgis.core import QgsRectangle, QgsGeometry, QgsVectorLayer, QgsPoint, QgsFeature, QgsPointXY, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsField, QgsFields, QgsMessageLog, QgsWkbTypes
 
 
 class Create_vlayer(object):
     '''creation of a virtual layer'''
-    def __init__(self,nom,type):
-        self.type=type
-        self.name = nom
-        self.layer = QgsVectorLayer(self.type, self.name , "memory")
-        self.pr =self.layer.dataProvider()
 
-    def create_point(self,geometry):
+    def __init__(self, nom, type):
+        self.type = type
+        self.name = nom
+        self.layer = QgsVectorLayer(self.type, self.name, "memory")
+        self.pr = self.layer.dataProvider()
+
+    def create_point(self, geometry):
         # add point to the layer
         self.seg = QgsFeature()
         self.seg.setGeometry(QgsGeometry.fromPoint(geometry))
@@ -43,7 +51,7 @@ class Create_vlayer(object):
 
     @property
     def display_layer(self):
-        #end of layer and display layer
+        # end of layer and display layer
         QgsProject.instance().addMapLayers([self.layer])
 
 
@@ -57,13 +65,13 @@ def diff(point2, point1):
     return p2QgsPoint(point2.x()-point1.x(), point2.y() - point1.y())
 
 
-def length(point1,point2):
+def length(point1, point2):
     # with PyQGIS: sqrDist
     return point1.distance(point2)
 
 
 def dircos(point):
-    Mag=mag(point)
+    Mag = mag(point)
     cosa = 0
     cosb = 0
 
@@ -71,7 +79,7 @@ def dircos(point):
         cosa = point.x() / Mag
         cosb = point.y() / Mag
 
-    return cosa,cosb
+    return cosa, cosb
 
 
 def getTipo(feat):
@@ -96,54 +104,56 @@ def getTipo(feat):
 
     return r
 
+
 def featureToPolyline(f):
-    g=f.geometry()
+    g = f.geometry()
     try:
-        lista=g.asPolyline()
+        lista = g.asPolyline()
     except:
-        lista=g.asMultiPolyline()[0]
+        lista = g.asMultiPolyline()[0]
     return lista
+
 
 def qgsGeometryToPolyline(g):
     if g:
         try:
-            lista=g.asPolyline()
+            lista = g.asPolyline()
         except:
-            lista=g.asMultiPolyline()[0]
+            lista = g.asMultiPolyline()[0]
     else:
-        lista=[QgsPointXY(0,0),QgsPointXY(0,10)]
+        lista = [QgsPointXY(0, 0), QgsPointXY(0, 10)]
 
     return lista
 
 
-def pairs(lista,inicio=0):
+def pairs(lista, inicio=0):
     # list pairs iteration
-    tipo=getTipo(lista)
-    line=featureToPolyline(lista)
+    tipo = getTipo(lista)
+    line = featureToPolyline(lista)
 
     from math import isclose
-    start=line[inicio]
+    start = line[inicio]
     for i in range(inicio+1, len(line)-1):
-       if not (isclose(line[i-1].azimuth(line[i]),line[i].azimuth(line[i+1]),rel_tol=.00001) or start.distance(line[i])<0.01):
-           yield start, line[i], tipo
-           start=line[i]
+        if not (isclose(line[i-1].azimuth(line[i]), line[i].azimuth(line[i+1]), rel_tol=.00001) or start.distance(line[i]) < 0.01):
+            yield start, line[i], tipo
+            start = line[i]
     yield start, line[-1], tipo
-
 
 
 def moveLine(layer, id, dest, src=None):
     try:
-        geometry=layer.getFeature(id).geometry().asPolyline()
+        geometry = layer.getFeature(id).geometry().asPolyline()
     except:
-        geometry=layer.getFeature(id).geometry().asMultiPolyline()[0]
+        geometry = layer.getFeature(id).geometry().asMultiPolyline()[0]
 
     if not src:
-        src=geometry[0]
-    dx=dest.x()-src.x()
-    dy=dest.y()-src.y()
+        src = geometry[0]
+    dx = dest.x()-src.x()
+    dy = dest.y()-src.y()
     g = layer.getFeature(id).geometry()
-    g.translate(dx,dy)
+    g.translate(dx, dy)
     layer.dataProvider().changeGeometryValues({id: g})
+
 
 def getLastPoint(layer, id):
     try:
@@ -152,17 +162,16 @@ def getLastPoint(layer, id):
         return layer.getFeature(id-1).geometry().asMultiPolyline()[0][-1]
 
 
-
 def decdeg2dms(dd):
     is_positive = dd >= 0
     dd = abs(dd)
-    minutes,seconds = divmod(dd*3600,60)
-    degrees,minutes = divmod(minutes,60)
+    minutes, seconds = divmod(dd*3600, 60)
+    degrees, minutes = divmod(minutes, 60)
     degrees = degrees if is_positive else -degrees
-    return (degrees,minutes,seconds)
+    return (degrees, minutes, seconds)
 
 
-def calcI(p1,p2,prog1,prog2):
+def calcI(p1, p2, prog1, prog2):
     return ((p2.z()-p1.z())/(prog2-prog1))*100
 
 
@@ -199,11 +208,12 @@ class PointTool(QgsMapTool):
         self.iface = iface
         self.callback = callback
         self.canvas = iface.mapCanvas()
-        self.rpoint = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
+        self.rpoint = QgsRubberBand(
+            iface.mapCanvas(), QgsWkbTypes.PointGeometry)
 
     def canvasReleaseEvent(self, e):
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(), e.pos().y())
-        self.point=point
+        self.point = point
         self.canvas.unsetMapTool(self)
         self.callback(self.point)
         return None
@@ -213,28 +223,30 @@ class PointTool(QgsMapTool):
 
 
 class ClickTool(QgsMapTool):
-    def __init__(self,iface, callback):
-        QgsMapTool.__init__(self,iface.mapCanvas())
-        self.iface      = iface
-        self.callback   = callback
-        self.canvas     = iface.mapCanvas()
-        self.rpoint=QgsRubberBand(iface.mapCanvas(),QGis.Point )
-        self.rline=QgsRubberBand(iface.mapCanvas(),QGis.Line )
-        premuto= False
-        linea=False
-        point0=iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
-        point1=iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
+    def __init__(self, iface, callback):
+        QgsMapTool.__init__(self, iface.mapCanvas())
+        self.iface = iface
+        self.callback = callback
+        self.canvas = iface.mapCanvas()
+        self.rpoint = QgsRubberBand(iface.mapCanvas(), QGis.Point)
+        self.rline = QgsRubberBand(iface.mapCanvas(), QGis.Line)
+        premuto = False
+        linea = False
+        point0 = iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
+        point1 = iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
 
-    def canvasReleaseEvent(self,e):
-        point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
+    def canvasReleaseEvent(self, e):
+        point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(), e.pos().y())
         self.callback(point)
         return None
 
-def p2QgsPoint(pt, pt2=None):  #Qgis 3.10.0 has a bug where the QgsPoint doesn't accept a QgsPointXY as a constructor
+
+# Qgis 3.10.0 has a bug where the QgsPoint doesn't accept a QgsPointXY as a constructor
+def p2QgsPoint(pt, pt2=None):
     if pt2 is None:
         try:
             if type(pt) is list:
-                if len(pt)==3:
+                if len(pt) == 3:
                     return QgsPoint(pt[0], pt[1], pt[2])
                 else:
                     return QgsPoint(pt[0], pt[1])
@@ -245,29 +257,30 @@ def p2QgsPoint(pt, pt2=None):  #Qgis 3.10.0 has a bug where the QgsPoint doesn't
     else:
         return QgsPoint(pt, pt2)
 
+
 def pointToWGS84(point):
-    t=QgsCoordinateReferenceSystem("EPSG:4326")
-    f=QgsProject.instance().crs()
-    transformer = QgsCoordinateTransform(f,t, QgsProject.instance())
+    t = QgsCoordinateReferenceSystem("EPSG:4326")
+    f = QgsProject.instance().crs()
+    transformer = QgsCoordinateTransform(f, t, QgsProject.instance())
     pt = transformer.transform(point)
     return pt
 
-def pointTo(crs,point):
-    t=QgsCoordinateReferenceSystem(crs)
-    f=QgsProject.instance().crs()
-    transformer = QgsCoordinateTransform(f,t, QgsProject.instance())
+
+def pointTo(crs, point):
+    t = QgsCoordinateReferenceSystem(crs)
+    f = QgsProject.instance().crs()
+    transformer = QgsCoordinateTransform(f, t, QgsProject.instance())
     pt = transformer.transform(point)
     return pt
-
 
 
 def pointFromWGS84(point):
     p = QgsProject.instance()
-    (proj4string,ok) = p.readEntry("SpatialRefSys","ProjectCRSProj4String")
+    (proj4string, ok) = p.readEntry("SpatialRefSys", "ProjectCRSProj4String")
     if not ok:
         return point
     f = QgsCoordinateReferenceSystem("EPSG:4326")
-    t=QgsProject.instance().crs()
+    t = QgsProject.instance().crs()
     transformer = QgsCoordinateTransform(f, t, p)
     pt = transformer.transform(point)
     return pt
@@ -283,50 +296,57 @@ def addGoogleXYZTiles(iface, QSettings):
     for source in sources:
         connectionType = source[0]
         connectionName = source[1]
-        QSettings().setValue("qgis/%s/%s/authcfg" % (connectionType, connectionName), source[2])
-        QSettings().setValue("qgis/%s/%s/password" % (connectionType, connectionName), source[3])
-        QSettings().setValue("qgis/%s/%s/referer" % (connectionType, connectionName), source[4])
-        QSettings().setValue("qgis/%s/%s/url" % (connectionType, connectionName), source[5])
-        QSettings().setValue("qgis/%s/%s/username" % (connectionType, connectionName), source[6])
-        QSettings().setValue("qgis/%s/%s/zmax" % (connectionType, connectionName), source[7])
-        QSettings().setValue("qgis/%s/%s/zmin" % (connectionType, connectionName), source[8])
+        QSettings().setValue("qgis/%s/%s/authcfg" %
+                             (connectionType, connectionName), source[2])
+        QSettings().setValue("qgis/%s/%s/password" %
+                             (connectionType, connectionName), source[3])
+        QSettings().setValue("qgis/%s/%s/referer" %
+                             (connectionType, connectionName), source[4])
+        QSettings().setValue("qgis/%s/%s/url" %
+                             (connectionType, connectionName), source[5])
+        QSettings().setValue("qgis/%s/%s/username" %
+                             (connectionType, connectionName), source[6])
+        QSettings().setValue("qgis/%s/%s/zmax" %
+                             (connectionType, connectionName), source[7])
+        QSettings().setValue("qgis/%s/%s/zmin" %
+                             (connectionType, connectionName), source[8])
     iface.reloadConnections()
 
 
-def getElevation(crs,point):
-   # epsg4326 = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId)
-   # mycrs = QgsCoordinateReferenceSystem(int(crs), 0)
-   # reprojectgeographic = QgsCoordinateTransform(mycrs, epsg4326, QgsCoordinateTransformContext())
-   # pt = reprojectgeographic.transform(QgsPointXY(point))
-   # conn = http.client.HTTPConnection("maps.googleapis.com")
-   ## QgsMessageLog.instance().logMessage(
-   # #    "http://maps.googleapis.com/maps/api/elevation/json?locations=" + str(pt[1]) + "," + str(
-   #  #       pt[0]) + "&sensor=false", "Elevation")
+def getElevation(crs, point):
+    # epsg4326 = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId)
+    # mycrs = QgsCoordinateReferenceSystem(int(crs), 0)
+    # reprojectgeographic = QgsCoordinateTransform(mycrs, epsg4326, QgsCoordinateTransformContext())
+    # pt = reprojectgeographic.transform(QgsPointXY(point))
+    # conn = http.client.HTTPConnection("maps.googleapis.com")
+    # QgsMessageLog.instance().logMessage(
+    # #    "http://maps.googleapis.com/maps/api/elevation/json?locations=" + str(pt[1]) + "," + str(
+    #  #       pt[0]) + "&sensor=false", "Elevation")
 
-   # try:
-   #     conn.request("GET", "/maps/api/elevation/json?locations=" + str(pt[1]) + "," + str(pt[0]) + "&sensor=false")
-   #     response = conn.getresponse()
-   #     jsonresult = response.read()
-   #     elevation = 0.0
-   #     results = json.loads(jsonresult).get('results')
-   #     # fix_print_with_import
-   #     print(results)
-   #     if 0 < len(results):
-   #         elevation = float(round(results[0].get('elevation'),4))
+    # try:
+    #     conn.request("GET", "/maps/api/elevation/json?locations=" + str(pt[1]) + "," + str(pt[0]) + "&sensor=false")
+    #     response = conn.getresponse()
+    #     jsonresult = response.read()
+    #     elevation = 0.0
+    #     results = json.loads(jsonresult).get('results')
+    #     # fix_print_with_import
+    #     print(results)
+    #     if 0 < len(results):
+    #         elevation = float(round(results[0].get('elevation'),4))
 
+    # except Exception as e:
+    #     msgLog(e.message)
+    #     qDebug(e.message)
+    #     elevation=0.0
 
-   # except Exception as e:
-   #     msgLog(e.message)
-   #     qDebug(e.message)
-   #     elevation=0.0
-
-   # return elevation
-   return 0
+    # return elevation
+    return 0
 
 
 def layerFields():
     fields = QgsFields()
-    fields.append(QgsField("Tipo", QVariant.String))  # C, T, E (Circular, tangente, Espiral ... startswith)
+    # C, T, E (Circular, tangente, Espiral ... startswith)
+    fields.append(QgsField("Tipo", QVariant.String))
     fields.append(QgsField("Descricao", QVariant.String))
     fields.append(QgsField("Raio", QVariant.Double))
     fields.append(QgsField("Angulo de Deflexao (Delta)", QVariant.Double))
@@ -338,97 +358,109 @@ def layerFields():
 def msgLog(msg):
     QgsMessageLog.logMessage(str(msg), tag="GeoRoad", level=0)
 
-def interpolList(l:list,i):
-    length=len(l)
-    if length%2!=0:
+
+def interpolList(l: list, i):
+    length = len(l)
+    if length % 2 != 0:
         return l[int(length/2)][i]
     else:
         return (l[int(length/2)][i]+l[int(length/2)-1][i])/2
 
-from urllib.request import urlopen
 
 def internet_on():
-   try:
+    try:
         response = urlopen('https://www.google.com/', timeout=3)
         return True
-   except:
+    except:
         return False
 
-##TODO allow user to configure precision
-precision=4
-longPrecision=8
 
-def roundFloat(f:float):
-    return round(f,precision)
+# TODO allow user to configure precision
+precision = 4
+longPrecision = 8
+
+
+def roundFloat(f: float):
+    return round(f, precision)
+
 
 def roundFloatShort(f):
-    return round(f,1)
+    return round(f, 1)
+
 
 def shortFloat2String(f):
-    return str(round(f,2))
+    return str(round(f, 2))
+
 
 def formatValue(value):
     try:
-        if int(float(value))==float(value): #value is a int
+        if int(float(value)) == float(value):  # value is a int
             return str(int(value))
         return str(roundFloat(float(value)))
     except:
         return str(value)
 
-def roundFloat2str(f:float):
-    return str(round(float(f),precision))
 
-def longRoundFloat(f:float):
-    return round(f,longPrecision)
+def roundFloat2str(f: float):
+    return str(round(float(f), precision))
 
-def longRoundFloat2str(f:float):
-    return str(round(f,longPrecision))
 
-def roundUpFloat2str(f:float):
-    return str(round(int(f/Config.instance().DIST+1),0))
+def longRoundFloat(f: float):
+    return round(f, longPrecision)
 
-def prog2estacaStr(i :float):
-    dist=Config.instance().DIST
-    if i%dist != 0:
-        return str(int(i/dist))+"+"+str(round(i%dist,2))
+
+def longRoundFloat2str(f: float):
+    return str(round(f, longPrecision))
+
+
+def roundUpFloat2str(f: float):
+    return str(round(int(f/Config.instance().DIST+1), 0))
+
+
+def prog2estacaStr(i: float):
+    dist = Config.instance().DIST
+    if i % dist != 0:
+        return str(int(i/dist))+"+"+str(round(i % dist, 2))
     else:
         return str(int(i/dist))
+
 
 def fastProg2EstacaStr(i, dist):
-    if i%dist != 0:
-        return str(int(i/dist))+"+"+str(round(i%Config.instance().DIST,2))
+    if i % dist != 0:
+        return str(int(i/dist))+"+"+str(round(i % Config.instance().DIST, 2))
     else:
         return str(int(i/dist))
 
+
 def estaca2progFloat(s: str):
-    dist=Config.instance().DIST
+    dist = Config.instance().DIST
     if '+' in s:
-        i=int(s.split("+")[0])
-        f=float(s.split("+")[1])
+        i = int(s.split("+")[0])
+        f = float(s.split("+")[1])
         return i*dist+f
     else:
         return int(s)*dist
+
 
 def fastEstaca2progFloat(s: str, dist):
-    dist=Config.instance().DIST
+    dist = Config.instance().DIST
     if '+' in s:
-        i=int(s.split("+")[0])
-        f=float(s.split("+")[1])
+        i = int(s.split("+")[0])
+        f = float(s.split("+")[1])
         return i*dist+f
     else:
         return int(s)*dist
-
 
 
 class imgDialog(QDialog):
-    def __init__(self,imagepath,title="Image", parent=None):
+    def __init__(self, imagepath, title="Image", parent=None):
         super(imgDialog, self).__init__(parent)
         self.title = title
         self.left = 10
         self.top = 10
         self.width = 640
         self.height = 480
-        self.imagepath=imagepath
+        self.imagepath = imagepath
         self.initUI()
 
     def initUI(self):
@@ -460,18 +492,21 @@ def yesNoDialog(iface=None, title="Atenção", info="", message=""):
     msgBox.setWindowTitle(title)
     msgBox.setText(message)
     msgBox.setInformativeText(info)
-    msgBox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+    msgBox.setStandardButtons(
+        QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
     msgBox.setDefaultButton(QtWidgets.QMessageBox.No)
   #  msgBox.show()
     return msgBox.exec_() == QtWidgets.QMessageBox.Yes
 
+
 class RasterInterpolator():
     def __init__(self):
-        self.BLOCK=None
-        self.LAYER=None
+        self.BLOCK = None
+        self.LAYER = None
 
-    def getBlockRecAndItemFromPointInRaster(self,layer, p):
-        pt = p  # QgsCoordinateTransform(QgsProject.instance().crs(),layer.crs(),QgsProject.instance()).transform(p)
+    def getBlockRecAndItemFromPointInRaster(self, layer, p):
+        # QgsCoordinateTransform(QgsProject.instance().crs(),layer.crs(),QgsProject.instance()).transform(p)
+        pt = p
         dp = layer.dataProvider()
         finalExtent = dp.extent()
 
@@ -490,11 +525,11 @@ class RasterInterpolator():
         pixelExtent = QgsRectangle(xMin, yMin, xMax, yMax)
         # 1 is referring to band 1
         if not(self.LAYER is None or self.BLOCK is None) and layer == self.LAYER:
-            block=self.BLOCK
+            block = self.BLOCK
         else:
             block = dp.block(1, finalExtent, layer.width(), layer.height())
-            self.BLOCK=block
-            self.LAYER=layer
+            self.BLOCK = block
+            self.LAYER = layer
 
         del dp
 
@@ -502,7 +537,6 @@ class RasterInterpolator():
             return block, pixelExtent, row, col
         else:
             return False, False, False, False
-
 
     def rectCell(self, layer, row, col):
         dp = layer.dataProvider()
@@ -519,30 +553,36 @@ class RasterInterpolator():
         del dp
         return QgsRectangle(xMin, yMin, xMax, yMax)
 
-
     def cotaFromTiff(self, layer, p, interpolate=True):
-        p = QgsCoordinateTransform(QgsProject.instance().crs(), layer.crs(), QgsProject.instance()).transform(p)
+        p = QgsCoordinateTransform(QgsProject.instance().crs(
+        ), layer.crs(), QgsProject.instance()).transform(p)
         if interpolate:
-            b, rec, row, col = self.getBlockRecAndItemFromPointInRaster(layer, p)
+            b, rec, row, col = self.getBlockRecAndItemFromPointInRaster(
+                layer, p)
             if not b:
                 return 0
 
-            #matrix dos 9 pixels
+            # matrix dos 9 pixels
             matx = [[[None, None, None], [None, None, None], [None, None, None]],
                     [[None, None, None], [None, None, None], [None, None, None]]]
 
             from itertools import product
             for i, j in product([-1, 0, 1], [-1, 0, 1]):
                 matx[0][i + 1][j + 1] = b.value(row + i, col + j)  # elevações
-                matx[1][i + 1][j + 1] = self.rectCell(layer, row + i, col + j).center().distance(p)  # distancias
+                # distancias
+                matx[1][i + 1][j +
+                               1] = self.rectCell(layer, row + i, col + j).center().distance(p)
                 if row < 0 or col < 0 or row >= layer.height() or col >= layer.width():
                     return 0
 
-            V = [matx[0][i][j] for i, j in product([0, 1, 2], [0, 1, 2])] #elevações
-            L = [matx[1][i][j] for i, j in product([0, 1, 2], [0, 1, 2])] #Distancias
+            V = [matx[0][i][j]
+                 for i, j in product([0, 1, 2], [0, 1, 2])]  # elevações
+            L = [matx[1][i][j]
+                 for i, j in product([0, 1, 2], [0, 1, 2])]  # Distancias
 
-            #tolerância de 1 diagonal inteira
-            max_dist = (layer.rasterUnitsPerPixelX() ** 2 + layer.rasterUnitsPerPixelY() ** 2) ** (1 / 2)
+            # tolerância de 1 diagonal inteira
+            max_dist = (layer.rasterUnitsPerPixelX() ** 2 +
+                        layer.rasterUnitsPerPixelY() ** 2) ** (1 / 2)
             # pesos
             I = [(max_dist - l) / max_dist if l < max_dist else 0 for l in L]
             # média
@@ -566,5 +606,3 @@ class RasterInterpolator():
     #            return v[0]
     #        else:
     #            return 0
-
-

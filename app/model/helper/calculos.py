@@ -11,6 +11,7 @@ def delta(azimutePrev, azimuteCurrent):
         res = 360 - res
     return res
 
+
 def vmedia(x):
     terms = [
         1.7995760048853219e+002,
@@ -71,7 +72,7 @@ def velocidade(i, classeProjeto, tipo):
 
 def fmax(velocidade):
   #  velocidades = {30: 0.2, 40: 0.18, 50: 0.16, 60: 0.15, 70: 0.15, 80: 0.14, 90: 0.14, 100: 0.13, 110: 0.12, 120: 0.11}
-#    return velocidades[velocidade]
+    #    return velocidades[velocidade]
     return .19-velocidade/1600
 
 
@@ -115,14 +116,18 @@ def fi(delta, theta):
 def d(rutilizado, fi):
     return rutilizado * fi
 
+
 def d_curva_simples(rutilizado, delta):
     return (math.pi * rutilizado * delta) / 180
 
+
 def r_curva_simples(d, delta):
-    return 180 * d /(math.pi * delta)
+    return 180 * d / (math.pi * delta)
+
 
 def l_utilizado(rutilizado, v, delta_val):
     return (max(0.036*v**3/rutilizado, 0.556*v)+rutilizado*delta_val*math.pi/180)/2
+
 
 def k(xs, rutilizado, theta):
     return xs - rutilizado * math.sin(theta)
@@ -177,8 +182,10 @@ def ept(epcAtual, dAtual):
 def deflexao_intermediaria(g20):
     return g20 / 2
 
+
 def clotX(theta):
     return 1-theta**2/10+theta**4/216
+
 
 def clotY(theta):
     return theta/3-theta**3/42

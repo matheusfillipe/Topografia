@@ -24,11 +24,13 @@ def extractZIP(filename):
 def compactZIP(filename):
     z = zipfile.ZipFile(filename, "w")
     os.chdir(os.path.dirname(filename))
-    z.write(Config.instance().TMP_DIR_PATH+'tmp/data/data.db','data/data.db',zipfile.ZIP_DEFLATED)
-    z.write(Config.instance().TMP_DIR_PATH+'tmp/data/config.json','data/config.json',zipfile.ZIP_DEFLATED)
-    tracs=Path(Config.instance().TMP_DIR_PATH+'tmp/data/').rglob("*.gpkg*")
+    z.write(Config.instance().TMP_DIR_PATH+'tmp/data/data.db',
+            'data/data.db', zipfile.ZIP_DEFLATED)
+    z.write(Config.instance().TMP_DIR_PATH+'tmp/data/config.json',
+            'data/config.json', zipfile.ZIP_DEFLATED)
+    tracs = Path(Config.instance().TMP_DIR_PATH+'tmp/data/').rglob("*.gpkg*")
     for trac in tracs:
-        z.write(str(trac),'data/'+trac.name,zipfile.ZIP_DEFLATED)
+        z.write(str(trac), 'data/'+trac.name, zipfile.ZIP_DEFLATED)
     tracs = Path(Config.instance().TMP_DIR_PATH+'tmp/data/').rglob("*.prism")
     for trac in tracs:
         z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
@@ -43,16 +45,16 @@ def compactZIP(filename):
 class Config(object):
     # Valore padrão
 
-    FILE_PATH=""
-    PLUGIN_NAME="GeoRoad"
+    FILE_PATH = ""
+    PLUGIN_NAME = "GeoRoad"
     fileName = ''
     UNITS = 'm'
     CSV_DELIMITER = ';'
-    DIST=20
-    RANDOM="__ix35-_-xxx901381asdioADJ398(__"
-    TMP_FOLDER="GeoRoadPluginTemporaryLayers/"
-    T_SPACING=50
-    CLASSE_INDEX=4
+    DIST = 20
+    RANDOM = "__ix35-_-xxx901381asdioADJ398(__"
+    TMP_FOLDER = "GeoRoadPluginTemporaryLayers/"
+    T_SPACING = 50
+    CLASSE_INDEX = 4
     crs = 2676
     planoMin = 0.0
     planoMax = 8.0
@@ -62,37 +64,37 @@ class Config(object):
     montanhosoMax = 100.0
     TMP_DIR_PATH = RANDOM
     T_OFFSET = 6
-    interpol="True"
-    velproj=100.0
-    emax=0.08
-    PREC=0.1 # 10cm default precisão
+    interpol = "True"
+    velproj = 100.0
+    emax = 0.08
+    PREC = 0.1  # 10cm default precisão
 
     #   DADOS para serem armazenados no projeto do qgis.
     #   Cada string nessa lista é criada como um atributo de Config.instance() que pode ser lida por
-    #Config.instance().nome e armazenada com Config.instance().store(nome, valor)
+    # Config.instance().nome e armazenada com Config.instance().store(nome, valor)
     # Chamadas de Config.instance() em loop são pouco eficientes! Não utilizar
 
-    data=["UNITS",
-         "CSV_DELIMITER",
-         "DIST",
-         "T_SPACING",
-         "CLASSE_INDEX",
-         "crs",
-         "planoMin",
-         "planoMax",
-         "onduladoMin",
-         "onduladoMax",
-         "montanhosoMin",
-         "montanhosoMax",
-         "T_OFFSET",
-         "FILE_PATH",
-          "interpol",
-          "velproj",
-          'emax',
-         "TMP_FOLDER",
-         "TMP_DIR_PATH",
-         "PREC"
-          ]
+    data = ["UNITS",
+            "CSV_DELIMITER",
+            "DIST",
+            "T_SPACING",
+            "CLASSE_INDEX",
+            "crs",
+            "planoMin",
+            "planoMax",
+            "onduladoMin",
+            "onduladoMax",
+            "montanhosoMin",
+            "montanhosoMax",
+            "T_OFFSET",
+            "FILE_PATH",
+            "interpol",
+            "velproj",
+            'emax',
+            "TMP_FOLDER",
+            "TMP_DIR_PATH",
+            "PREC"
+            ]
 
     def __init__(self):
         self.crs = 2676
@@ -111,15 +113,14 @@ class Config(object):
         self.filename = ""
         self.tipo_mapa = 3
         self.ordem_mapa = [3, 1, 10, 9]
-        self.ordem_units = ['m','km', 'mm']
+        self.ordem_units = ['m', 'km', 'mm']
         Config.fileName = self.filename
         self.UNITS = 'm'
         self.CSV_DELIMITER = ';'
         Config.UNITS = self.UNITS
         Config.CSV_DELIMITER = self.CSV_DELIMITER
 
-
-    def create_datatable(self,dbPath='data/data.db'):
+    def create_datatable(self, dbPath='data/data.db'):
         con = sqlite3.connect(dbPath)
         con.execute("CREATE TABLE if not exists PROJECT"
                     "(id INTEGER primary key AUTOINCREMENT, crs varchar(255), "
@@ -212,7 +213,7 @@ class Config(object):
                     "TRANSVERSAL_id INTEGER,"
                     "TABLEESTACA_id INTEGER,"
                     "FOREIGN KEY(TRANSVERSAL_id) REFERENCES TRANSVERSAL(id),"
-                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"                 
+                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
                     ")")
 
         con.execute("CREATE TABLE if not exists RELEVO_SESSAO"
@@ -222,7 +223,7 @@ class Config(object):
                     "TRANSVERSAL_id INTEGER,"
                     "TABLEESTACA_id INTEGER,"
                     "FOREIGN KEY(TRANSVERSAL_id) REFERENCES TRANSVERSAL(id),"
-                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"                 
+                    "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
                     ")")
 
         con.execute("CREATE TABLE if not exists VERTICAIS_TABLE"
@@ -230,19 +231,19 @@ class Config(object):
                     "estaca text,"
                     "descricao text,"
                     "progressiva text,"
-                    "greide text,"     
+                    "greide text,"
                     "TABLEESTACA_id INTEGER,"
                     "FOREIGN KEY(TABLEESTACA_id) REFERENCES TABLEESTACA(id)"
                     ")")
 
         con.execute("CREATE TABLE if not exists INTERSECT_TABLE"
-                    "(id INTEGER primary key AUTOINCREMENT,"                    
+                    "(id INTEGER primary key AUTOINCREMENT,"
                     "estaca text,"
                     "descricao text,"
                     "progressiva text,"
                     "norte text,"
                     "este text,"
-                    "greide text,"                   
+                    "greide text,"
                     "cota text,"
                     "azimute text,"
                     "TABLEESTACA_id INTEGER,"
@@ -250,7 +251,7 @@ class Config(object):
                     ")")
 
         con.execute("CREATE TABLE if not exists BRUCKNER_TABLE"
-                    "(id INTEGER primary key AUTOINCREMENT,"                    
+                    "(id INTEGER primary key AUTOINCREMENT,"
                     "estaca text,"
                     "volume text,"
                     "TABLEESTACA_id INTEGER,"
@@ -259,7 +260,6 @@ class Config(object):
 
         con.commit()
         return con
-
 
     def newfile(self, filename):
         self.filename = filename
@@ -282,7 +282,7 @@ class Config(object):
 
         con = self.create_datatable()
         res = con.execute("SELECT id FROM PROJECT").fetchall()
-        if res is None or len(res)==0:
+        if res is None or len(res) == 0:
             con.execute("INSERT INTO PROJECT"
                         "(id,crs,classeprojeto,maxplano,minplano,"
                         "maxondulado,minondulado,maxmontanhoso,"
@@ -309,9 +309,12 @@ class Config(object):
         self.filename = filename
         Config.fileName = self.filename
         extractZIP(filename)
-        self.create_datatable(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
-        con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
-        cur = con.execute("SELECT crs, classeprojeto, maxplano,maxondulado,maxmontanhoso,tipomapa FROM PROJECT")
+        self.create_datatable(
+            Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
+        con = sqlite3.connect(
+            Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
+        cur = con.execute(
+            "SELECT crs, classeprojeto, maxplano,maxondulado,maxmontanhoso,tipomapa FROM PROJECT")
         proj = cur.fetchone()
         self.crs = proj[0]
         self.class_project = proj[1]
@@ -334,35 +337,43 @@ class Config(object):
         shutil.rmtree(Config.instance().TMP_DIR_PATH+'tmp')
 
     def savefile(self, fromf=None):
-        if fromf==None:
-            if self.filename in [None,'']:
-                raise Exception(u'Não é possivel salvar pois não foi aberto ou criado um novo arquivo')
+        if fromf == None:
+            if self.filename in [None, '']:
+                raise Exception(
+                    u'Não é possivel salvar pois não foi aberto ou criado um novo arquivo')
             extractZIP(self.filename)
         else:
             extractZIP(fromf)
-        con = sqlite3.connect(Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
-        con.execute("UPDATE PROJECT SET crs=?,classeprojeto=?,maxplano=?,maxondulado=?,maxmontanhoso=?,tipomapa=? WHERE id=1",(self.crs,self.class_project,self.dataTopo[1],self.dataTopo[3],self.dataTopo[5],self.tipo_mapa))
+        con = sqlite3.connect(
+            Config.instance().TMP_DIR_PATH+"tmp/data/data.db")
+        con.execute("UPDATE PROJECT SET crs=?,classeprojeto=?,maxplano=?,maxondulado=?,maxmontanhoso=?,tipomapa=? WHERE id=1",
+                    (self.crs, self.class_project, self.dataTopo[1], self.dataTopo[3], self.dataTopo[5], self.tipo_mapa))
         con.commit()
         con.close()
         Config.UNITS = self.UNITS
         Config.CSV_DELIMITER = self.CSV_DELIMITER
         dados = {}
-        dados['csv_delimiter']= self.CSV_DELIMITER
+        dados['csv_delimiter'] = self.CSV_DELIMITER
         dados['units'] = self.UNITS
         with open(Config.instance().TMP_DIR_PATH+'tmp/data/config.json', 'w') as outfile:
             json_formatado = json.dumps(dados)
             outfile.write(json_formatado)
 
         z = zipfile.ZipFile(u"%s" % self.filename, "w")
-        z.write(Config.instance().TMP_DIR_PATH+'tmp/data/data.db','data/data.db',zipfile.ZIP_DEFLATED)
-        z.write(Config.instance().TMP_DIR_PATH+'tmp/data/config.json','data/config.json',zipfile.ZIP_DEFLATED)
-        tracs = Path(Config.instance().TMP_DIR_PATH + 'tmp/data/').rglob("*.gpkg*")
+        z.write(Config.instance().TMP_DIR_PATH+'tmp/data/data.db',
+                'data/data.db', zipfile.ZIP_DEFLATED)
+        z.write(Config.instance().TMP_DIR_PATH+'tmp/data/config.json',
+                'data/config.json', zipfile.ZIP_DEFLATED)
+        tracs = Path(Config.instance().TMP_DIR_PATH +
+                     'tmp/data/').rglob("*.gpkg*")
         for trac in tracs:
             z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
-        tracs = Path(Config.instance().TMP_DIR_PATH + 'tmp/data/').rglob("*.prism")
+        tracs = Path(Config.instance().TMP_DIR_PATH +
+                     'tmp/data/').rglob("*.prism")
         for trac in tracs:
             z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
-        tracs = Path(Config.instance().TMP_DIR_PATH + 'tmp/data/').rglob("*.bruck")
+        tracs = Path(Config.instance().TMP_DIR_PATH +
+                     'tmp/data/').rglob("*.bruck")
         for trac in tracs:
             z.write(str(trac), 'data/' + trac.name, zipfile.ZIP_DEFLATED)
         z.close()
@@ -393,8 +404,9 @@ class Config(object):
         self.class_project = pos - 1
 
     def store(self, key, value):
-        assert len(key) > 0 and type(key) == str and key in self.data, "Invalid key!"
-        if key=="interpol":
+        assert len(key) > 0 and type(
+            key) == str and key in self.data, "Invalid key!"
+        if key == "interpol":
             proj = QgsProject.instance()
             proj.writeEntry(Config.PLUGIN_NAME, key, str(int(value)))
         else:
@@ -402,15 +414,17 @@ class Config(object):
             proj.writeEntry(Config.PLUGIN_NAME, key, str(value))
 
     def read(self, key):
-        assert len(key) > 0 and type(key) == str and key in self.data, "Invalid key!"
+        assert len(key) > 0 and type(
+            key) == str and key in self.data, "Invalid key!"
         proj = QgsProject.instance()
-        value : str
-        value = proj.readEntry(Config.PLUGIN_NAME, key, str(getattr(Config, key)))[0]
+        value: str
+        value = proj.readEntry(Config.PLUGIN_NAME, key,
+                               str(getattr(Config, key)))[0]
         if value.isdigit():
-            value=int(value)
+            value = int(value)
         else:
             try:
-                value=float(value)
+                value = float(value)
             except:
                 pass
         setattr(self, key, value)
@@ -418,7 +432,7 @@ class Config(object):
 
     @classmethod
     def instance(cls):
-        cfg=cls()
+        cfg = cls()
         for d in cfg.data:
             cfg.read(d)
             setattr(Config, d, getattr(cfg, d))
@@ -426,9 +440,8 @@ class Config(object):
         try:
             cfg.interpol = bool(int(cfg.interpol))
         except ValueError:
-            if cfg.interpol=='False':
+            if cfg.interpol == 'False':
                 cfg.interpol = False
-            if cfg.interpol=='True':
+            if cfg.interpol == 'True':
                 cfg.interpol = True
         return cfg
-

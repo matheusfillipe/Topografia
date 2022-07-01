@@ -11,14 +11,15 @@ from ..view.config import TopoConfig
 from ..model.estacas import Estacas
 from ..controller import perfil
 
+
 class Config(object):
-    def __init__(self,iface):
+    def __init__(self, iface):
         """
             ----view------
             criacao da tela config
         """
         self.conf = TopoConfig(iface)
-        #defino o modelo de dados
+        # defino o modelo de dados
         self.model = ModelConfig()
         self.events()
         self.crs = self.model.crs
@@ -30,7 +31,8 @@ class Config(object):
         self.conf.txtCRS.textChanged.connect(self.listCRS)
         # self.txtCRS.textChanged(self.listCRS)
         self.conf.tableCRS.itemClicked.connect(self.itemClick)
-        self.conf.comboClasse.currentIndexChanged.connect(self.mudancaClasseProjeto)
+        self.conf.comboClasse.currentIndexChanged.connect(
+            self.mudancaClasseProjeto)
         self.conf.comboMap.currentIndexChanged.connect(self.mudancaMapa)
         self.conf.comboUnits.currentIndexChanged.connect(self.mudancaUnits)
 
@@ -43,8 +45,10 @@ class Config(object):
         k = 0
         for x in crs:
             self.conf.tableCRS.insertRow(self.conf.tableCRS.rowCount())
-            self.conf.tableCRS.setItem(k, 0, QtWidgets.QTableWidgetItem(str(x[1])))
-            self.conf.tableCRS.setItem(k, 1, QtWidgets.QTableWidgetItem(str(x[0])))
+            self.conf.tableCRS.setItem(
+                k, 0, QtWidgets.QTableWidgetItem(str(x[1])))
+            self.conf.tableCRS.setItem(
+                k, 1, QtWidgets.QTableWidgetItem(str(x[0])))
             k += 1
 
     def itemClick(self, item):
@@ -62,12 +66,12 @@ class Config(object):
             self.model.tipo_mapa = self.ordem_mapa[pos]
 
     def mudancaUnits(self, pos):
-        
+
         self.model.UNITS = self.model.ordem_units[pos]
 
     def newfile(self):
         filename = u"{0}".format(self.conf.new_file()[0])
-        if filename in ["",None]:
+        if filename in ["", None]:
             return
         if filename.endswith(".zip"):
             ModelConfig.instance().store("FILE_PATH", filename)
@@ -78,8 +82,9 @@ class Config(object):
     def openfile(self, filename=None):
         if filename is None:
             filename = u"{0}".format(self.conf.open_file()[0])
-            if filename in ["",None] or not(filename.endswith('zip')):
-                self.conf.error('SELECIONE UM ARQUIVO zip PARA SER ABERTO\n'+filename+' invalido!')
+            if filename in ["", None] or not(filename.endswith('zip')):
+                self.conf.error(
+                    'SELECIONE UM ARQUIVO zip PARA SER ABERTO\n'+filename+' invalido!')
                 return
 
         ModelConfig.instance().store("FILE_PATH", filename)
@@ -89,13 +94,13 @@ class Config(object):
 
     def savefile(self):
         self.model.filename = u"{0}".format(self.model.filename)
-        fromf=self.model.filename
+        fromf = self.model.filename
         try:
             filename = u"{0}".format(self.conf.new_file()[0])
             if filename in ["", None]:
                 return
             if not filename.endswith(".zip"):
-                filename+=".zip"
+                filename += ".zip"
             self.model.filename = filename
             self.model.savefile(fromf=fromf)
             self.update()
@@ -127,16 +132,14 @@ class Config(object):
         txt = self.model.listCRSID()
         self.conf.update(self.model, txt)
 
-
     def runTrasversalDialog(self):
-        self.trasversalDialog=perfil.Ui_sessaoTipo(self.conf)
+        self.trasversalDialog = perfil.Ui_sessaoTipo(self.conf)
         self.trasversalDialog.save.connect(self.savePerfil)
         self.trasversalDialog.showMaximized()
         self.trasversalDialog.exec_()
 
     def savePerfil(self):
         pass
-
 
     def run(self):
         self.conf.show()
@@ -161,5 +164,3 @@ class Config(object):
             self.update()
         else:
             self.model.crs = crs
-
-

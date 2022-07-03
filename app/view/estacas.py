@@ -23,10 +23,6 @@ from ..model.config import Config
 from ..model.utils import (fastProg2EstacaStr, formatValue, msgLog, p2QgsPoint,
                            prog2estacaStr)
 
-# -*- coding: utf-8 -*-
-sip.setapi("QString", 2)
-sip.setapi("QVariant", 2)
-
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
@@ -455,6 +451,9 @@ class EstacasUI(QtWidgets.QDialog, FORMESTACA1_CLASS):
 
         if not path:
             return None
+
+        if not path.endswith(".shp"):
+            path += ".shp"
 
         writer = QgsVectorFileWriter(
             path,

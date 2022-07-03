@@ -13,8 +13,6 @@ from ..model.utils import msgLog, PointTool, p2QgsPoint
 from ..model.helper.qgsgeometry import *
 
 
-sip.setapi('QString', 2)
-
 from qgis.PyQt import QtGui, uic, Qt, QtWidgets
 
 import qgis

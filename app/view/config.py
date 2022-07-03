@@ -85,7 +85,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
             Config.data[14]: self.interpol.isChecked,
             Config.data[15]: self.velProj.value,
             Config.data[16]: self.emax.value,
-            Config.data[17]: self.prec.value,
+            Config.data[19]: self.prec.value,
         }
 
         self.dataAssociationRead = {
@@ -105,7 +105,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
             Config.data[14]: self.interpol.setChecked,
             Config.data[15]: self.velProj.setValue,
             Config.data[16]: self.emax.setValue,
-            Config.data[17]: self.prec.setValue,
+            Config.data[19]: self.prec.setValue,
         }
 
         self.dbBuild: QtWidgets.QPushButton
@@ -174,7 +174,7 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
     def changeCRS(self, crs):
         if crs == None:
             crs = 31983
-        mycrs = QgsCoordinateReferenceSystem(int(crs), 0)
+        mycrs = QgsCoordinateReferenceSystem("EPSG:" + str(crs))
         # self.iface.mapCanvas().mapRenderer().setCrs( QgsCoordinateReferenceSystem(mycrs, QgsCoordinateReferenceSystem.EpsgCrsId) )
         self.iface.mapCanvas().mapSettings().setDestinationCrs(
             mycrs

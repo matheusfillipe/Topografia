@@ -451,6 +451,9 @@ class GLViewWidget(QtWidgets.QOpenGLWidget):
         
     def mouseMoveEvent(self, ev):
         lpos = ev.position() if hasattr(ev, 'position') else ev.localPos()
+        if not hasattr(self, "mousePos"):
+            return
+
         diff = lpos - self.mousePos
         self.mousePos = lpos
         

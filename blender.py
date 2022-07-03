@@ -184,6 +184,9 @@ bpy.context.view_layer.active_layer_collection = (
     bpy.context.view_layer.layer_collection.children[-1]
 )
 for pt, est, azi in zip(data["points"], data["estacas"], data["azi"]):
+    ## Print only 10th's
+    # if not est.strip().endswith("0"):
+    #     continue
     bpy.ops.object.text_add(enter_editmode=False, location=(pt[0], pt[1], pt[2] + 15))
     bpy.context.object.data.materials.append(bpy.data.materials.get("Label"))
     bpy.context.object.data.body = est

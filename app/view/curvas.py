@@ -191,7 +191,7 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
         widget = self.geometry()
         x = 0#widget.width()
         y = (screen.height()-widget.height())/2
-        self.move(x, y)
+        self.move(int(x), int(y))
 
     def fill_comboCurva(self):
         self.comboCurva.clear()

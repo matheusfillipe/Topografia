@@ -986,8 +986,6 @@ class Estacas(object):
     def tmpFolder(self):
         import tempfile
         from pathlib import Path
-        msgLog("empt", tempfile.gettempdir())
-        msgLog("conf", Config.TMP_FOLDER)
         return str(Path(tempfile.gettempdir() + "/" + Config.TMP_FOLDER))
 
     def saveGeoPackage(self, name: str, poly, fields, type, driver):
@@ -1000,7 +998,7 @@ class Estacas(object):
                    "tmp/data/" + name + ".gpkg"))
         shutil.rmtree(str(path), ignore_errors=True)
         shutil.rmtree(str(tmp), ignore_errors=True)
-        writer = QgsVectorFileWriter(
+        writer = QgsVectorFileWriter.create(
             path, "UTF-8", fields, type, QgsProject.instance().crs(), driver
         )
         for p in poly:

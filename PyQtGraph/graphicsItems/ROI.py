@@ -1336,9 +1336,11 @@ class Handle(UIGraphicsItem):
 
     sigClicked = QtCore.Signal(object, object)   # self, event
     sigRemoveRequested = QtCore.Signal(object)   # self
+    sigEditRequest = QtCore.Signal(object)
     
     def __init__(self, radius, typ=None, pen=(200, 200, 220),
                  hoverPen=(255, 255, 0), parent=None, deletable=False):
+        super().__init__()
         self.rois = []
         self.radius = radius
         self.typ = typ
@@ -1375,7 +1377,13 @@ class Handle(UIGraphicsItem):
             self.setAcceptedMouseButtons(self.acceptedMouseButtons() & ~QtCore.Qt.MouseButton.RightButton)
 
     def removeClicked(self):
+        if hasattr(self,"edge") and self.edge:
+            return
         self.sigRemoveRequested.emit(self)
+    
+    def edit(self):
+        self.sigEditRequest.emit(self)
+
 
     def hoverEvent(self, ev):
         hover = False

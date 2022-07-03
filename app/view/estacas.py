@@ -455,7 +455,7 @@ class EstacasUI(QtWidgets.QDialog, FORMESTACA1_CLASS):
         if not path.endswith(".shp"):
             path += ".shp"
 
-        writer = QgsVectorFileWriter(
+        writer = QgsVectorFileWriter.create(
             path,
             "UTF-8",
             fields,

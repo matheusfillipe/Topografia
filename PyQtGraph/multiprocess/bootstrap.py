@@ -1,16 +1,14 @@
 """For starting up remote processes"""
-from __future__ import print_function
-import sys, pickle, os
+import importlib
+import os
+import pickle
+import sys
 
 if __name__ == '__main__':
     if hasattr(os, 'setpgrp'):
         os.setpgrp()  ## prevents signals (notably keyboard interrupt) being forwarded from parent to this process
-    if sys.version[0] == '3':
-        #name, port, authkey, ppid, targetStr, path, pyside = pickle.load(sys.stdin.buffer)
-        opts = pickle.load(sys.stdin.buffer)
-    else:
-        #name, port, authkey, ppid, targetStr, path, pyside = pickle.load(sys.stdin)
-        opts = pickle.load(sys.stdin)
+    #name, port, authkey, ppid, targetStr, path, pyside = pickle.load(sys.stdin.buffer)
+    opts = pickle.load(sys.stdin.buffer)
     #print "key:",  ' '.join([str(ord(x)) for x in authkey])
     path = opts.pop('path', None)
     if path is not None:
@@ -24,22 +22,15 @@ if __name__ == '__main__':
                 sys.path.pop()
             sys.path.extend(path)
 
-    pyqtapis = opts.pop('pyqtapis', None)
-    if pyqtapis is not None:
-        import sip
-        for k,v in list(pyqtapis.items()):
-            sip.setapi(k, v)
-        
-    if opts.pop('pyside', False):
-        import PySide
-        
+    qt_lib = opts.pop('qt_lib', None)
+    if qt_lib is not None:
+        globals()[qt_lib] = importlib.import_module(qt_lib)
     
     targetStr = opts.pop('targetStr')
     try:
         target = pickle.loads(targetStr)  ## unpickling the target should import everything we need
     except:
-        # fix_print_with_import
-        print(("Current sys.path:", sys.path))
+        print("Current sys.path:", sys.path)
         raise
     target(**opts)  ## Send all other options to the target function
     sys.exit(0)

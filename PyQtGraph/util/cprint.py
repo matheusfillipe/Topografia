@@ -1,13 +1,12 @@
 """
 Cross-platform color text printing
 
-Based on colorama (see PyQtGraph/util/colorama/README.txt)
+Based on colorama (see pyqtgraph/util/colorama/README.txt)
 """
-import sys, re
+import sys
 
-from .colorama.winterm import WinTerm, WinColor, WinStyle
 from .colorama.win32 import windll
-from ..python2_3 import str
+from .colorama.winterm import WinColor, WinStyle, WinTerm
 
 _WIN = sys.platform.startswith('win')
 if windll is not None:
@@ -98,5 +97,3 @@ def cout(*args):
 def cerr(*args):
     """Shorthand for cprint('stderr', ...)"""
     cprint('stderr', *args)
-
-

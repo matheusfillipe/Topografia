@@ -1,9 +1,11 @@
-from builtins import range
-from builtins import object
-import os, sys, time, multiprocessing, re
+import multiprocessing
+import os
+import re
+import sys
+import time
+
 from .processes import ForkedProcess
 from .remoteproxy import ClosedError
-from ..python2_3 import str, xrange
 
 
 class CanceledError(Exception):
@@ -76,7 +78,7 @@ class Parallelize(object):
             workers = 1
         self.workers = workers
         if tasks is None:
-            tasks = list(range(workers))
+            tasks = range(workers)
         self.tasks = list(tasks)
         self.reseed = randomReseed
         self.kwds = kwds.copy()
@@ -197,6 +199,8 @@ class Parallelize(object):
         finally:
             if self.showProgress:
                 self.progressDlg.__exit__(None, None, None)
+            for ch in self.childs:
+                ch.join()
         if len(self.exitCodes) < len(self.childs):
             raise Exception("Parallelizer started %d processes but only received exit codes from %d." % (len(self.childs), len(self.exitCodes)))
         for code in self.exitCodes:
@@ -213,14 +217,14 @@ class Parallelize(object):
             try:
                 cores = {}
                 pid = None
-                
-                for line in open('/proc/cpuinfo'):
-                    m = re.match(r'physical id\s+:\s+(\d+)', line)
-                    if m is not None:
-                        pid = m.groups()[0]
-                    m = re.match(r'cpu cores\s+:\s+(\d+)', line)
-                    if m is not None:
-                        cores[pid] = int(m.groups()[0])
+                with open('/proc/cpuinfo') as fd:
+                    for line in fd:
+                        m = re.match(r'physical id\s+:\s+(\d+)', line)
+                        if m is not None:
+                            pid = m.groups()[0]
+                        m = re.match(r'cpu cores\s+:\s+(\d+)', line)
+                        if m is not None:
+                            cores[pid] = int(m.groups()[0])
                 return sum(cores.values())
             except:
                 return multiprocessing.cpu_count()

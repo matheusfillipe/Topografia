@@ -1,4 +1,4 @@
-from builtins import object
+import numpy as np
 
 
 class PlotData(object):
@@ -51,7 +51,3 @@ class PlotData(object):
             mn = np.min(self[field])
             self.minVals[field] = mn
         return mn
-    
-    
-    
-    

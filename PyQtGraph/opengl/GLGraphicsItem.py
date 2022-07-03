@@ -1,9 +1,8 @@
-from OpenGL.GL import *
+from OpenGL.GL import *  # noqa
 from OpenGL import GL
-from ..Qt import QtGui, QtCore
-from .. import Transform3D
-from ..python2_3 import str
 
+from .. import Transform3D
+from ..Qt import QtCore
 
 GLOptions = {
     'opaque': {
@@ -33,7 +32,7 @@ class GLGraphicsItem(QtCore.QObject):
     _nextId = 0
     
     def __init__(self, parentItem=None):
-        QtCore.QObject.__init__(self)
+        super().__init__()
         self._id = GLGraphicsItem._nextId
         GLGraphicsItem._nextId += 1
         
@@ -42,6 +41,7 @@ class GLGraphicsItem(QtCore.QObject):
         self.__children = set()
         self.__transform = Transform3D()
         self.__visible = True
+        self.__initialized = False
         self.setParentItem(parentItem)
         self.setDepthValue(0)
         self.__glOpts = {}
@@ -135,7 +135,7 @@ class GLGraphicsItem(QtCore.QObject):
         
     def setTransform(self, tr):
         """Set the local transform for this object.
-        Must be a :class:`Transform3D <PyQtGraph.Transform3D>` instance. This transform
+        Must be a :class:`Transform3D <pyqtgraph.Transform3D>` instance. This transform
         determines how the local coordinate system of the item is mapped to the coordinate
         system of its parent."""
         self.__transform = Transform3D(tr)
@@ -228,6 +228,12 @@ class GLGraphicsItem(QtCore.QObject):
         view, as it may be obscured or outside of the current view area."""
         return self.__visible
     
+    def initialize(self):
+        self.initializeGL()
+        self.__initialized = True
+
+    def isInitialized(self):
+        return self.__initialized
     
     def initializeGL(self):
         """
@@ -242,7 +248,7 @@ class GLGraphicsItem(QtCore.QObject):
         This method is responsible for preparing the GL state options needed to render 
         this item (blending, depth testing, etc). The method is called immediately before painting the item.
         """
-        for k,v in list(self.__glOpts.items()):
+        for k,v in self.__glOpts.items():
             if v is None:
                 continue
             if isinstance(k, str):

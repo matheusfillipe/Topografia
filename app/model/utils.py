@@ -355,8 +355,8 @@ def layerFields():
     return fields
 
 
-def msgLog(msg):
-    QgsMessageLog.logMessage(str(msg), tag="GeoRoad", level=0)
+def msgLog(*msg):
+    QgsMessageLog.logMessage(" ".join(str(p) for p in msg), tag="GeoRoad", level=0)
 
 
 def interpolList(l: list, i):

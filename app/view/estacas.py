@@ -843,7 +843,7 @@ class EstacasCv(QtWidgets.QDialog):
         widget = self.geometry()
         x = 0  # widget.width()
         y = (screen.height() - widget.height()) / 2
-        self.move(x, y)
+        self.move(int(x), int(y))
 
     def clear(self):
         self.tableWidget.setRowCount(0)
@@ -1377,7 +1377,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         widget = self.geometry()
         x = 0  # widget.width()
         y = (screen.height() - widget.height()) / 2
-        self.move(x, y)
+        self.move(int(x), int(y))
 
     def clear(self):
         self.tableWidget.setRowCount(0)

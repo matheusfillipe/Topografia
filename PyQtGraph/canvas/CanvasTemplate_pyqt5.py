@@ -1,5 +1,3 @@
-from builtins import object
-# -*- coding: utf-8 -*-
 
 # Form implementation generated from reading ui file 'CanvasTemplate.ui'
 #
@@ -80,7 +78,7 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "Form"))
+        Form.setWindowTitle(_translate("Form", "PyQtGraph"))
         self.autoRangeBtn.setText(_translate("Form", "Auto Range"))
         self.redirectCheck.setToolTip(_translate("Form", "Check to display all local items in a remote canvas."))
         self.redirectCheck.setText(_translate("Form", "Redirect"))

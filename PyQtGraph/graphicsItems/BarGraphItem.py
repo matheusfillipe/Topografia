@@ -1,10 +1,9 @@
-from builtins import range
-from ..Qt import QtGui, QtCore
-from .GraphicsObject import GraphicsObject
-from .. import getConfigOption
-from .. import functions as fn
 import numpy as np
 
+from .. import functions as fn
+from .. import getConfigOption
+from ..Qt import QtCore, QtGui
+from .GraphicsObject import GraphicsObject
 
 __all__ = ['BarGraphItem']
 
@@ -41,6 +40,7 @@ class BarGraphItem(GraphicsObject):
             y0=None,
             x1=None,
             y1=None,
+            name=None,
             height=None,
             width=None,
             pen=None,
@@ -121,7 +121,7 @@ class BarGraphItem(GraphicsObject):
         
         p.setPen(fn.mkPen(pen))
         p.setBrush(fn.mkBrush(brush))
-        for i in range(len(x0)):
+        for i in range(len(x0 if not np.isscalar(x0) else y0)):
             if pens is not None:
                 p.setPen(fn.mkPen(pens[i]))
             if brushes is not None:
@@ -167,3 +167,15 @@ class BarGraphItem(GraphicsObject):
         if self.picture is None:
             self.drawPicture()
         return self._shape
+
+    def implements(self, interface=None):
+        ints = ['plotData']
+        if interface is None:
+            return ints
+        return interface in ints
+
+    def name(self):
+        return self.opts.get('name', None)
+
+    def getData(self):
+        return self.opts.get('x'),  self.opts.get('height')

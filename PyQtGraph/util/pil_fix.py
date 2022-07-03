@@ -1,9 +1,15 @@
-# -*- coding: utf-8 -*-
 """
 Importing this module installs support for 16-bit images in PIL.
 This works by patching objects in the PIL namespace; no files are
 modified.
 """
+
+import warnings
+
+warnings.warn(
+    "Not used in pyqtgraph. Will be removed in 0.13",
+    DeprecationWarning, stacklevel=2
+)
 
 from PIL import Image
 
@@ -47,7 +53,6 @@ if Image.VERSION == '1.1.6':
             else:
                 raise TypeError("Do not understand data.")
         ndmax = 4
-        bad_dims=0
         if mode in ['1','L','I','P','F']:
             ndmax = 2
         elif mode == 'RGB':

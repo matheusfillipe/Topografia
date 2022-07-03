@@ -1,21 +1,53 @@
-# -*- coding: utf-8 -*-
 """
 debug.py - Functions to aid in debugging 
 Copyright 2010  Luke Campagnola
-Distributed under MIT/X11 license. See license.txt for more infomation.
+Distributed under MIT/X11 license. See license.txt for more information.
 """
 
-from __future__ import print_function
-from builtins import str
-from builtins import map
-from builtins import object
 
-import sys, traceback, time, gc, re, types, weakref, inspect, os, cProfile, threading
-from . import ptime
+from __future__ import print_function
+
+import contextlib
+import cProfile
+import gc
+import inspect
+import os
+import re
+import sys
+import threading
+import time
+import traceback
+import types
+import warnings
+import weakref
+from time import perf_counter
+
 from numpy import ndarray
-from .Qt import QtCore, QtGui
-from .util.mutex import Mutex
+
+from .Qt import QT_LIB, QtCore
 from .util import cprint
+
+if sys.version.startswith("3.8") and QT_LIB == "PySide2":
+    from .Qt import PySide2
+    if tuple(map(int, PySide2.__version__.split("."))) < (5, 14) \
+        and PySide2.__version__.startswith(QtCore.__version__):
+        warnings.warn(
+            "Due to PYSIDE-1140, ThreadChase and ThreadColor will not work" +
+            " on pip-installed PySide2 bindings < 5.14"
+        )
+from .util.mutex import Mutex
+
+
+# credit to Wolph: https://stackoverflow.com/a/17603000
+@contextlib.contextmanager
+def open_maybe_console(filename=None):
+    fh = sys.stdout if filename is None else open(filename, "w", encoding='utf-8')
+    try:
+        yield fh
+    finally:
+        if fh is not sys.stdout:
+            fh.close()
+
 
 __ftraceDepth = 0
 def ftrace(func):
@@ -109,11 +141,10 @@ def getExc(indent=4, prefix='|  ', skip=1):
 def printExc(msg='', indent=4, prefix='|'):
     """Print an error message followed by an indented exception backtrace
     (This function is intended to be called within except: blocks)"""
-    exc = getExc(indent, prefix + '  ', skip=2)
-    print("[%s]  %s\n" % (time.strftime("%H:%M:%S"), msg))
-    print(" "*indent + prefix + '='*30 + '>>')
-    print(exc)
-    print(" "*indent + prefix + '='*30 + '<<')
+    exc = getExc(indent=0, prefix="", skip=2)
+    # print(" "*indent + prefix + '='*30 + '>>')
+    warnings.warn("\n".join([msg, exc]), RuntimeWarning, stacklevel=2)
+    # print(" "*indent + prefix + '='*30 + '<<')
 
     
 def printTrace(msg='', indent=4, prefix='|'):
@@ -164,13 +195,15 @@ def listObjs(regex='Q', typ=None):
         
 
     
-def findRefPath(startObj, endObj, maxLen=8, restart=True, seen={}, path=None, ignore=None):
+def findRefPath(startObj, endObj, maxLen=8, restart=True, seen=None, path=None, ignore=None):
     """Determine all paths of object references from startObj to endObj"""
     refs = []
     if path is None:
         path = [endObj]
     if ignore is None:
         ignore = {}
+    if seen is None:
+        seen = {}
     ignore[id(sys._getframe())] = None
     ignore[id(path)] = None
     ignore[id(seen)] = None
@@ -198,7 +231,7 @@ def findRefPath(startObj, endObj, maxLen=8, restart=True, seen={}, path=None, ig
             #print prefix+"  FRAME"
             continue
         try:
-            if any([r is x for x in  path]):
+            if any(r is x for x in  path):
                 #print prefix+"  LOOP", objChainString([r]+path)
                 continue
         except:
@@ -278,7 +311,7 @@ def refPathString(chain):
         o2 = chain[i]
         cont = False
         if isinstance(o1, list) or isinstance(o1, tuple):
-            if any([o2 is x for x in o1]):
+            if any(o2 is x for x in o1):
                 s += "[%d]" % o1.index(o2)
                 continue
         #print "  not list"
@@ -481,7 +514,7 @@ class Profiler(object):
     "C.function" (without the module name) will enable this profiler.
 
     For regular functions, use the qualified name of the function, stripping
-    only the initial "PyQtGraph." prefix from the module.
+    only the initial "pyqtgraph." prefix from the module.
     """
 
     _profilers = os.environ.get("PYQTGRAPHPROFILE", None)
@@ -513,7 +546,7 @@ class Profiler(object):
         try:
             caller_object_type = type(caller_frame.f_locals["self"])
         except KeyError: # we are in a regular function
-            qualifier = caller_frame.f_globals["__name__"].split(".", 1)[1]
+            qualifier = caller_frame.f_globals["__name__"].split(".", 1)[-1]
         else: # we are in a method
             qualifier = caller_object_type.__name__
         func_qualname = qualifier + "." + caller_frame.f_code.co_name
@@ -526,7 +559,7 @@ class Profiler(object):
         obj._delayed = delayed
         obj._markCount = 0
         obj._finished = False
-        obj._firstTime = obj._lastTime = ptime.time()
+        obj._firstTime = obj._lastTime = perf_counter()
         obj._newMsg("> Entering " + obj._name)
         return obj
 
@@ -538,7 +571,7 @@ class Profiler(object):
         if msg is None:
             msg = str(self._markCount)
         self._markCount += 1
-        newTime = ptime.time()
+        newTime = perf_counter()
         self._newMsg("  %s: %0.4f ms", 
                      msg, (newTime - self._lastTime) * 1000)
         self._lastTime = newTime
@@ -566,7 +599,7 @@ class Profiler(object):
         if msg is not None:
             self(msg)
         self._newMsg("< Exiting %s, total time: %0.4f ms", 
-                     self._name, (ptime.time() - self._firstTime) * 1000)
+                     self._name, (perf_counter() - self._firstTime) * 1000)
         type(self)._depth -= 1
         if self._depth < 1:
             self.flush()
@@ -579,6 +612,7 @@ class Profiler(object):
 
 def profile(code, name='profile_run', sort='cumulative', num=30):
     """Common-use for cProfile"""
+    import pstats
     cProfile.run(code, name)
     stats = pstats.Stats(name)
     stats.sort_stats(sort)
@@ -797,7 +831,7 @@ class ObjTracker(object):
                 continue
             
             try:
-                ref = weakref.ref(obj)
+                ref = weakref.ref(o)
             except:
                 ref = None
             refs[oid] = ref
@@ -859,7 +893,6 @@ class ObjTracker(object):
         
     def findTypes(self, refs, regex):
         allObjs = get_all_objects()
-        ids = {}
         objs = []
         r = re.compile(regex)
         for k in refs:
@@ -1001,7 +1034,7 @@ def findObj(regex):
 def listRedundantModules():
     """List modules that have been imported more than once via different paths."""
     mods = {}
-    for name, mod in list(sys.modules.items()):
+    for name, mod in sys.modules.items():
         if not hasattr(mod, '__file__'):
             continue
         mfile = os.path.abspath(mod.__file__)
@@ -1023,10 +1056,8 @@ def walkQObjectTree(obj, counts=None, verbose=False, depth=0):
     
     if verbose:
         print("  "*depth + typeStr(obj))
-    report = False
     if counts is None:
         counts = {}
-        report = True
     typ = str(type(obj))
     try:
         counts[typ] += 1
@@ -1086,7 +1117,10 @@ def listQThreads():
     """Prints Thread IDs (Qt's, not OS's) for all QThreads."""
     thr = findObj('[Tt]hread')
     thr = [t for t in thr if isinstance(t, QtCore.QThread)]
-    import sip
+    try:
+        from PyQt5 import sip
+    except ImportError:
+        import sip
     for t in thr:
         print("--> ", t)
         print("     Qt ID: 0x%x" % sip.unwrapinstance(t))
@@ -1126,10 +1160,11 @@ class ThreadTrace(object):
     Used to debug freezing by starting a new thread that reports on the 
     location of other threads periodically.
     """
-    def __init__(self, interval=10.0):
+    def __init__(self, interval=10.0, logFile=None):
         self.interval = interval
         self.lock = Mutex()
         self._stop = False
+        self.logFile = logFile
         self.start()
 
     def stop(self):
@@ -1145,20 +1180,41 @@ class ThreadTrace(object):
         self.thread.start()
 
     def run(self):
-        while True:
-            with self.lock:
-                if self._stop is True:
-                    return
-                    
-            print("\n=============  THREAD FRAMES:  ================")
-            for id, frame in list(sys._current_frames().items()):
-                if id == threading.current_thread().ident:
-                    continue
-                print("<< thread %d >>" % id)
-                traceback.print_stack(frame)
-            print("===============================================\n")
-            
-            time.sleep(self.interval)
+        iter = 0
+        with open_maybe_console(self.logFile) as printFile:
+            while True:
+                with self.lock:
+                    if self._stop is True:
+                        return
+
+                printFile.write(f"\n=============  THREAD FRAMES {iter}:  ================\n")
+                for id, frame in sys._current_frames().items():
+                    if id == threading.current_thread().ident:
+                        continue
+
+                    # try to determine a thread name
+                    try:
+                        name = threading._active.get(id, None)
+                    except:
+                        name = None
+                    if name is None:
+                        try:
+                            # QThread._names must be manually set by thread creators.
+                            name = QtCore.QThread._names.get(id)
+                        except:
+                            name = None
+                    if name is None:
+                        name = "???"
+
+                    printFile.write("<< thread %d \"%s\" >>\n" % (id, name))
+                    tb = str(''.join(traceback.format_stack(frame)))
+                    printFile.write(tb)
+                    printFile.write("\n")
+                printFile.write("===============================================\n\n")
+                printFile.flush()
+
+                iter += 1
+                time.sleep(self.interval)
 
 
 class ThreadColor(object):
@@ -1202,10 +1258,10 @@ def enableFaulthandler():
     """
     try:
         import faulthandler
+
         # necessary to disable first or else new threads may not be handled.
         faulthandler.disable()
         faulthandler.enable(all_threads=True)
         return True
     except ImportError:
         return False
-

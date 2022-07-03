@@ -1,17 +1,17 @@
 if __name__ == '__main__':
-    import os, sys
+    import os
+    import sys
     path = os.path.abspath(os.path.dirname(__file__))
     sys.path.insert(0, os.path.join(path, '..', '..'))
 
-from ..Qt import QtGui, QtCore
 from .. import functions as fn
-import weakref
+from ..Qt import QtGui, QtWidgets
 from .UIGraphicsItem import UIGraphicsItem
 
 __all__ = ['VTickGroup']
 class VTickGroup(UIGraphicsItem):
     """
-    **Bases:** :class:`UIGraphicsItem <PyQtGraph.UIGraphicsItem>`
+    **Bases:** :class:`UIGraphicsItem <pyqtgraph.UIGraphicsItem>`
     
     Draws a set of tick marks which always occupy the same vertical range of the view,
     but have x coordinates relative to the data within the view.
@@ -26,7 +26,7 @@ class VTickGroup(UIGraphicsItem):
                         the view, 1 is the top. [0.8, 1] would draw ticks in the top
                         fifth of the view.
         pen             The pen to use for drawing ticks. Default is grey. Can be specified
-                        as any argument valid for :func:`mkPen<PyQtGraph.mkPen>`
+                        as any argument valid for :func:`mkPen<pyqtgraph.mkPen>`
         ==============  ===================================================================
         """
         if yrange is None:
@@ -39,7 +39,7 @@ class VTickGroup(UIGraphicsItem):
         if pen is None:
             pen = (200, 200, 200)
             
-        self.path = QtGui.QGraphicsPathItem()
+        self.path = QtWidgets.QGraphicsPathItem()
         
         self.ticks = []
         self.xvals = []
@@ -50,7 +50,7 @@ class VTickGroup(UIGraphicsItem):
         
     def setPen(self, *args, **kwargs):
         """Set the pen to use for drawing ticks. Can be specified as any arguments valid
-        for :func:`mkPen<PyQtGraph.mkPen>`"""
+        for :func:`mkPen<pyqtgraph.mkPen>`"""        
         self.pen = fn.mkPen(*args, **kwargs)
 
     def setXVals(self, vals):
@@ -79,7 +79,6 @@ class VTickGroup(UIGraphicsItem):
             
     def rebuildTicks(self):
         self.path = QtGui.QPainterPath()
-        yrange = self.yRange()
         for x in self.xvals:
             self.path.moveTo(x, 0.)
             self.path.lineTo(x, 1.)

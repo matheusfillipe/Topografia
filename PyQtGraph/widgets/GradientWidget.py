@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
-from ..Qt import QtGui, QtCore
-from .GraphicsView import GraphicsView
 from ..graphicsItems.GradientEditorItem import GradientEditorItem
-import weakref
-import numpy as np
+from ..Qt import QtCore, QtGui, QtWidgets
+from .GraphicsView import GraphicsView
 
 __all__ = ['GradientWidget']
 
@@ -25,10 +22,10 @@ class GradientWidget(GraphicsView):
         ticks will appear.
         
         All other arguments are passed to 
-        :func:`GradientEditorItem.__init__ <PyQtGraph.GradientEditorItem.__init__>`.
+        :func:`GradientEditorItem.__init__ <pyqtgraph.GradientEditorItem.__init__>`.
         
         Note: For convenience, this class wraps methods from 
-        :class:`GradientEditorItem <PyQtGraph.GradientEditorItem>`.
+        :class:`GradientEditorItem <pyqtgraph.GradientEditorItem>`.
         """
         GraphicsView.__init__(self, parent, useOpenGL=False, background=None)
         self.maxDim = 31
@@ -38,14 +35,16 @@ class GradientWidget(GraphicsView):
         self.item.sigGradientChangeFinished.connect(self.sigGradientChangeFinished)
         self.setCentralItem(self.item)
         self.setOrientation(orientation)
-        self.setCacheMode(self.CacheNone)
-        self.setRenderHints(QtGui.QPainter.Antialiasing | QtGui.QPainter.TextAntialiasing)
-        self.setFrameStyle(QtGui.QFrame.NoFrame | QtGui.QFrame.Plain)
-        #self.setBackgroundRole(QtGui.QPalette.NoRole)
-        #self.setBackgroundBrush(QtGui.QBrush(QtCore.Qt.NoBrush))
+        self.setCacheMode(self.CacheModeFlag.CacheNone)
+        self.setRenderHints(QtGui.QPainter.RenderHint.Antialiasing | QtGui.QPainter.RenderHint.TextAntialiasing)
+        frame_style = QtWidgets.QFrame.Shape.NoFrame | QtWidgets.QFrame.Shadow.Plain
+
+        self.setFrameStyle(frame_style)
+        #self.setBackgroundRole(QtGui.QPalette.ColorRole.NoRole)
+        #self.setBackgroundBrush(QtGui.QBrush(QtCore.Qt.BrushStyle.NoBrush))
         #self.setAutoFillBackground(False)
-        #self.setAttribute(QtCore.Qt.WA_PaintOnScreen, False)
-        #self.setAttribute(QtCore.Qt.WA_OpaquePaintEvent, True)
+        #self.setAttribute(QtCore.Qt.WindowType.WindowType.WidgetAttribute.WA_PaintOnScreen, False)
+        #self.setAttribute(QtCore.Qt.WindowType.WindowType.WidgetAttribute.WA_OpaquePaintEvent, True)
 
     def setOrientation(self, ort):
         """Set the orientation of the widget. May be one of 'bottom', 'top', 
@@ -71,4 +70,5 @@ class GradientWidget(GraphicsView):
         ### wrap methods from GradientEditorItem
         return getattr(self.item, attr)
 
-
+    def widgetGroupInterface(self):
+        return (self.sigGradientChanged, self.saveState, self.restoreState)

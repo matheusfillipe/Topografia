@@ -1,10 +1,9 @@
-from builtins import str
-from OpenGL.GL import *
-from OpenGL.arrays import vbo
-from .. GLGraphicsItem import GLGraphicsItem
-from .. import shaders
-from ... import QtGui
+from OpenGL.GL import *  # noqa
 import numpy as np
+
+from ... import QtGui
+from ... import functions as fn
+from ..GLGraphicsItem import GLGraphicsItem
 
 __all__ = ['GLLinePlotItem']
 
@@ -44,34 +43,22 @@ class GLLinePlotItem(GLGraphicsItem):
         ====================  ==================================================
         """
         args = ['pos', 'color', 'width', 'mode', 'antialias']
-        for k in list(kwds.keys()):
+        for k in kwds.keys():
             if k not in args:
                 raise Exception('Invalid keyword argument: %s (allowed arguments are %s)' % (k, str(args)))
         self.antialias = False
-        for arg in args:
-            if arg in kwds:
-                setattr(self, arg, kwds[arg])
-                #self.vbo.pop(arg, None)
+        if 'pos' in kwds:
+            pos = kwds.pop('pos')
+            self.pos = np.ascontiguousarray(pos, dtype=np.float32)
+        if 'color' in kwds:
+            color = kwds.pop('color')
+            if isinstance(color, np.ndarray):
+                color = np.ascontiguousarray(color, dtype=np.float32)
+            self.color = color
+        for k, v in kwds.items():
+            setattr(self, k, v)
         self.update()
 
-    def initializeGL(self):
-        pass
-        
-    #def setupGLState(self):
-        #"""Prepare OpenGL state for drawing. This function is called immediately before painting."""
-        ##glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)  ## requires z-sorting to render properly.
-        #glBlendFunc(GL_SRC_ALPHA, GL_ONE)
-        #glEnable( GL_BLEND )
-        #glEnable( GL_ALPHA_TEST )
-        #glDisable( GL_DEPTH_TEST )
-        
-        ##glEnable( GL_POINT_SMOOTH )
-
-        ##glHint(GL_POINT_SMOOTH_HINT, GL_NICEST)
-        ##glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, (0, 0, -1e-3))
-        ##glPointParameterfv(GL_POINT_SIZE_MAX, (65500,))
-        ##glPointParameterfv(GL_POINT_SIZE_MIN, (0,))
-        
     def paint(self):
         if self.pos is None:
             return
@@ -86,12 +73,13 @@ class GLLinePlotItem(GLGraphicsItem):
                 glEnableClientState(GL_COLOR_ARRAY)
                 glColorPointerf(self.color)
             else:
-                if isinstance(self.color, QtGui.QColor):
-                    glColor4f(*fn.glColor(self.color))
-                else:
-                    glColor4f(*self.color)
+                color = self.color
+                if isinstance(color, str):
+                    color = fn.mkColor(color)
+                if isinstance(color, QtGui.QColor):
+                    color = color.getRgbF()
+                glColor4f(*color)
             glLineWidth(self.width)
-            #glPointSize(self.width)
             
             if self.antialias:
                 glEnable(GL_LINE_SMOOTH)
@@ -100,9 +88,9 @@ class GLLinePlotItem(GLGraphicsItem):
                 glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
                 
             if self.mode == 'line_strip':
-                glDrawArrays(GL_LINE_STRIP, 0, int(self.pos.size / self.pos.shape[-1]))
+                glDrawArrays(GL_LINE_STRIP, 0, self.pos.shape[0])
             elif self.mode == 'lines':
-                glDrawArrays(GL_LINES, 0, int(self.pos.size / self.pos.shape[-1]))
+                glDrawArrays(GL_LINES, 0, self.pos.shape[0])
             else:
                 raise Exception("Unknown line mode '%s'. (must be 'lines' or 'line_strip')" % self.mode)
                 

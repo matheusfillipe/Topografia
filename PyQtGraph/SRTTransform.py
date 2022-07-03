@@ -1,9 +1,10 @@
-from __future__ import print_function
-from builtins import str
-# -*- coding: utf-8 -*-
-from .Qt import QtCore, QtGui
-from .Point import Point
+import warnings
+from math import atan2, degrees
+
 import numpy as np
+
+from .Point import Point
+from .Qt import QtCore, QtGui, QtWidgets
 
 
 class SRTTransform(QtGui.QTransform):
@@ -37,7 +38,11 @@ class SRTTransform(QtGui.QTransform):
         return self._state['scale']
         
     def getAngle(self):  
-        ## deprecated; for backward compatibility
+        warnings.warn(
+            'SRTTransform.getAngle() is deprecated, use SRTTransform.getRotation() instead'
+            'will be removed in 0.13',
+            DeprecationWarning, stacklevel=2
+        )
         return self.getRotation()
         
     def getRotation(self):
@@ -63,8 +68,7 @@ class SRTTransform(QtGui.QTransform):
         dp3 = Point(p3-p1)
         
         ## detect flipped axes
-        if dp2.angle(dp3) > 0:
-            #da = 180
+        if dp2.angle(dp3, units="radians") > 0:
             da = 0
             sy = -1.0
         else:
@@ -74,7 +78,7 @@ class SRTTransform(QtGui.QTransform):
         self._state = {
             'pos': Point(p1),
             'scale': Point(dp2.length(), dp3.length() * sy),
-            'angle': (np.arctan2(dp2[1], dp2[0]) * 180. / np.pi) + da
+            'angle': degrees(atan2(dp2[1], dp2[0])) + da
         }
         self.update()
         
@@ -171,31 +175,32 @@ class SRTTransform(QtGui.QTransform):
 
         
 if __name__ == '__main__':
-    from . import widgets
     import GraphicsView
+
+    from . import widgets
     from .functions import *
-    app = QtGui.QApplication([])
-    win = QtGui.QMainWindow()
+    app = pg.mkQApp()  # noqa: qapp stored to avoid gc
+    win = QtWidgets.QMainWindow()
     win.show()
     cw = GraphicsView.GraphicsView()
     #cw.enableMouse()  
     win.setCentralWidget(cw)
-    s = QtGui.QGraphicsScene()
+    s = QtWidgets.QGraphicsScene()
     cw.setScene(s)
     win.resize(600,600)
     cw.enableMouse()
     cw.setRange(QtCore.QRectF(-100., -100., 200., 200.))
     
-    class Item(QtGui.QGraphicsItem):
+    class Item(QtWidgets.QGraphicsItem):
         def __init__(self):
-            QtGui.QGraphicsItem.__init__(self)
-            self.b = QtGui.QGraphicsRectItem(20, 20, 20, 20, self)
+            QtWidgets.QGraphicsItem.__init__(self)
+            self.b = QtWidgets.QGraphicsRectItem(20, 20, 20, 20, self)
             self.b.setPen(QtGui.QPen(mkPen('y')))
-            self.t1 = QtGui.QGraphicsTextItem(self)
+            self.t1 = QtWidgets.QGraphicsTextItem(self)
             self.t1.setHtml('<span style="color: #F00">R</span>')
             self.t1.translate(20, 20)
-            self.l1 = QtGui.QGraphicsLineItem(10, 0, -10, 0, self)
-            self.l2 = QtGui.QGraphicsLineItem(0, 10, 0, -10, self)
+            self.l1 = QtWidgets.QGraphicsLineItem(10, 0, -10, 0, self)
+            self.l2 = QtWidgets.QGraphicsLineItem(0, 10, 0, -10, self)
             self.l1.setPen(QtGui.QPen(mkPen('y')))
             self.l2.setPen(QtGui.QPen(mkPen('y')))
         def boundingRect(self):
@@ -207,8 +212,8 @@ if __name__ == '__main__':
     #s.addItem(t1)
     item = Item()
     s.addItem(item)
-    l1 = QtGui.QGraphicsLineItem(10, 0, -10, 0)
-    l2 = QtGui.QGraphicsLineItem(0, 10, 0, -10)
+    l1 = QtWidgets.QGraphicsLineItem(10, 0, -10, 0)
+    l2 = QtWidgets.QGraphicsLineItem(0, 10, 0, -10)
     l1.setPen(QtGui.QPen(mkPen('r')))
     l2.setPen(QtGui.QPen(mkPen('r')))
     s.addItem(l1)
@@ -219,29 +224,23 @@ if __name__ == '__main__':
     tr3 = QtGui.QTransform()
     tr3.translate(20, 0)
     tr3.rotate(45)
-    # fix_print_with_import
-    print(("QTransform -> Transform:", SRTTransform(tr3)))
+    print("QTransform -> Transform:", SRTTransform(tr3))
     
-    # fix_print_with_import
-    print(("tr1:", tr1))
+    print("tr1:", tr1)
     
     tr2.translate(20, 0)
     tr2.rotate(45)
-    # fix_print_with_import
-    print(("tr2:", tr2))
+    print("tr2:", tr2)
     
     dt = tr2/tr1
-    # fix_print_with_import
-    print(("tr2 / tr1 = ", dt))
+    print("tr2 / tr1 = ", dt)
     
-    # fix_print_with_import
-    print(("tr2 * tr1 = ", tr2*tr1))
+    print("tr2 * tr1 = ", tr2*tr1)
     
     tr4 = SRTTransform()
     tr4.scale(-1, 1)
     tr4.rotate(30)
-    # fix_print_with_import
-    print(("tr1 * tr4 = ", tr1*tr4))
+    print("tr1 * tr4 = ", tr1*tr4)
     
     w1 = widgets.TestROI((19,19), (22, 22), invertible=True)
     #w2 = widgets.TestROI((0,0), (150, 150))

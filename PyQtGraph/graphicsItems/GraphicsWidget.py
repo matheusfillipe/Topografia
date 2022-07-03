@@ -1,21 +1,24 @@
-from ..Qt import QtGui, QtCore  
-from ..GraphicsScene import GraphicsScene
+from ..Qt import QtGui, QtWidgets
 from .GraphicsItem import GraphicsItem
 
 __all__ = ['GraphicsWidget']
 
-class GraphicsWidget(GraphicsItem, QtGui.QGraphicsWidget):
+class GraphicsWidget(GraphicsItem, QtWidgets.QGraphicsWidget):
     
-    _qtBaseClass = QtGui.QGraphicsWidget
+    _qtBaseClass = QtWidgets.QGraphicsWidget
     def __init__(self, *args, **kargs):
         """
-        **Bases:** :class:`GraphicsItem <PyQtGraph.GraphicsItem>`, :class:`QtGui.QGraphicsWidget`
+        **Bases:** :class:`GraphicsItem <pyqtgraph.GraphicsItem>`, :class:`QtWidgets.QGraphicsWidget`
         
         Extends QGraphicsWidget with several helpful methods and workarounds for PyQt bugs. 
-        Most of the extra functionality is inherited from :class:`GraphicsItem <PyQtGraph.GraphicsItem>`.
+        Most of the extra functionality is inherited from :class:`GraphicsItem <pyqtgraph.GraphicsItem>`.
         """
-        QtGui.QGraphicsWidget.__init__(self, *args, **kargs)
+        QtWidgets.QGraphicsWidget.__init__(self, *args, **kargs)
         GraphicsItem.__init__(self)
+
+        # cache bouding rect and geometry
+        self._boundingRectCache = self._previousGeometry = None
+        self._painterPathCache = None
         
         ## done by GraphicsItem init
         #GraphicsScene.registerObject(self)  ## workaround for pyqt bug in graphicsscene.items()
@@ -23,7 +26,7 @@ class GraphicsWidget(GraphicsItem, QtGui.QGraphicsWidget):
     # Removed due to https://bugreports.qt-project.org/browse/PYSIDE-86
     #def itemChange(self, change, value):
         ## BEWARE: Calling QGraphicsWidget.itemChange can lead to crashing!
-        ##ret = QtGui.QGraphicsWidget.itemChange(self, change, value)  ## segv occurs here
+        ##ret = QtWidgets.QGraphicsWidget.itemChange(self, change, value)  ## segv occurs here
         ## The default behavior is just to return the value argument, so we'll do that
         ## without calling the original method.
         #ret = value
@@ -46,14 +49,22 @@ class GraphicsWidget(GraphicsItem, QtGui.QGraphicsWidget):
         return self.geometry().width()
 
     def boundingRect(self):
-        br = self.mapRectFromParent(self.geometry()).normalized()
-        #print "bounds:", br
+        geometry = self.geometry()
+        if geometry != self._previousGeometry:
+            self._painterPathCache = None
+            
+            br = self.mapRectFromParent(geometry).normalized()
+            self._boundingRectCache = br
+            self._previousGeometry = geometry
+        else:
+            br = self._boundingRectCache
+
         return br
-        
+
     def shape(self):  ## No idea why this is necessary, but rotated items do not receive clicks otherwise.
-        p = QtGui.QPainterPath()
-        p.addRect(self.boundingRect())
-        #print "shape:", p.boundingRect()
+        p = self._painterPathCache
+        if p is None:
+            self._painterPathCache = p = QtGui.QPainterPath()
+            p.addRect(self.boundingRect())
+
         return p
-
-

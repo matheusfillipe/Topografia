@@ -1,12 +1,13 @@
-from .. import getConfigOption
-from .GraphicsObject import *
 from .. import functions as fn
-from ..Qt import QtGui, QtCore
+from .. import getConfigOption
+from ..Qt import QtCore, QtGui
+from .GraphicsObject import *
 
+__all__ = ['IsocurveItem']
 
 class IsocurveItem(GraphicsObject):
     """
-    **Bases:** :class:`GraphicsObject <PyQtGraph.GraphicsObject>`
+    **Bases:** :class:`GraphicsObject <pyqtgraph.GraphicsObject>`
     
     Item displaying an isocurve of a 2D array. To align this item correctly with an 
     ImageItem, call ``isocurve.setParentItem(image)``.
@@ -18,10 +19,10 @@ class IsocurveItem(GraphicsObject):
         ==============  ===============================================================
         **Arguments:**
         data            A 2-dimensional ndarray. Can be initialized as None, and set
-                        later using :func:`setData <PyQtGraph.IsocurveItem.setData>`
+                        later using :func:`setData <pyqtgraph.IsocurveItem.setData>`
         level           The cutoff value at which to draw the isocurve.
         pen             The color of the curve item. Can be anything valid for
-                        :func:`mkPen <PyQtGraph.mkPen>`
+                        :func:`mkPen <pyqtgraph.mkPen>`
         axisOrder       May be either 'row-major' or 'col-major'. By default this uses
                         the ``imageAxisOrder``
                         :ref:`global configuration option <apiref_config>`.
@@ -64,13 +65,13 @@ class IsocurveItem(GraphicsObject):
 
     def setPen(self, *args, **kwargs):
         """Set the pen used to draw the isocurve. Arguments can be any that are valid 
-        for :func:`mkPen <PyQtGraph.mkPen>`"""
+        for :func:`mkPen <pyqtgraph.mkPen>`"""
         self.pen = fn.mkPen(*args, **kwargs)
         self.update()
 
     def setBrush(self, *args, **kwargs):
         """Set the brush used to draw the isocurve. Arguments can be any that are valid 
-        for :func:`mkBrush <PyQtGraph.mkBrush>`"""
+        for :func:`mkBrush <pyqtgraph.mkBrush>`"""
         self.brush = fn.mkBrush(*args, **kwargs)
         self.update()
         

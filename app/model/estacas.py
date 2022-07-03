@@ -986,7 +986,8 @@ class Estacas(object):
     def tmpFolder(self):
         import tempfile
         from pathlib import Path
-
+        msgLog("empt", tempfile.gettempdir())
+        msgLog("conf", Config.TMP_FOLDER)
         return str(Path(tempfile.gettempdir() + "/" + Config.TMP_FOLDER))
 
     def saveGeoPackage(self, name: str, poly, fields, type, driver):

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>632</width>
-    <height>288</height>
+    <width>750</width>
+    <height>389</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -56,7 +56,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="inicialSb">
+      <widget class="QDoubleSpinBox" name="inicialSb">
        <property name="enabled">
         <bool>false</bool>
        </property>
@@ -69,12 +69,6 @@
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Estaca de partida.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
-       <property name="maximum">
-        <number>1000000000</number>
-       </property>
-       <property name="singleStep">
-        <number>20</number>
-       </property>
       </widget>
      </item>
      <item>
@@ -85,7 +79,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="finalSb">
+      <widget class="QDoubleSpinBox" name="finalSb">
        <property name="enabled">
         <bool>false</bool>
        </property>
@@ -97,12 +91,6 @@
        </property>
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Última estaca (Será incluída).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="maximum">
-        <number>1000000000</number>
-       </property>
-       <property name="singleStep">
-        <number>20</number>
        </property>
       </widget>
      </item>

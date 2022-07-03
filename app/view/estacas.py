@@ -2723,7 +2723,7 @@ class ProgressDialog:  # QtWidgets.QProgressDialog):  #, PROGRESS_DIALOG):
 
     def setValue(self, f: float):
         self.progressBar: QtWidgets.QProgressBar
-        self.progressBar.setValue(f)
+        self.progressBar.setValue(int(f))
         self.floor = f
 
     def setLoop(self, ceiling, totalSteps, floor=None):
@@ -2866,8 +2866,8 @@ class CorteExport(QtWidgets.QDialog, EXPORTAR_CORTE):
         self.checkBox: QtWidgets.QCheckBox
         self.comboBox: QtWidgets.QComboBox
         self.espSb: QtWidgets.QDoubleSpinBox
-        self.finalSb: QtWidgets.QSpinBox
-        self.inicialSb: QtWidgets.QSpinBox
+        self.finalSb: QtWidgets.QDoubleSpinBox
+        self.inicialSb: QtWidgets.QDoubleSpinBox
         self.intSp: QtWidgets.QDoubleSpinBox
         self.label: QtWidgets.QLabel
         self.label_2: QtWidgets.QLabel

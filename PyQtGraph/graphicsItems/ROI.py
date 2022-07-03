@@ -2091,7 +2091,7 @@ class PolyLineROI(ROI):
         else:
             self.segments.insert(index, seg)
         seg.sigClicked.connect(self.segmentClicked)
-        seg.setAcceptedMouseButtons(QtCore.Qt.MouseButton.LeftButton)
+        seg.setAcceptedMouseButtons(QtCore.Qt.MouseButton.LeftButton | QtCore.Qt.MouseButton.RightButton)
         seg.setZValue(self.zValue()+1)
         for h in seg.handles:
             h['item'].setDeletable(True)

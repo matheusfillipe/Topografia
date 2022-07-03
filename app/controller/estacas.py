@@ -850,23 +850,27 @@ class Estacas(object):
         return X, V
 
     def bruckner2DXF(self, X, Y):
-        filename = QtWidgets.QFileDialog.getSaveFileName(
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             caption="Save dxf", filter="Arquivo DXF (*.dxf)"
         )
-        if filename[0] in ["", None]:
+        if filename in ["", None]:
             return
+        if not filename.endswith(".dxf"):
+            filename += ".dxf"
         dist = Config.instance().DIST
         self.saveDXF(
-            filename[0], [[p2QgsPoint(x * dist, y / 1000000)
+            filename, [[p2QgsPoint(x * dist, y / 1000000)
                            for x, y in (zip(X, Y))]]
         )
 
     def exportDXF(self):
-        filename = QtWidgets.QFileDialog.getSaveFileName(
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             caption="Save dxf", filter="Arquivo DXF (*.dxf)"
         )
-        if filename[0] in ["", None]:
+        if filename in ["", None]:
             return
+        if not filename.endswith(".dxf"):
+            filename += ".dxf"
         estacas = self.viewCv.get_estacas()
         terreno = self.model.load_terreno_long()
         Lpoints = []
@@ -886,10 +890,10 @@ class Estacas(object):
                     [float(e[4]), float(e[3]), float(e[-3])]))
             Lpoints.append(points)
 
-        self.saveDXF(filename[0], Lpoints)
+        self.saveDXF(filename, Lpoints)
 
         if self.viewCv.mode == "CV":
-            self.addVerticalEstacas(filename[0], estacas)
+            self.addVerticalEstacas(filename, estacas)
 
     def exportCS(self):
         #        if yesNoDialog(title="Plotar Transversais?", message="Deseja exportar os perfis transversais? (Se ainda não foram definidos não serão salvos)"):
@@ -897,11 +901,13 @@ class Estacas(object):
 
         X, table, prismoide = self.loadTrans()
 
-        filename = QtWidgets.QFileDialog.getSaveFileName(
+        filename. _ = QtWidgets.QFileDialog.getSaveFileName(
             caption="Save dxf", filter="Arquivo DXF (*.dxf)"
         )
-        if filename[0] in ["", None]:
+        if filename in ["", None]:
             return
+        if not filename.endswith(".dxf"):
+            filename += ".dxf"
         LPoints = []
         for i, face in enumerate(prismoide.getFaces()):
             st = face.superior
@@ -923,8 +929,8 @@ class Estacas(object):
             LPoints.append(points)
 
         self.addTransEstacas(
-            filename[0], self.model.load_intersect(
-            ), self.saveDXF(filename[0], LPoints)
+            filename, self.model.load_intersect(
+            ), self.saveDXF(filename, LPoints)
         )
         self.progressDialog.close()
 

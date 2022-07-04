@@ -489,7 +489,6 @@ class Curvas(QtWidgets.QDialog, FORMCURVA_CLASS):
                             self.next_index,
                             self.current_index,
                         )
-                        msgLog(">>>> CIRCLE", data)
                         k = 0
                         vmax = "120 km/h"
 

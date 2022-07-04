@@ -549,8 +549,7 @@ def circleArc(layer, data, index, layer2, i, ic):
     p = p2QgsPoint(tmp_line.interpolate(E).asPoint())
 
     feat = QgsFeature(layerFields())
-    msgLog(">>> D is this here D =", data['L'])
-    feat.setAttributes(["C", "", data["R"], data["D"], data["T"], data["L"]])
+    feat.setAttributes(["C", "", float(data["R"]), float(data["D"]), float(data["T"]), float(data["L"])])
     # Create a QgsCircularStringV2
     circularRing = QgsCircularString()
     # Set first point, intermediate point for curvature and end point
@@ -561,6 +560,7 @@ def circleArc(layer, data, index, layer2, i, ic):
     f2 = QgsFeature(layer.fields())
     f2.setGeometry(l2)
     layer.dataProvider().addFeatures([feat])
+    l = data["L"]
 
     return data
 

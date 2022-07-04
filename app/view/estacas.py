@@ -455,13 +455,17 @@ class EstacasUI(QtWidgets.QDialog, FORMESTACA1_CLASS):
         if not path.endswith(".shp"):
             path += ".shp"
 
+        save_options = QgsVectorFileWriter.SaveVectorOptions()
+        save_options.driverName = "ESRI Shapefile"
+        save_options.fileEncoding = "UTF-8"
+
         writer = QgsVectorFileWriter.create(
             path,
-            "UTF-8",
             fields,
             QgsWkbTypes.MultiLineString,
             QgsCoordinateReferenceSystem("EPSG:" + str(crs)),
-            "ESRI Shapefile",
+            transformContext=QgsProject.instance().transformContext(),
+            options=save_options,
         )
         del writer
         self.iface.addVectorLayer(path, "", "ogr")

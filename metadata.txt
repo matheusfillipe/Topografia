@@ -11,11 +11,11 @@
 name=GeoRoad
 qgisMinimumVersion=3.0
 description=Geometric Road Design
-version=1.2
+version=1.3
 author=Lucas, Matheus Fillipe
 email=matheusfillipeag@gmail.com
 qgisMaximumVersion=3.99
-about=This plugins has the goal to easy the study and apply the process of the geometric road design and comes with the standard Brazilian guidelines for speed limitations, allowed inclinations, curves radius and length.
+about=This plugin has the goal to easy the study and apply the process of the geometric road design and comes with the standard Brazilian guidelines for speed limitations, allowed inclinations, curves radius and length.
     The basic workflow of this software would be creating a table of segmented points from a vector layer with progressive distance; creating horizontal curves that can be spiral or circular (Segmented); calculating elevations over it from a raster layer; defining the longitudinal profile with parabolic transition curves curves; computing the intersection between the horizontal and vertical data; computing the perpendicular cross section from a raster layer, setting up the road section over the terrain; computing volume and displaying Bruckner's diagram.
     Vertical data can be set and edited with a pyqtgraph interface. The cross section setup and volume computations are computing intensive and its recomended 8 GB of ram or more. Most tables can be exported or imported in the formats *.csv for tables and *.dxf.
 tracker=https://github.com/matheusfillipe/Topografia/issues

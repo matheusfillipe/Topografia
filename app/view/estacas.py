@@ -1378,9 +1378,10 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.comboBox.clear()
 
     def saveEstacasCSV(self):
-        filename = QtWidgets.QFileDialog.getSaveFileName(
+        res = QtWidgets.QFileDialog.getSaveFileName(
             caption="Save Worksheet", filter="Arquivo CSV (*.csv)"
         )
+        filename = (res[0] + ("" if res[0].endswith(".csv") else ".csv"), res[1])
         return filename
 
     def fill_table(self, estaca, f=False):
@@ -2807,8 +2808,12 @@ class EstacaRangeSelect(QtWidgets.QDialog, BRUCKNER_SELECT):
     def itemClick(self, item):
         ests = item.text().split("-")
         index = self.inicial.findText(ests[0])
+        if index < 0:
+            msgLog("Não encontrei:", str(ests[0]))
         self.inicial.setCurrentIndex(index)
         index = self.final_2.findText(ests[1])
+        if index < 0:
+            msgLog("Não encontrei:", str(ests[1]))
         self.final_2.setCurrentIndex(index)
         msgLog("Setting range " + str(ests))
 

@@ -637,11 +637,13 @@ class Estacas(object):
                 )
 
     def exportTrans(self):
-        filename = QtWidgets.QFileDialog.getSaveFileName(
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             caption="Save dxf", filter="Arquivo DXF (*.dxf)"
         )
-        if filename[0] in ["", None]:
+        if filename in ["", None]:
             return
+        if not filename.endswith(".dxf"):
+            filename += ".dxf"
         v = self.trans.verticais.getY(self.trans.progressiva[self.trans.current])
         self.saveDXF(
             filename[0],
@@ -968,7 +970,6 @@ class Estacas(object):
             "memory",
         )
         layer.setCrs(QgsCoordinateReferenceSystem(QgsProject.instance().crs()))
-        features = []
         DX = 0
         DY = 0
         MAX_COLUMNS = 10
@@ -978,11 +979,19 @@ class Estacas(object):
             g = QgsGeometry.fromPolyline(points)
             g.translate(DX, DY)
             feat.setGeometry(g)
-            features.append(QgsFeature(feat))
+            # features.append(QgsFeature(feat))
+            layer.dataProvider().addFeatures([feat])
+            layer.updateExtents()
+
+            # TODO this rectangle is not really being added around
             feat = QgsFeature()
             rect = g.boundingBox()
             feat.setGeometry(QgsGeometry.fromRect(rect))
-            features.append(QgsFeature(feat))
+
+            layer.dataProvider().addFeatures([feat])
+            layer.updateExtents()
+
+            # features.append(QgsFeature(feat))
             coords.append(
                 np.array([np.average(rect.center().x()), rect.center().y() + 5])
             )
@@ -995,15 +1004,13 @@ class Estacas(object):
                 DY -= DX / MAX_COLUMNS
                 DX = 0
 
-        layer.dataProvider().addFeatures(features)
-        layer.updateExtents()
+        # QgsProject.instance().addMapLayer(layer)
 
-        #        QgsProject.instance().addMapLayer(layer)
         dxfExport = QgsDxfExport()
         dxfExport.setMapSettings(self.iface.mapCanvas().mapSettings())
         dxfExport.addLayers([QgsDxfExport.DxfLayer(layer)])
         dxfExport.setSymbologyScale(1)
-        # dxfExport.setSymbologyExport(QgsDxfExport.SymbolLayerSymbology)
+        dxfExport.setSymbologyExport(QgsDxfExport.SymbolLayerSymbology)
         dxfExport.setLayerTitleAsName(True)
         dxfExport.setDestinationCrs(layer.crs())
         dxfExport.setForce2d(False)

@@ -4,16 +4,19 @@ from __future__ import print_function
 import os
 from builtins import str
 
-from qgis.PyQt import uic, QtWidgets
+from qgis._core import (QgsCoordinateReferenceSystem, QgsMapLayer, QgsProject,
+                        QgsRasterLayer, QgsRectangle, QgsVectorFileWriter,
+                        QgsVectorLayer)
+from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import QSettings, Qt
 from qgis.PyQt.QtWidgets import QAbstractItemView
-from qgis._core import QgsCoordinateReferenceSystem, QgsProject, QgsRasterLayer, QgsMapLayer, QgsRectangle, QgsVectorFileWriter, QgsVectorLayer
 
-from ..model.utils import yesNoDialog, msgLog
-from ..model.config import Config, extractZIP, compactZIP
+from ..model.config import Config, compactZIP, extractZIP
+from ..model.utils import msgLog, yesNoDialog
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), '../view/ui/Topo_dialog_conf.ui'))
+FORM_CLASS, _ = uic.loadUiType(
+    os.path.join(os.path.dirname(__file__), "../view/ui/Topo_dialog_conf.ui")
+)
 
 
 class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
@@ -54,85 +57,91 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         self.txtCRS = QtWidgets.QLineEdit()
         self.txtCSV: QtWidgets.QLineEdit
         self.offsetSpinBox: QtWidgets.QSpinBox
-        self.velProj : QtWidgets.QSpinBox
-
+        self.velProj: QtWidgets.QSpinBox
 
         super(TopoConfig, self).__init__(parent)
         self.iface = iface
         self.setupUi(self)
         self.setWindowFlags(self.windowFlags() & Qt.WindowContextHelpButtonHint)
         self.setup()
-        
-        self.unitsList=['m','Km','mm']
+
+        self.unitsList = ["m", "Km", "mm"]
         self.comboClasse.currentIndexChanged.connect(self.updateVelocidade)
 
-        self.dataAssociationWrite = {Config.data[0]: self.units,
-                                Config.data[1]: self.txtCSV.text,
-                                Config.data[2]: self.estacas.value,
-                                Config.data[3]: self.transversal.value,
-                                Config.data[4]: self.comboClasse.currentIndex,
-                                Config.data[5]: self.txtCRS.text,
-                                Config.data[6]: self.planoMin.value,
-                                Config.data[7]: self.planoMax.value,
-                                Config.data[8]: self.onduladoMin.value,
-                                Config.data[9]: self.onduladoMax.value,
-                                Config.data[10]: self.montanhosoMin.value,
-                                Config.data[11]: self.montanhosoMax.value,
-                                Config.data[12]: self.offsetSpinBox.value,
-                                Config.data[14]: self.interpol.isChecked,
-                                Config.data[15]: self.velProj.value,
-                                Config.data[16]: self.emax.value,
-                                Config.data[17]: self.prec.value
+        self.dataAssociationWrite = {
+            Config.data[0]: self.units,
+            Config.data[1]: self.txtCSV.text,
+            Config.data[2]: self.estacas.value,
+            Config.data[3]: self.transversal.value,
+            Config.data[4]: self.comboClasse.currentIndex,
+            Config.data[5]: self.txtCRS.text,
+            Config.data[6]: self.planoMin.value,
+            Config.data[7]: self.planoMax.value,
+            Config.data[8]: self.onduladoMin.value,
+            Config.data[9]: self.onduladoMax.value,
+            Config.data[10]: self.montanhosoMin.value,
+            Config.data[11]: self.montanhosoMax.value,
+            Config.data[12]: self.offsetSpinBox.value,
+            Config.data[14]: self.interpol.isChecked,
+            Config.data[15]: self.velProj.value,
+            Config.data[16]: self.emax.value,
+            Config.data[19]: self.prec.value,
         }
 
-        self.dataAssociationRead = {Config.data[0]: self.setUnits,
-                                 Config.data[1]: self.txtCSV.setText,
-                                 Config.data[2]: self.estacas.setValue,
-                                 Config.data[3]: self.transversal.setValue,
-                                 Config.data[4]: self.comboClasse.setCurrentIndex,
-                                 Config.data[5]: self.txtCRS.setText,
-                                 Config.data[6]: self.planoMin.setValue,
-                                 Config.data[7]: self.planoMax.setValue,
-                                 Config.data[8]: self.onduladoMin.setValue,
-                                 Config.data[9]: self.onduladoMax.setValue,
-                                 Config.data[10]: self.montanhosoMin.setValue,
-                                 Config.data[11]: self.montanhosoMax.setValue,
-                                 Config.data[12]: self.offsetSpinBox.setValue,
-                                 Config.data[14]: self.interpol.setChecked,
-                                 Config.data[15]: self.velProj.setValue,
-                                 Config.data[16]: self.emax.setValue,
-                                 Config.data[17]: self.prec.setValue
-                                }
+        self.dataAssociationRead = {
+            Config.data[0]: self.setUnits,
+            Config.data[1]: self.txtCSV.setText,
+            Config.data[2]: self.estacas.setValue,
+            Config.data[3]: self.transversal.setValue,
+            Config.data[4]: self.comboClasse.setCurrentIndex,
+            Config.data[5]: self.txtCRS.setText,
+            Config.data[6]: self.planoMin.setValue,
+            Config.data[7]: self.planoMax.setValue,
+            Config.data[8]: self.onduladoMin.setValue,
+            Config.data[9]: self.onduladoMax.setValue,
+            Config.data[10]: self.montanhosoMin.setValue,
+            Config.data[11]: self.montanhosoMax.setValue,
+            Config.data[12]: self.offsetSpinBox.setValue,
+            Config.data[14]: self.interpol.setChecked,
+            Config.data[15]: self.velProj.setValue,
+            Config.data[16]: self.emax.setValue,
+            Config.data[19]: self.prec.setValue,
+        }
 
         self.dbBuild: QtWidgets.QPushButton
         self.dbBuild.clicked.connect(self.buildDb)
 
     def updateVelocidade(self, i):
-        v=[100, 100, 80, 80, 70, 60, 40, 40]
+        v = [100, 100, 80, 80, 70, 60, 40, 40]
         self.velProj.setValue(v[i])
 
     def buildDb(self):
-        if yesNoDialog(iface=self, message="Tem certeza que deseja reconstruir o banco de dados?"):
-            cfg=Config.instance()
+        if yesNoDialog(
+            iface=self, message="Tem certeza que deseja reconstruir o banco de dados?"
+        ):
+            cfg = Config.instance()
             extractZIP(cfg.FILE_PATH)
-            con=cfg.create_datatable(cfg.TMP_DIR_PATH + "tmp/data/data.db")
+            con = cfg.create_datatable(cfg.TMP_DIR_PATH + "tmp/data/data.db")
             con.close()
             compactZIP(cfg.FILE_PATH)
 
-
     def show(self):
         for d in self.dataAssociationRead:
-            cfg=Config.instance()
+            cfg = Config.instance()
             try:
                 self.dataAssociationRead[d](getattr(cfg, d))
             except Exception as e:
                 import traceback
-                msgLog("Erro ao ler configurações: "+str(d))
-                msgLog("Erro: " + str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
+
+                msgLog("Erro ao ler configurações: " + str(d))
+                msgLog(
+                    "Erro: "
+                    + str(traceback.format_exception(None, e, e.__traceback__))[1:-1]
+                )
 
         return super(TopoConfig, self).show()
 
-    def setUnits(self, s:str):
+    def setUnits(self, s: str):
         self.comboUnits.setCurrentIndex(self.unitsList.index(s))
 
     def units(self):
@@ -142,19 +151,21 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         for d in self.dataAssociationWrite:
             setattr(Config, d, self.dataAssociationWrite[d]())
             Config.instance().store(d, self.dataAssociationWrite[d]())
-        x=Config.instance().T_OFFSET
+        x = Config.instance().T_OFFSET
         return super(TopoConfig, self).accept()
 
     def setup(self):
-        self.setWindowTitle(u"Configurações")
-        self.txtCRS.setText(str(self.iface.mapCanvas().mapSettings().destinationCrs().description()))
-        self.txtCSV.setText(';')
+        self.setWindowTitle("Configurações")
+        self.txtCRS.setText(
+            str(self.iface.mapCanvas().mapSettings().destinationCrs().description())
+        )
+        self.txtCSV.setText(";")
         self.tableCRS.setColumnCount(2)
         self.tableCRS.setColumnWidth(1, 254)
         self.tableCRS.setSelectionBehavior(QAbstractItemView.SelectRows)
         # self.conf.tableCRS.setRowCount(300)
-        self.tableCRS.setHorizontalHeaderLabels((u"ID", u"CRS"))
-        self.tableCRS:QtWidgets.QTableWidget
+        self.tableCRS.setHorizontalHeaderLabels(("ID", "CRS"))
+        self.tableCRS: QtWidgets.QTableWidget
         self.tableCRS.hide()
         self.txtCRS.hide()
         self.label.hide()
@@ -163,9 +174,11 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
     def changeCRS(self, crs):
         if crs == None:
             crs = 31983
-        mycrs = QgsCoordinateReferenceSystem(int(crs), 0)
+        mycrs = QgsCoordinateReferenceSystem("EPSG:" + str(crs))
         # self.iface.mapCanvas().mapRenderer().setCrs( QgsCoordinateReferenceSystem(mycrs, QgsCoordinateReferenceSystem.EpsgCrsId) )
-        self.iface.mapCanvas().mapSettings().setDestinationCrs(mycrs)  # set CRS to canvas
+        self.iface.mapCanvas().mapSettings().setDestinationCrs(
+            mycrs
+        )  # set CRS to canvas
         # self.iface.mapCanvas().setMapUnits(QGis.Meters)
         self.iface.mapCanvas().refresh()
 
@@ -180,17 +193,21 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         return filename
 
     def error(self, msg):
-        msgBox = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning, "AVISO",
-                                       u"%s" % msg,
-                                       QtWidgets.QMessageBox.NoButton, None)
+        msgBox = QtWidgets.QMessageBox(
+            QtWidgets.QMessageBox.Warning,
+            "AVISO",
+            "%s" % msg,
+            QtWidgets.QMessageBox.NoButton,
+            None,
+        )
         msgBox.addButton("OK", QtWidgets.QMessageBox.AcceptRole)
         # msgBox.addButton("&Continue", QtGui.QMessageBox.RejectRole)
         msgBox.exec_()
 
     def update(self, model, txtcrs):
-        self.txtCRS.setText(U"%s" % txtcrs)
+        self.txtCRS.setText("%s" % txtcrs)
         # print model.CSV_DELIMITER
-        self.txtCSV.setText(U"%s" % model.CSV_DELIMITER)
+        self.txtCSV.setText("%s" % model.CSV_DELIMITER)
         self.comboClasse.setCurrentIndex(model.class_project + 1)
         self.planoMin.setValue(model.dataTopo[0])
         self.planoMax.setValue(model.dataTopo[1])
@@ -205,24 +222,21 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         from ..model.utils import msgLog
 
         root = QgsProject.instance().layerTreeRoot()
-        urlWithParams = 'type=xyz&url=http://mt1.google.com/vt/lyrs%3Ds%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&zmax=19&zmin=0'
-        rlayer = QgsRasterLayer(urlWithParams, 'Google Satellite', 'wms')
+        urlWithParams = "type=xyz&url=http://mt1.google.com/vt/lyrs%3Ds%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&zmax=19&zmin=0"
+        rlayer = QgsRasterLayer(urlWithParams, "Google Satellite", "wms")
         if rlayer.isValid():
             QgsProject.instance().addMapLayer(rlayer, False)
             root.addLayer(rlayer)
         else:
-            msgLog('Failed to load Satellite layer')
+            msgLog("Failed to load Satellite layer")
 
-
-        urlWithParams = 'type=xyz&url=http://mt1.google.com/vt/lyrs%3Dt%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&zmax=19&zmin=0'
-        rlayer = QgsRasterLayer(urlWithParams, 'Google Terrain', 'wms')
+        urlWithParams = "type=xyz&url=http://mt1.google.com/vt/lyrs%3Dt%26x%3D%7Bx%7D%26y%3D%7By%7D%26z%3D%7Bz%7D&zmax=19&zmin=0"
+        rlayer = QgsRasterLayer(urlWithParams, "Google Terrain", "wms")
         if rlayer.isValid():
             QgsProject.instance().addMapLayer(rlayer, False)
             root.addLayer(rlayer)
         else:
-            msgLog('Failed to load Terrain layer')
-
-
+            msgLog("Failed to load Terrain layer")
 
     def carregacarta(self, model):
         # create Qt widget
@@ -233,9 +247,11 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         canvas.enableAntiAliasing(True)
 
         # not updated US6SP10M files from ENC_ROOT
-        source_dir = QtWidgets.QFileDialog.getExistingDirectory(None, 'Select a folder:', '',
-                                                                QtWidgets.QFileDialog.ShowDirsOnly)
-        if source_dir in [None, '']: return
+        source_dir = QtWidgets.QFileDialog.getExistingDirectory(
+            None, "Select a folder:", "", QtWidgets.QFileDialog.ShowDirsOnly
+        )
+        if source_dir in [None, ""]:
+            return
         # source_dir = "/home/lucas/python_work/TopoGraph"
         canvas_layers = []
         extent = QgsRectangle()
@@ -252,7 +268,11 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
         for files in os.listdir(source_dir):
 
             # load only the shapefiles
-            if files.endswith(".dxf") or files.endswith(".shp") or files.endswith(".dgn"):
+            if (
+                files.endswith(".dxf")
+                or files.endswith(".shp")
+                or files.endswith(".dgn")
+            ):
                 vlayer = QgsVectorLayer(source_dir + "/" + files, files, "ogr")
 
                 # add layer to the registry
@@ -260,25 +280,27 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                 # extent.combineExtentWith(vlayer.extent())
                 # canvas_layers.append(QgsMapCanvasLayer(vlayer))
 
-                vlayer = QgsVectorLayer(r"%s/tmp/%s.shp" % (source_dir, files), files, "ogr")
+                vlayer = QgsVectorLayer(
+                    r"%s/tmp/%s.shp" % (source_dir, files), files, "ogr"
+                )
 
                 attr = {}
                 vlayerUser = vlayer.crs().toProj4()
-                for elem in vlayerUser.strip().split('+'):
-                    key_value = elem.strip().split('=')
+                for elem in vlayerUser.strip().split("+"):
+                    key_value = elem.strip().split("=")
                     if len(key_value) > 1:
                         attr[key_value[0]] = key_value[1]
                     else:
                         attr[key_value[0]] = None
-                attr['units'] = Config.UNITS
-                string_proj = ''
+                attr["units"] = Config.UNITS
+                string_proj = ""
                 for a in attr:
-                    if a == '':
+                    if a == "":
                         continue
                     if attr[a] is None:
-                        string_proj += '+%s ' % a
+                        string_proj += "+%s " % a
                     else:
-                        string_proj += '+%s=%s ' % (a, attr[a])
+                        string_proj += "+%s=%s " % (a, attr[a])
                 crs = QgsCoordinateReferenceSystem()
                 crs.createFromProj4(string_proj)
                 vlayer.setCrs(crs)
@@ -286,8 +308,13 @@ class TopoConfig(QtWidgets.QDialog, FORM_CLASS):
                 extent.combineExtentWith(vlayer.extent())
                 canvas_layers.append(QgsMapLayer(vlayer))
 
-                self.format = QgsVectorFileWriter.writeAsVectorFormat(vlayer, r"%s/tmp/%s.shp" % (source_dir, files),
-                                                                      "utf-8", None, "ESRI Shapefile")
+                self.format = QgsVectorFileWriter.writeAsVectorFormat(
+                    vlayer,
+                    r"%s/tmp/%s.shp" % (source_dir, files),
+                    "utf-8",
+                    None,
+                    "ESRI Shapefile",
+                )
                 print(self.format)
                 # set extent to the extent of our layer
                 # canvas.setExtent(vlayer.extent())

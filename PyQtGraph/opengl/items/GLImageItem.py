@@ -1,13 +1,12 @@
-from OpenGL.GL import *
-from .. GLGraphicsItem import GLGraphicsItem
-from ...Qt import QtGui
+from OpenGL.GL import *  # noqa
 import numpy as np
+from ..GLGraphicsItem import GLGraphicsItem
 
 __all__ = ['GLImageItem']
 
 class GLImageItem(GLGraphicsItem):
     """
-    **Bases:** :class:`GLGraphicsItem <PyQtGraph.opengl.GLGraphicsItem>`
+    **Bases:** :class:`GLGraphicsItem <pyqtgraph.opengl.GLGraphicsItem>`
     
     Displays image data as a textured quad.
     """
@@ -29,8 +28,11 @@ class GLImageItem(GLGraphicsItem):
         GLGraphicsItem.__init__(self)
         self.setData(data)
         self.setGLOptions(glOptions)
+        self.texture = None
         
     def initializeGL(self):
+        if self.texture is not None:
+            return
         glEnable(GL_TEXTURE_2D)
         self.texture = glGenTextures(1)
         
@@ -57,7 +59,8 @@ class GLImageItem(GLGraphicsItem):
         if glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH) == 0:
             raise Exception("OpenGL failed to create 2D texture (%dx%d); too large for this hardware." % shape[:2])
         
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, shape[0], shape[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, self.data.transpose((1,0,2)))
+        data = np.ascontiguousarray(self.data.transpose((1,0,2)))
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, shape[0], shape[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
         glDisable(GL_TEXTURE_2D)
         
         #self.lists = {}
@@ -73,6 +76,7 @@ class GLImageItem(GLGraphicsItem):
     def paint(self):
         if self._needUpdate:
             self._updateTexture()
+            self._needUpdate = False
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, self.texture)
         
@@ -95,5 +99,5 @@ class GLImageItem(GLGraphicsItem):
         glTexCoord2f(0,1)
         glVertex3f(0, self.data.shape[1], 0)
         glEnd()
-        glDisable(GL_TEXTURE_3D)
+        glDisable(GL_TEXTURE_2D)
                 

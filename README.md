@@ -1,4 +1,9 @@
 # GeoRoad
+
+![roadrender480](https://user-images.githubusercontent.com/24435787/177056338-7a77195b-bf76-4a55-be05-2db0b5d0d669.gif)
+
+![image](https://user-images.githubusercontent.com/24435787/177056760-7dbe59f7-0702-47f5-9823-fe17649e152d.png)
+
 ## Descrição
 
 
@@ -12,7 +17,7 @@ Este plugin funciona para Windows, Mac e Linux, com suas principais funções te
 
 ---------------------------------------------------------------------
 
-This plugins has the goal to easy the study and apply the process of the geometric road design and comes with the standard Brazilian guidelines for speed limitations, allowed inclinations, curves radius and length.
+This plugin has the goal to easy the study and apply the process of the geometric road design and comes with the standard Brazilian guidelines for speed limitations, allowed inclinations, curves radius and length.
 
 The basic workflow of this software would be creating a table of segmented points from a vector layer with progressive distance; creating horizontal curves that can be spiral or circular (Segmented); calculating elevations over it from a raster layer; defining the longitudinal profile with parabolic transition curves curves; computing the intersection between the horizontal and vertical data; computing the perpendicular cross section from a raster layer, setting up the road section over the terrain; computing volume and displaying Bruckner's diagram.
 

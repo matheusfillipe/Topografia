@@ -85,30 +85,25 @@ class Estacas(object):
             pt = reprojectgeographic.transform(point)
 
             webbrowser.open(
-                "https://www.google.com.br/maps/@%f,%f,15z?hl=pt-BR" % (
-                    pt.y(), pt.x())
+                "https://www.google.com.br/maps/@%f,%f,15z?hl=pt-BR" % (pt.y(), pt.x())
             )
 
     def events(self):
         self.preview.tableEstacas: QtWidgets.QTableWidget
         self.preview.btnNovo.clicked.connect(self.new)
         self.preview.btnOpen.clicked.connect(lambda: self.openEstaca(True))
-        self.preview.tableEstacas.doubleClicked.connect(
-            lambda: self.openEstaca(True))
+        self.preview.tableEstacas.doubleClicked.connect(lambda: self.openEstaca(True))
         self.preview.btnOpenCSV.clicked.connect(self.openEstacaCSV)
         self.preview.btnApagar.clicked.connect(self.deleteEstaca)
         self.preview.btnGerarTracado.clicked.connect(self.geraTracado)
-        self.preview.tableEstacas.itemClicked.connect(
-            self.itemClickTableEstacas)
-        self.preview.tableEstacas.itemActivated.connect(
-            self.itemClickTableEstacas)
+        self.preview.tableEstacas.itemClicked.connect(self.itemClickTableEstacas)
+        self.preview.tableEstacas.itemActivated.connect(self.itemClickTableEstacas)
         self.preview.tableEstacas.itemSelectionChanged.connect(
             self.itemClickTableEstacas
         )
         self.preview.btnOpenCv.clicked.connect(self.openCv)
         self.preview.deleted.connect(self.deleteEstaca)
-        self.preview.btnDuplicar.clicked.connect(
-            lambda: self.duplicarEstaca(True))
+        self.preview.btnDuplicar.clicked.connect(lambda: self.duplicarEstaca(True))
         self.preview.btnGerarCurvas.clicked.connect(self.geraCurvas)
 
         """
@@ -191,8 +186,7 @@ class Estacas(object):
             self.ctExpDiag = diag = CorteExport(None, float(table[-1][2]))
             diag.btnPreview.clicked.connect(lambda: self.corteExport(True))
             diag.btnSave.clicked.connect(lambda: self.corteExport(False))
-            diag.comboBox.currentIndexChanged.connect(
-                lambda: self.createMesh())
+            diag.comboBox.currentIndexChanged.connect(lambda: self.createMesh())
             diag.label_4.hide()
             diag.inicialSb.hide()
             diag.finalSb.hide()
@@ -235,8 +229,7 @@ class Estacas(object):
         if tipo == "T":
             plane_normal = [1, 0, 0]
             self.progressDialog.show()
-            self.progressDialog.setLoop(
-                100, (e1 - e2) / Config.instance().DIST, 0)
+            self.progressDialog.setLoop(100, (e1 - e2) / Config.instance().DIST, 0)
             for e in self.tableCorte:
                 if estaca2progFloat(e[0]) > e2:
                     break
@@ -260,8 +253,7 @@ class Estacas(object):
             )
         else:  # V
             plane_normal = [0, 1, 0]
-            sections = self.sliceCorte(
-                file, tipo, step, depth, plane_normal, offset)
+            sections = self.sliceCorte(file, tipo, step, depth, plane_normal, offset)
         self.combined = np.sum(sections)
 
         if hasattr(self, "ctExpDiag") and self.ctExpDiag.isEstaca():  # printar estacas
@@ -270,8 +262,7 @@ class Estacas(object):
             textHeight = 5
             if tipo == "T":
                 self.progressDialog.show()
-                self.progressDialog.setLoop(
-                    100, (e1 - e2) / Config.instance().DIST)
+                self.progressDialog.setLoop(100, (e1 - e2) / Config.instance().DIST)
                 for e in self.tableCorte:
                     if estaca2progFloat(e[1]) > e2:
                         break
@@ -283,11 +274,9 @@ class Estacas(object):
                             height=textHeight,
                         )
                         self.combined.vertices = np.vstack(
-                            (self.combined.vertices,
-                             self.combined.bounds.mean(axis=0))
+                            (self.combined.vertices, self.combined.bounds.mean(axis=0))
                         )
-                        self.combined.entities = np.append(
-                            self.combined.entities, text)
+                        self.combined.entities = np.append(self.combined.entities, text)
 
                 self.progressDialog.close()
 
@@ -301,11 +290,9 @@ class Estacas(object):
                         height=textHeight,
                     )
                     self.combined.vertices = np.vstack(
-                        (self.combined.vertices, np.array(
-                            [float(e[4]), float(e[3])]))
+                        (self.combined.vertices, np.array([float(e[4]), float(e[3])]))
                     )
-                    self.combined.entities = np.append(
-                        self.combined.entities, text)
+                    self.combined.entities = np.append(self.combined.entities, text)
                     line = trimesh.path.entities.Line(
                         np.array(
                             [
@@ -336,8 +323,7 @@ class Estacas(object):
                             ),
                         )
                     )
-                    self.combined.entities = np.append(
-                        self.combined.entities, line)
+                    self.combined.entities = np.append(self.combined.entities, line)
             else:  # V
                 for e in self.tableCorte:
                     text = trimesh.path.entities.Text(
@@ -346,11 +332,9 @@ class Estacas(object):
                         height=textHeight,
                     )
                     self.combined.vertices = np.vstack(
-                        (self.combined.vertices, np.array(
-                            [float(e[2]), float(e[5])]))
+                        (self.combined.vertices, np.array([float(e[2]), float(e[5])]))
                     )
-                    self.combined.entities = np.append(
-                        self.combined.entities, text)
+                    self.combined.entities = np.append(self.combined.entities, text)
                     line = trimesh.path.entities.Line(
                         np.array(
                             [
@@ -371,8 +355,7 @@ class Estacas(object):
                             np.array([float(e[2]), float(e[5]) + 5]),
                         )
                     )
-                    self.combined.entities = np.append(
-                        self.combined.entities, line)
+                    self.combined.entities = np.append(self.combined.entities, line)
 
             msgLog(
                 "Foram adicionados "
@@ -430,8 +413,7 @@ class Estacas(object):
         if filename in ["", None]:
             return
         filename = (
-            str(filename) if str(filename).endswith(
-                filter) else str(filename) + filter
+            str(filename) if str(filename).endswith(filter) else str(filename) + filter
         )
         self.combined.export(filename)
 
@@ -494,8 +476,7 @@ class Estacas(object):
             except Exception as e:
                 import traceback
 
-                msgLog(str(traceback.format_exception(
-                    None, e, e.__traceback__))[1:-1])
+                msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
                 errors.append(est)
                 continue
 
@@ -564,8 +545,7 @@ class Estacas(object):
         if filename in ["", None]:
             return
         filename = (
-            str(filename) if str(filename).endswith(
-                filter) else str(filename) + filter
+            str(filename) if str(filename).endswith(filter) else str(filename) + filter
         )
         combined.save(filename)
 
@@ -653,18 +633,18 @@ class Estacas(object):
 
                 msgLog(
                     "Erro: "
-                    + str(traceback.format_exception(None,
-                          e, e.__traceback__))[1:-1]
+                    + str(traceback.format_exception(None, e, e.__traceback__))[1:-1]
                 )
 
     def exportTrans(self):
-        filename = QtWidgets.QFileDialog.getSaveFileName(
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             caption="Save dxf", filter="Arquivo DXF (*.dxf)"
         )
-        if filename[0] in ["", None]:
+        if filename in ["", None]:
             return
-        v = self.trans.verticais.getY(
-            self.trans.progressiva[self.trans.current])
+        if not filename.endswith(".dxf"):
+            filename += ".dxf"
+        v = self.trans.verticais.getY(self.trans.progressiva[self.trans.current])
         self.saveDXF(
             filename[0],
             [
@@ -684,8 +664,7 @@ class Estacas(object):
         uri = filename[0] + "|layername=entities|geometrytype=Line"
         vlayer = QgsVectorLayer(uri, "Seção tipo", "ogr")
         features = [f for f in vlayer.getFeatures()]
-        v = self.trans.verticais.getY(
-            self.trans.progressiva[self.trans.current])
+        v = self.trans.verticais.getY(self.trans.progressiva[self.trans.current])
         pl = featureToPolyline(features[0])
         from collections import OrderedDict
 
@@ -743,8 +722,8 @@ class Estacas(object):
                 + "-"
                 + str(dialog.final_2.itemText(ef))
             )
-            X = Xests[ei: ef + 1]
-            V = Vests[ei: ef + 1]
+            X = Xests[ei : ef + 1]
+            V = Vests[ei : ef + 1]
             dist = Config.instance().DIST
             X = [x * dist for x in X]
 
@@ -812,7 +791,7 @@ class Estacas(object):
         msgLog("Calculando tabela de volumes acumulados")
         X = [float(x) for x in X]
         x1 = X[ei]
-        X = X[ei: ef + 1]
+        X = X[ei : ef + 1]
         V = []
         vAcumulado = 0
         face = prismoide.faces[ei]
@@ -850,23 +829,26 @@ class Estacas(object):
         return X, V
 
     def bruckner2DXF(self, X, Y):
-        filename = QtWidgets.QFileDialog.getSaveFileName(
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             caption="Save dxf", filter="Arquivo DXF (*.dxf)"
         )
-        if filename[0] in ["", None]:
+        if filename in ["", None]:
             return
+        if not filename.endswith(".dxf"):
+            filename += ".dxf"
         dist = Config.instance().DIST
         self.saveDXF(
-            filename[0], [[p2QgsPoint(x * dist, y / 1000000)
-                           for x, y in (zip(X, Y))]]
+            filename, [[p2QgsPoint(x * dist, y / 1000000) for x, y in (zip(X, Y))]]
         )
 
     def exportDXF(self):
-        filename = QtWidgets.QFileDialog.getSaveFileName(
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             caption="Save dxf", filter="Arquivo DXF (*.dxf)"
         )
-        if filename[0] in ["", None]:
+        if filename in ["", None]:
             return
+        if not filename.endswith(".dxf"):
+            filename += ".dxf"
         estacas = self.viewCv.get_estacas()
         terreno = self.model.load_terreno_long()
         Lpoints = []
@@ -876,20 +858,18 @@ class Estacas(object):
                 points.append(p2QgsPoint(float(e[-2]), float(e[-1])))
             Lpoints.append(points)
             prog = float(e[-2])
-            points = [p2QgsPoint(float(e[-2]) - prog, float(e[-1]))
-                      for e in terreno]
+            points = [p2QgsPoint(float(e[-2]) - prog, float(e[-1])) for e in terreno]
             Lpoints.append(points)
         elif self.viewCv.mode == "T":
             points = []
             for e in estacas:
-                points.append(p2QgsPoint(
-                    [float(e[4]), float(e[3]), float(e[-3])]))
+                points.append(p2QgsPoint([float(e[4]), float(e[3]), float(e[-3])]))
             Lpoints.append(points)
 
-        self.saveDXF(filename[0], Lpoints)
+        self.saveDXF(filename, Lpoints)
 
         if self.viewCv.mode == "CV":
-            self.addVerticalEstacas(filename[0], estacas)
+            self.addVerticalEstacas(filename, estacas)
 
     def exportCS(self):
         #        if yesNoDialog(title="Plotar Transversais?", message="Deseja exportar os perfis transversais? (Se ainda não foram definidos não serão salvos)"):
@@ -897,11 +877,13 @@ class Estacas(object):
 
         X, table, prismoide = self.loadTrans()
 
-        filename = QtWidgets.QFileDialog.getSaveFileName(
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             caption="Save dxf", filter="Arquivo DXF (*.dxf)"
         )
-        if filename[0] in ["", None]:
+        if filename in ["", None]:
             return
+        if not filename.endswith(".dxf"):
+            filename += ".dxf"
         LPoints = []
         for i, face in enumerate(prismoide.getFaces()):
             st = face.superior
@@ -923,8 +905,7 @@ class Estacas(object):
             LPoints.append(points)
 
         self.addTransEstacas(
-            filename[0], self.model.load_intersect(
-            ), self.saveDXF(filename[0], LPoints)
+            filename, self.model.load_intersect(), self.saveDXF(filename, LPoints)
         )
         self.progressDialog.close()
 
@@ -989,7 +970,6 @@ class Estacas(object):
             "memory",
         )
         layer.setCrs(QgsCoordinateReferenceSystem(QgsProject.instance().crs()))
-        features = []
         DX = 0
         DY = 0
         MAX_COLUMNS = 10
@@ -999,11 +979,19 @@ class Estacas(object):
             g = QgsGeometry.fromPolyline(points)
             g.translate(DX, DY)
             feat.setGeometry(g)
-            features.append(QgsFeature(feat))
+            # features.append(QgsFeature(feat))
+            layer.dataProvider().addFeatures([feat])
+            layer.updateExtents()
+
+            # TODO this rectangle is not really being added around
             feat = QgsFeature()
             rect = g.boundingBox()
             feat.setGeometry(QgsGeometry.fromRect(rect))
-            features.append(QgsFeature(feat))
+
+            layer.dataProvider().addFeatures([feat])
+            layer.updateExtents()
+
+            # features.append(QgsFeature(feat))
             coords.append(
                 np.array([np.average(rect.center().x()), rect.center().y() + 5])
             )
@@ -1016,15 +1004,13 @@ class Estacas(object):
                 DY -= DX / MAX_COLUMNS
                 DX = 0
 
-        layer.dataProvider().addFeatures(features)
-        layer.updateExtents()
+        # QgsProject.instance().addMapLayer(layer)
 
-        #        QgsProject.instance().addMapLayer(layer)
         dxfExport = QgsDxfExport()
         dxfExport.setMapSettings(self.iface.mapCanvas().mapSettings())
         dxfExport.addLayers([QgsDxfExport.DxfLayer(layer)])
         dxfExport.setSymbologyScale(1)
-        # dxfExport.setSymbologyExport(QgsDxfExport.SymbolLayerSymbology)
+        dxfExport.setSymbologyExport(QgsDxfExport.SymbolLayerSymbology)
         dxfExport.setLayerTitleAsName(True)
         dxfExport.setDestinationCrs(layer.crs())
         dxfExport.setForce2d(False)
@@ -1102,8 +1088,7 @@ class Estacas(object):
         if l > 1:
             self.preview.error("Selecione um único arquivo!")
         elif l < 1:  # criar traçado, iniciar edição
-            name = self.fileName(
-                "Traçado " + str(len(self.model.listTables()) + 1))
+            name = self.fileName("Traçado " + str(len(self.model.listTables()) + 1))
             if not name:
                 return
             self.new(
@@ -1186,8 +1171,7 @@ class Estacas(object):
         if self.model.id_filename == -1:
             return
         filename = self.fileName(
-            suggestion="Cópia de " +
-            self.model.getNameFromId(self.model.id_filename)
+            suggestion="Cópia de " + self.model.getNameFromId(self.model.id_filename)
         )
         if not filename:
             return None
@@ -1219,8 +1203,7 @@ class Estacas(object):
                     msgLog("Tranversais Salvas!")
             except Exception as e:
                 msgLog("Falha ao duplicar Transversais: ")
-                msgLog(str(traceback.format_exception(
-                    None, e, e.__traceback__))[1:-1])
+                msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
 
         self.model.id_filename = self.model.ultimo
         self.progressDialog.setValue(40)
@@ -1237,8 +1220,7 @@ class Estacas(object):
             curvaModel.duplicate(filename, self.model.ultimo, source)
         except Exception as e:
             msgLog("---------------------------------\n\nFalha ao duplicar curvas: ")
-            msgLog(str(traceback.format_exception(
-                None, e, e.__traceback__))[1:-1])
+            msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
         self.progressDialog.setValue(60)
         try:
             tipo, class_project = self.model.tipo()
@@ -1258,8 +1240,7 @@ class Estacas(object):
             self.model.saveGreide(self.model.ultimo)
         except Exception as e:
             msgLog("Falha ao duplicar Greide: ")
-            msgLog(str(traceback.format_exception(
-                None, e, e.__traceback__))[1:-1])
+            msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
         self.progressDialog.setValue(80)
         # self.geraCurvas(self.model.id_filename)
 
@@ -1365,18 +1346,15 @@ class Estacas(object):
                 if prog in progs:
                     h = horizontais[progs.index(float(v[2]))]
                     if h[1]:
-                        desc = "" if h[1] == "" and v[1] == "" else h[1] + \
-                            " + " + v[1]
+                        desc = "" if h[1] == "" and v[1] == "" else h[1] + " + " + v[1]
                     else:
                         desc = v[1]
-                    verticais.append(
-                        [v[0], desc, v[2], h[3], h[4], v[3], h[5], h[6]])
+                    verticais.append([v[0], desc, v[2], h[3], h[4], v[3], h[5], h[6]])
                 else:
                     pt = road.interpolate(prog - 0.1).asPoint()
                     pt2 = road.interpolate(prog).asPoint()
                     verticais.append(
-                        [v[0], v[1], v[2], pt.y(), pt.x(), v[3], None,
-                         azimuth(pt, pt2)]
+                        [v[0], v[1], v[2], pt.y(), pt.x(), v[3], None, azimuth(pt, pt2)]
                     )  # Não sei a cota 6
                 self.progressDialog.increment()
                 vprogs.append(prog)
@@ -1444,12 +1422,10 @@ class Estacas(object):
                     from numpy import interp
 
                     table[i][-2] = interp(
-                        0, [-distAnt,
-                            distProx], [float(anterior[0]), float(proxima[0])]
+                        0, [-distAnt, distProx], [float(anterior[0]), float(proxima[0])]
                     )
                     table[i][-3] = interp(
-                        0, [-distAnt,
-                            distProx], [float(anterior[1]), float(proxima[1])]
+                        0, [-distAnt, distProx], [float(anterior[1]), float(proxima[1])]
                     )
                 except Exception as e:
                     msgLog(str(e))
@@ -1862,8 +1838,7 @@ class Estacas(object):
                         pointsList.append([xPoint, yPoint])
 
                     except ValueError as e:
-                        self.preview.error(
-                            "GeoTIFF não compativel com a coordenada!!!")
+                        self.preview.error("GeoTIFF não compativel com a coordenada!!!")
                         msgLog(str(e))
                         return False
                     except IndexError as e:
@@ -1908,8 +1883,7 @@ class Estacas(object):
 
         for i, _ in enumerate(pointsList):
 
-            point = QgsPointXY(
-                float(pointsList[i][0]), float(pointsList[i][1]))
+            point = QgsPointXY(float(pointsList[i][0]), float(pointsList[i][1]))
             points.append(point)
 
         poly.setGeometry(QgsGeometry.fromPolylineXY(points))
@@ -1920,8 +1894,7 @@ class Estacas(object):
 
     def newEstacasLayer(self, name):
         fields = layerFields()
-        self.model.saveGeoPackage(
-            name, [], fields, QgsWkbTypes.MultiCurveZ, "GPKG")
+        self.model.saveGeoPackage(name, [], fields, QgsWkbTypes.MultiCurveZ, "GPKG")
 
     def saveEstacasLayer(self, estacas, name=None):
         name = (
@@ -2050,8 +2023,7 @@ class Estacas(object):
             for x in range(1, dataset.RasterCount + 1):
                 band = dataset.GetRasterBand(x)
                 img = band.ReadAsArray()
-            self.img_origem = dataset.GetGeoTransform(
-            )[0], dataset.GetGeoTransform()[3]
+            self.img_origem = dataset.GetGeoTransform()[0], dataset.GetGeoTransform()[3]
             self.tamanho_pixel = abs(dataset.GetGeoTransform()[1]), abs(
                 dataset.GetGeoTransform()[5]
             )
@@ -2077,8 +2049,7 @@ class Estacas(object):
                     estacas[i][5] = "%f" % img[pixel]
                 except Exception as e:
                     # self.drawEstacas(estacas)
-                    self.preview.error(
-                        "GeoTIFF não compativel com a coordenada!!!")
+                    self.preview.error("GeoTIFF não compativel com a coordenada!!!")
                     msgLog("Erro: " + str(e))
                     break
 
@@ -2099,8 +2070,7 @@ class Estacas(object):
         # fazer multithreading
         for i, _ in enumerate(estacas):
             points.append(
-                (int("%d" % float(estacas[i][4])),
-                 int("%d" % float(estacas[i][3])))
+                (int("%d" % float(estacas[i][4])), int("%d" % float(estacas[i][3])))
             )
 
         dwg = dxfgrabber.readfile(filename, options={"assure_3d_coords": True})
@@ -2132,8 +2102,7 @@ class Estacas(object):
         import win32event
         import win32process
 
-        outpath = r"%s\%s.out" % (
-            os.environ["TEMP"], os.path.basename(__file__))
+        outpath = r"%s\%s.out" % (os.environ["TEMP"], os.path.basename(__file__))
         if ctypes.windll.shell32.IsUserAnAdmin():
             if os.path.isfile(outpath):
                 sys.stderr = sys.stdout = open(outpath, "w", 0)
@@ -2221,8 +2190,7 @@ class Estacas(object):
             "SVM",
             "Regressão Linear",
         ]
-        itens_func = [KNeighborsRegressor, KNN,
-                      SVR, linear_model.ARDRegression]
+        itens_func = [KNeighborsRegressor, KNN, SVR, linear_model.ARDRegression]
         item, ok = QtWidgets.QInputDialog.getItem(
             None, "Selecione:", "Selecione o método de predição:", itens, 0, False
         )
@@ -2256,8 +2224,7 @@ class Estacas(object):
                 self.model.table[i][5] = "%d" % getElevation(
                     crs,
                     p2QgsPoint(
-                        float(self.model.table[i][4]), float(
-                            self.model.table[i][3])
+                        float(self.model.table[i][4]), float(self.model.table[i][3])
                     ),
                 )
                 if self.model.table[i][5] == 0:
@@ -2364,8 +2331,7 @@ class Estacas(object):
 
     @nongui
     def generateVerticaisThread(self):
-        self.progressDialog.setText(
-            "Calculando estacas do greide no perfil vertical")
+        self.progressDialog.setText("Calculando estacas do greide no perfil vertical")
         self.openEstaca()
         self.viewCv.clear()
         self.viewCv.setWindowTitle(
@@ -2389,8 +2355,7 @@ class Estacas(object):
                 None, title="Erro!", message="Perfil Vertical ainda não foi definido!"
             )
             msgLog("Falha ao identificar Greide")
-            msgLog(str(traceback.format_exception(
-                None, e, e.__traceback__))[1:-1])
+            msgLog(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
             return
             # self.perfilView()
             # self.perfil = Ui_Perfil(self.view, tipo, class_project, self.model.getGreide(self.model.id_filename), self.model.getCv(self.model.id_filename))
@@ -2445,8 +2410,7 @@ class Estacas(object):
         est = 1
         dist = Config.instance().DIST
         LH = int(
-            self.perfil.roi.getHandlePos(
-                self.perfil.roi.countHandles() - 1).x() / dist
+            self.perfil.roi.getHandlePos(self.perfil.roi.countHandles() - 1).x() / dist
         )
         skip = False
         self.progressDialog.setLoop(80, LH)
@@ -2526,13 +2490,11 @@ class Estacas(object):
                 continue
 
             if dx == dist and (pv or pt):
-                (estaca, descricao, progressiva, cota) = (
-                    str(est + 1), desc, x, y)
+                (estaca, descricao, progressiva, cota) = (str(est + 1), desc, x, y)
                 skip = True
             else:
                 (estaca, descricao, progressiva, cota) = (
-                    est if not (pv or pt) else str(est) +
-                    " + " + roundFloat2str(dx),
+                    est if not (pv or pt) else str(est) + " + " + roundFloat2str(dx),
                     desc,
                     x,
                     y,
@@ -2611,8 +2573,7 @@ class Estacas(object):
     def updateTables(self):
         try:
             self.view.setWindowTitle(
-                self.model.getNameFromId(
-                    self.model.id_filename) + ": Horizontal"
+                self.model.getNameFromId(self.model.id_filename) + ": Horizontal"
             )
         except:
             pass
@@ -2635,8 +2596,7 @@ class Estacas(object):
         while finalResult > 0 or result > 0:
             self.update()
             result = self.preview.exec_()
-            self.nextView.resize(self.nextView.width(),
-                                 self.nextView.height() + 1)
+            self.nextView.resize(self.nextView.width(), self.nextView.height() + 1)
             if result:
                 self.preview.close()
                 self.nextView.show()

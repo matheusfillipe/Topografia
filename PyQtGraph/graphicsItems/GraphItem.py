@@ -1,10 +1,10 @@
-from builtins import range
+import numpy as np
+
 from .. import functions as fn
+from .. import getConfigOption
+from ..Qt import QtCore, QtGui
 from .GraphicsObject import GraphicsObject
 from .ScatterPlotItem import ScatterPlotItem
-from ..Qt import QtGui, QtCore
-import numpy as np
-from .. import getConfigOption
 
 __all__ = ['GraphItem']
 
@@ -33,31 +33,33 @@ class GraphItem(GraphicsObject):
         **Arguments:**
         pos             (N,2) array of the positions of each node in the graph.
         adj             (M,2) array of connection data. Each row contains indexes
-                        of two nodes that are connected.
+                        of two nodes that are connected or None to hide lines
         pen             The pen to use when drawing lines between connected
                         nodes. May be one of:
                      
-                        * QPen
-                        * a single argument to pass to pg.mkPen
-                        * a record array of length M
-                          with fields (red, green, blue, alpha, width). Note
-                          that using this option may have a significant performance
-                          cost.
-                        * None (to disable connection drawing)
-                        * 'default' to use the default foreground color.
+                          * QPen
+                          * a single argument to pass to pg.mkPen
+                          * a record array of length M
+                            with fields (red, green, blue, alpha, width). Note
+                            that using this option may have a significant performance
+                            cost.
+                          * None (to disable connection drawing)
+                          * 'default' to use the default foreground color.
                      
         symbolPen       The pen(s) used for drawing nodes.
         symbolBrush     The brush(es) used for drawing nodes.
         ``**opts``      All other keyword arguments are given to
-                        :func:`ScatterPlotItem.setData() <PyQtGraph.ScatterPlotItem.setData>`
+                        :func:`ScatterPlotItem.setData() <pyqtgraph.ScatterPlotItem.setData>`
                         to affect the appearance of nodes (symbol, size, brush,
                         etc.)
         ==============  =======================================================================
         """
         if 'adj' in kwds:
             self.adjacency = kwds.pop('adj')
-            if self.adjacency.dtype.kind not in 'iu':
-                raise Exception("adjacency array must have int or unsigned type.")
+            if hasattr(self.adjacency, '__len__') and len(self.adjacency) == 0:
+                self.adjacency = None
+            elif self.adjacency is not None and self.adjacency.dtype.kind not in 'iu':
+                raise Exception("adjacency must be None or an array of either int or unsigned type.")
             self._update()
         if 'pos' in kwds:
             self.pos = kwds['pos']
@@ -83,11 +85,11 @@ class GraphItem(GraphicsObject):
         Set the pen used to draw graph lines.
         May be: 
         
-        * None to disable line drawing
-        * Record array with fields (red, green, blue, alpha, width)
-        * Any set of arguments and keyword arguments accepted by 
-          :func:`mkPen <PyQtGraph.mkPen>`.
-        * 'default' to use the default foreground color.
+          * None to disable line drawing
+          * Record array with fields (red, green, blue, alpha, width)
+          * Any set of arguments and keyword arguments accepted by
+            :func:`mkPen <pyqtgraph.mkPen>`.
+          * 'default' to use the default foreground color.
         """
         if len(args) == 1 and len(kwargs) == 0:
             self.pen = args[0]
@@ -127,10 +129,10 @@ class GraphItem(GraphicsObject):
             p.end()
 
     def paint(self, p, *args):
-        if self.picture == None:
+        if self.picture is None:
             self.generatePicture()
         if getConfigOption('antialias') is True:
-            p.setRenderHint(p.Antialiasing)
+            p.setRenderHint(p.RenderHint.Antialiasing)
         self.picture.play(p)
         
     def boundingRect(self):
@@ -141,8 +143,3 @@ class GraphItem(GraphicsObject):
     
     def pixelPadding(self):
         return self.scatter.pixelPadding()
-        
-        
-        
-        
-

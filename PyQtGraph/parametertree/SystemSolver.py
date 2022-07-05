@@ -1,8 +1,10 @@
-from __future__ import print_function
-from builtins import object
-from ..pgcollections import OrderedDict
-import numpy as np
 import copy
+from collections import OrderedDict
+from math import log2
+
+import numpy as np
+
+from .. import functions as fn
 
 
 class SystemSolver(object):
@@ -52,16 +54,17 @@ class SystemSolver(object):
     1) The *defaultState* class attribute: This is a dict containing a 
        description of the variables in the system--their default values,
        data types, and the ways they can be constrained. The format is::
-       
+
            { name: [value, type, constraint, allowed_constraints], ...}
-       
-       * *value* is the default value. May be None if it has not been specified
-         yet.
-       * *type* may be float, int, bool, np.ndarray, ...
-       * *constraint* may be None, single value, or (min, max)
-            * None indicates that the value is not constrained--it may be 
-              automatically generated if the value is requested.
-       * *allowed_constraints* is a string composed of (n)one, (f)ixed, and (r)ange. 
+
+       Where:
+         * *value* is the default value. May be None if it has not been specified
+           yet.
+         * *type* may be float, int, bool, np.ndarray, ...
+         * *constraint* may be None, single value, or (min, max)
+              * None indicates that the value is not constrained--it may be
+                automatically generated if the value is requested.
+         * *allowed_constraints* is a string composed of (n)one, (f)ixed, and (r)ange.
        
        Note: do not put mutable objects inside defaultState!
        
@@ -232,7 +235,7 @@ class SystemSolver(object):
         Return a serializable description of the solver's current state.
         """
         state = OrderedDict()
-        for name, var in list(self._vars.items()):
+        for name, var in self._vars.items():
             state[name] = (var[0], var[2])
         return state
     
@@ -241,7 +244,7 @@ class SystemSolver(object):
         Restore the state of all values and constraints in the solver.
         """
         self.reset()
-        for name, var in list(state.items()):
+        for name, var in state.items():
             self.set(name, var[0], var[1])
     
     def resetUnfixed(self):
@@ -249,7 +252,7 @@ class SystemSolver(object):
         For any variable that does not have a fixed value, reset
         its value to None.
         """
-        for var in list(self._vars.values()):
+        for var in self._vars.values():
             if var[2] != 'fixed':
                 var[0] = None
                 
@@ -265,7 +268,7 @@ class SystemSolver(object):
         (Ideally, all parameters are either fixed by the user or constrained by the
         system, but never both).
         """
-        for k,v in list(self._vars.items()):
+        for k,v in self._vars.items():
             if v[2] == 'fixed' and 'n' in v[3]:
                 oldval = v[:]
                 self.set(k, None, None)
@@ -284,10 +287,10 @@ class SystemSolver(object):
 
     def __repr__(self):
         state = OrderedDict()
-        for name, var in list(self._vars.items()):
+        for name, var in self._vars.items():
             if var[2] == 'fixed':
                 state[name] = var[0]
-        state = ', '.join(["%s=%s" % (n, v) for n,v in list(state.items())])
+        state = ', '.join(["%s=%s" % (n, v) for n,v in state.items()])
         return "<%s %s>" % (self.__class__.__name__, state)
 
 
@@ -392,15 +395,12 @@ if __name__ == '__main__':
                 sh = self.shutter   # this raises RuntimeError if shutter has not
                                    # been specified
                 ap = 4.0 * (sh / (1./60.)) * (iso / 100.) * (2 ** exp) * (2 ** light)
-                ap = np.clip(ap, 2.0, 16.0)
+                ap = fn.clip_scalar(ap, 2.0, 16.0)
             except RuntimeError:
                 # program mode; we can select a suitable shutter
                 # value at the same time.
                 sh = (1./60.)
                 raise
-            
-            
-            
             return ap
 
         def _balance(self):
@@ -408,10 +408,8 @@ if __name__ == '__main__':
             light = self.lightMeter
             sh = self.shutter
             ap = self.aperture
-            fl = self.flash
-            
             bal = (4.0 / ap) * (sh / (1./60.)) * (iso / 100.) * (2 ** light)
-            return np.log2(bal)
+            return log2(bal)
     
     camera = Camera()
     

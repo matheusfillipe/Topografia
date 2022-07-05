@@ -1,15 +1,10 @@
-from builtins import range
-# -*- coding: utf-8 -*-
 import numpy as np
-from ...Qt import QtCore, QtGui
-from ..Node import Node
-from . import functions
+
+from ... import Point, PolyLineROI
 from ... import functions as pgfn
-from .common import *
-from ...python2_3 import xrange
-from ... import PolyLineROI
-from ... import Point
 from ... import metaarray as metaarray
+from . import functions
+from .common import CtrlNode, PlottingCtrlNode, metaArrayWrapper
 
 
 class Downsample(CtrlNode):
@@ -319,7 +314,6 @@ class RemovePeriodic(CtrlNode):
         
         ## determine frequencies in fft data
         df = 1.0 / (len(data1) * dt)
-        freqs = np.linspace(0.0, (len(ft)-1) * df, len(ft))
         
         ## flatten spikes at f0 and harmonics
         f0 = self.ctrls['f0'].value()

@@ -61,10 +61,8 @@ class Estacas(object):
             iface=iface,
         )
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
-        con.execute(
-            "INSERT INTO TABLEESTACA (name) values ('" + filename + "')")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con.execute("INSERT INTO TABLEESTACA (name) values ('" + filename + "')")
         con.commit()
         id_estaca = con.execute("SELECT last_insert_rowid()").fetchone()
         con.close()
@@ -79,13 +77,10 @@ class Estacas(object):
         return self.table
 
     def newEmpty(self, distancia, filename):
-        self.__init__(distancia=distancia,
-                      filename=filename, ultimo=self.ultimo)
+        self.__init__(distancia=distancia, filename=filename, ultimo=self.ultimo)
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
-        con.execute(
-            "INSERT INTO TABLEESTACA (name) values ('" + filename + "')")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con.execute("INSERT INTO TABLEESTACA (name) values ('" + filename + "')")
         con.commit()
         id_estaca = con.execute("SELECT last_insert_rowid()").fetchone()[0]
         con.close()
@@ -94,8 +89,7 @@ class Estacas(object):
 
     def getNewId(self):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         id_estaca = con.execute("SELECT last_insert_rowid()").fetchone()
         con.close()
         compactZIP(Config.fileName)
@@ -103,10 +97,8 @@ class Estacas(object):
 
     def saveEstacas(self, filename, estacas):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
-        con.execute(
-            "INSERT INTO TABLEESTACA (name) values ('" + filename + "')")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con.execute("INSERT INTO TABLEESTACA (name) values ('" + filename + "')")
         con.commit()
         id_estaca = con.execute("SELECT last_insert_rowid()").fetchone()
         con.close()
@@ -121,8 +113,7 @@ class Estacas(object):
     def saveVerticais(self, table):
         try:
             extractZIP(Config.fileName)
-            con = sqlite3.connect(
-                Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+            con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
             con.execute(
                 "DELETE FROM VERTICAIS_TABLE WHERE TABLEESTACA_id=?",
                 (self.id_filename,),
@@ -152,8 +143,7 @@ class Estacas(object):
     def saveIntersect(self, table):
         try:
             extractZIP(Config.fileName)
-            con = sqlite3.connect(
-                Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+            con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
             con.execute(
                 "DELETE FROM INTERSECT_TABLE WHERE TABLEESTACA_id=?",
                 (self.id_filename,),
@@ -183,11 +173,9 @@ class Estacas(object):
     def saveBruckner(self, table):
         try:
             extractZIP(Config.fileName)
-            con = sqlite3.connect(
-                Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+            con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
             con.execute(
-                "DELETE FROM BRUCKNER_TABLE WHERE TABLEESTACA_id=?", (
-                    self.id_filename,)
+                "DELETE FROM BRUCKNER_TABLE WHERE TABLEESTACA_id=?", (self.id_filename,)
             )
 
             for linha in table:
@@ -214,11 +202,9 @@ class Estacas(object):
         from pathlib import Path
 
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         con.execute(
-            "DELETE FROM BRUCKNER_TABLE WHERE TABLEESTACA_id=?", (
-                self.id_filename,)
+            "DELETE FROM BRUCKNER_TABLE WHERE TABLEESTACA_id=?", (self.id_filename,)
         )
         con.isolation_level = None
         con.execute("VACUUM")
@@ -256,8 +242,7 @@ class Estacas(object):
 
     def getCRS(self):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         proj = con.execute("SELECT crs FROM PROJECT where id = 1").fetchone()
         crs = proj[0]
         con.close()
@@ -266,8 +251,7 @@ class Estacas(object):
 
     def tipo(self):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         proj = con.execute(
             "SELECT crs, classeprojeto, maxplano,maxondulado,maxmontanhoso,tipomapa FROM PROJECT where id = 1"
         ).fetchone()
@@ -297,8 +281,7 @@ class Estacas(object):
         if self.id_filename == -1:
             return None
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         est = con.execute(
             "SELECT estaca,descricao,progressiva,norte,este,cota,azimute FROM ESTACA WHERE TABLEESTACA_id = ?",
             (int(self.id_filename),),
@@ -309,8 +292,7 @@ class Estacas(object):
 
     def listTables(self):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         est = con.execute("SELECT id,name,data FROM TABLEESTACA").fetchall()
         con.close()
         compactZIP(Config.fileName)
@@ -320,8 +302,7 @@ class Estacas(object):
         if self.id_filename == -1:
             return None
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         est = con.execute(
             "select estaca,descricao,progressiva,greide from verticais_table where tableestaca_id = ?",
             (int(self.id_filename),),
@@ -334,8 +315,7 @@ class Estacas(object):
         if self.id_filename == -1:
             return None
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         est = con.execute(
             "select descricao,progressiva,cota from ESTACA where tableestaca_id = ?",
             (int(self.id_filename),),
@@ -350,8 +330,7 @@ class Estacas(object):
         if id_filename == -1:
             return None
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         est = con.execute(
             "SELECT estaca,descricao,progressiva,norte,este,greide,cota,azimute FROM INTERSECT_TABLE WHERE TABLEESTACA_id = ?",
             (int(id_filename),),
@@ -364,8 +343,7 @@ class Estacas(object):
         if self.id_filename == -1:
             return None
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         est = con.execute(
             "SELECT estaca, volume FROM BRUCKNER_TABLE WHERE TABLEESTACA_id = ?",
             (int(self.id_filename),),
@@ -376,8 +354,7 @@ class Estacas(object):
 
     def getNameFromId(self, id):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         name = con.execute(
             "SELECT name FROM TABLEESTACA WHERE id=?", (str(id),)
         ).fetchall()
@@ -391,36 +368,26 @@ class Estacas(object):
     def deleteEstaca(self, idEstacaTable):
         self.removeGeoPackage(self.getNameFromId(idEstacaTable))
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
-        con.execute("DELETE FROM ESTACA WHERE TABLEESTACA_id=?",
-                    (idEstacaTable,))
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con.execute("DELETE FROM ESTACA WHERE TABLEESTACA_id=?", (idEstacaTable,))
         con.execute("DELETE FROM TABLEESTACA WHERE id=?", (idEstacaTable,))
         con.execute(
-            "DELETE FROM VERTICAIS_TABLE WHERE TABLEESTACA_id=?", (
-                idEstacaTable,)
+            "DELETE FROM VERTICAIS_TABLE WHERE TABLEESTACA_id=?", (idEstacaTable,)
         )
         con.execute(
-            "DELETE FROM INTERSECT_TABLE WHERE TABLEESTACA_id=?", (
-                idEstacaTable,)
+            "DELETE FROM INTERSECT_TABLE WHERE TABLEESTACA_id=?", (idEstacaTable,)
         )
         con.execute(
-            "DELETE FROM RELEVO_SESSAO WHERE TABLEESTACA_id=?", (
-                idEstacaTable,)
+            "DELETE FROM RELEVO_SESSAO WHERE TABLEESTACA_id=?", (idEstacaTable,)
         )
+        con.execute("DELETE FROM SESSAO_TIPO WHERE TABLEESTACA_id=?", (idEstacaTable,))
+        con.execute("DELETE FROM TRANSVERSAL WHERE TABLEESTACA_id=?", (idEstacaTable,))
         con.execute(
-            "DELETE FROM SESSAO_TIPO WHERE TABLEESTACA_id=?", (idEstacaTable,))
-        con.execute(
-            "DELETE FROM TRANSVERSAL WHERE TABLEESTACA_id=?", (idEstacaTable,))
-        con.execute(
-            "DELETE FROM CURVA_VERTICAL_DADOS WHERE TABLEESTACA_id=?", (
-                idEstacaTable,)
+            "DELETE FROM CURVA_VERTICAL_DADOS WHERE TABLEESTACA_id=?", (idEstacaTable,)
         )
-        con.execute("DELETE FROM GREIDE WHERE TABLEESTACA_id=?",
-                    (idEstacaTable,))
+        con.execute("DELETE FROM GREIDE WHERE TABLEESTACA_id=?", (idEstacaTable,))
         con.execute(
-            "DELETE FROM BRUCKNER_TABLE WHERE TABLEESTACA_id=?", (
-                idEstacaTable,)
+            "DELETE FROM BRUCKNER_TABLE WHERE TABLEESTACA_id=?", (idEstacaTable,)
         )
         con.commit()
         con.close()
@@ -440,10 +407,8 @@ class Estacas(object):
 
     def save(self, idEstacaTable):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
-        con.execute("DELETE FROM ESTACA WHERE TABLEESTACA_id=?",
-                    (idEstacaTable,))
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con.execute("DELETE FROM ESTACA WHERE TABLEESTACA_id=?", (idEstacaTable,))
         con.commit()
         for linha in self.table:
             linha = list(linha)
@@ -463,10 +428,8 @@ class Estacas(object):
 
     def saveGreide(self, idEstacaTable):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
-        con.execute("DELETE FROM GREIDE WHERE TABLEESTACA_id = ?",
-                    (idEstacaTable,))
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con.execute("DELETE FROM GREIDE WHERE TABLEESTACA_id = ?", (idEstacaTable,))
         con.commit()
         for linha in self.table:
             linha = list(linha)
@@ -474,8 +437,7 @@ class Estacas(object):
 
             lt = tuple(linha)
 
-            con.execute(
-                "INSERT INTO GREIDE (x,cota,TABLEESTACA_id)values(?,?,?)", lt)
+            con.execute("INSERT INTO GREIDE (x,cota,TABLEESTACA_id)values(?,?,?)", lt)
         con.isolation_level = None
         con.execute("VACUUM")
         con.isolation_level = ""
@@ -501,30 +463,24 @@ class Estacas(object):
 
     def cleanGreide(self, id_filename):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
-        con.execute("DELETE FROM GREIDE WHERE TABLEESTACA_id = ?",
-                    (id_filename,))
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con.execute("DELETE FROM GREIDE WHERE TABLEESTACA_id = ?", (id_filename,))
         con.commit()
         con.close()
         compactZIP(Config.fileName)
 
     def saveTrans(self, id_filename, prismoid: prismoide):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
 
-        con.execute(
-            "DELETE FROM TRANSVERSAL WHERE TABLEESTACA_id = ?", (id_filename,))
+        con.execute("DELETE FROM TRANSVERSAL WHERE TABLEESTACA_id = ?", (id_filename,))
+        con.commit()
+
+        con.execute("DELETE FROM SESSAO_TIPO WHERE TABLEESTACA_id = ?", (id_filename,))
         con.commit()
 
         con.execute(
-            "DELETE FROM SESSAO_TIPO WHERE TABLEESTACA_id = ?", (id_filename,))
-        con.commit()
-
-        con.execute(
-            "DELETE FROM RELEVO_SESSAO WHERE TABLEESTACA_id = ?", (
-                id_filename,)
+            "DELETE FROM RELEVO_SESSAO WHERE TABLEESTACA_id = ?", (id_filename,)
         )
         con.commit()
 
@@ -537,8 +493,7 @@ class Estacas(object):
 
             lt = tuple(linha)
 
-            cursor.execute(
-                "INSERT INTO TRANSVERSAL (x,TABLEESTACA_id)values(?,?)", lt)
+            cursor.execute("INSERT INTO TRANSVERSAL (x,TABLEESTACA_id)values(?,?)", lt)
 
             transId = int(cursor.lastrowid)
 
@@ -576,24 +531,20 @@ class Estacas(object):
 
     def cleanTrans(self, idEstacaTable):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
 
         con.execute(
-            "DELETE FROM TRANSVERSAL WHERE TABLEESTACA_id = ?", (
-                idEstacaTable,)
+            "DELETE FROM TRANSVERSAL WHERE TABLEESTACA_id = ?", (idEstacaTable,)
         )
         con.commit()
 
         con.execute(
-            "DELETE FROM SESSAO_TIPO WHERE TABLEESTACA_id = ?", (
-                idEstacaTable,)
+            "DELETE FROM SESSAO_TIPO WHERE TABLEESTACA_id = ?", (idEstacaTable,)
         )
         con.commit()
 
         con.execute(
-            "DELETE FROM RELEVO_SESSAO WHERE TABLEESTACA_id = ?", (
-                idEstacaTable,)
+            "DELETE FROM RELEVO_SESSAO WHERE TABLEESTACA_id = ?", (idEstacaTable,)
         )
         con.commit()
         con.isolation_level = None
@@ -618,8 +569,7 @@ class Estacas(object):
     def getTrans(self, idEstacaTable):
         try:
             extractZIP(Config.fileName)
-            con = sqlite3.connect(
-                Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+            con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
 
             est = con.execute(
                 "SELECT id, x FROM TRANSVERSAL WHERE TABLEESTACA_id = ?",
@@ -669,11 +619,9 @@ class Estacas(object):
     def getGreide(self, idEstacaTable):
         try:
             extractZIP(Config.fileName)
-            con = sqlite3.connect(
-                Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+            con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
             est = con.execute(
-                "SELECT x,cota FROM GREIDE WHERE TABLEESTACA_id = ?", (
-                    idEstacaTable,)
+                "SELECT x,cota FROM GREIDE WHERE TABLEESTACA_id = ?", (idEstacaTable,)
             ).fetchall()
             con.close()
             compactZIP(Config.fileName)
@@ -685,8 +633,7 @@ class Estacas(object):
     def getCv(self, idEstacaTable):
         try:
             extractZIP(Config.fileName)
-            con = sqlite3.connect(
-                Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+            con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
 
             cv = con.execute(
                 "SELECT CURVA_id,L FROM CURVA_VERTICAL_DADOS WHERE TABLEESTACA_id = ?",
@@ -702,8 +649,7 @@ class Estacas(object):
 
     def openCSV(self, filename, fileDB):
         extractZIP(Config.fileName)
-        con = sqlite3.connect(
-            Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
+        con = sqlite3.connect(Config.instance().TMP_DIR_PATH + "tmp/data/data.db")
         con.execute("INSERT INTO TABLEESTACA (name) values ('" + fileDB + "')")
         con.commit()
         id_estaca = con.execute("SELECT last_insert_rowid()").fetchone()
@@ -814,8 +760,7 @@ class Estacas(object):
                         cota = getElevation(
                             crs,
                             p2QgsPoint(
-                                float(ponto_inicial.x()), float(
-                                    ponto_inicial.y())
+                                float(ponto_inicial.x()), float(ponto_inicial.y())
                             ),
                         )
                         if cota == 0:
@@ -824,8 +769,7 @@ class Estacas(object):
                         cota = 0.0
                     estaca = int(estaca)
                     yield [
-                        "%d+%f" % (estaca,
-                                   resto) if resto != 0 else "%d" % (estaca),
+                        "%d+%f" % (estaca, resto) if resto != 0 else "%d" % (estaca),
                         "PI%d" % i,
                         prog,
                         ponto_inicial.y(),
@@ -863,8 +807,7 @@ class Estacas(object):
         self, estaca, anterior, prog, az, cosa, cosb, sobra=0.0
     ):
         dist = sobra if sobra > 0 else self.distancia
-        p = p2QgsPoint(anterior.x() + (dist * cosa),
-                       anterior.y() + (dist * cosb))
+        p = p2QgsPoint(anterior.x() + (dist * cosa), anterior.y() + (dist * cosb))
         prog += dist
         return [str(int(estaca)), "", prog, p.y(), p.x(), 0.0, az], prog, p
 
@@ -875,8 +818,7 @@ class Estacas(object):
         prog += dist
         while pg:
             p = pg.asPoint()
-            az = azimuth(p, geom.interpolate(
-                prog - initalProg + 0.001).asPoint())
+            az = azimuth(p, geom.interpolate(prog - initalProg + 0.001).asPoint())
             yield [str(int(estaca)), "", prog, p.y(), p.x(), 0.0, az], prog, p
             prog += self.distancia
             pg = geom.interpolate(prog - initalProg)
@@ -995,19 +937,27 @@ class Estacas(object):
 
         extractZIP(Config.fileName)
         tmp = str(Path(self.tmpFolder() + "/" + name + ".gpkg"))
-        path = str(Path(Config.instance().TMP_DIR_PATH +
-                   "tmp/data/" + name + ".gpkg"))
+        path = str(Path(Config.instance().TMP_DIR_PATH + "tmp/data/" + name + ".gpkg"))
         shutil.rmtree(str(path), ignore_errors=True)
         shutil.rmtree(str(tmp), ignore_errors=True)
-        writer = QgsVectorFileWriter(
-            path, "UTF-8", fields, type, QgsProject.instance().crs(), driver
+
+        save_options = QgsVectorFileWriter.SaveVectorOptions()
+        save_options.driverName = driver
+        save_options.fileEncoding = "UTF-8"
+
+        writer = QgsVectorFileWriter.create(
+            path,
+            fields,
+            type,
+            QgsProject.instance().crs(),
+            transformContext=QgsProject.instance().transformContext(),
+            options=save_options,
         )
         for p in poly:
             writer.addFeature(p)
         del writer
         shutil.copy(path, tmp)
-        shutil.copy(tmp, Config.instance().TMP_DIR_PATH +
-                    "tmp/data/" + name + ".gpkg")
+        shutil.copy(tmp, Config.instance().TMP_DIR_PATH + "tmp/data/" + name + ".gpkg")
         compactZIP(Config.fileName)
         return tmp
 
@@ -1063,12 +1013,10 @@ class Estacas(object):
             for p in res:
                 if p.stat().st_mtime > path.stat().st_mtime:
                     path = p
-            layer = self.iface.addVectorLayer(
-                (str(path.absolute())), "", "ogr")
+            layer = self.iface.addVectorLayer((str(path.absolute())), "", "ogr")
         elif len(res) == 1:
             path = res[0]
-            layer = self.iface.addVectorLayer(
-                (str(path.absolute())), "", "ogr")
+            layer = self.iface.addVectorLayer((str(path.absolute())), "", "ogr")
         else:
             layer = None
 
@@ -1095,16 +1043,14 @@ class Estacas(object):
                     p.unlink()
                 except:
                     msgLog(
-                        "Failed to erase " +
-                        str(p) + "  at model/estacas.py saveLayer"
+                        "Failed to erase " + str(p) + "  at model/estacas.py saveLayer"
                     )
         for p in Path(path.parent).rglob("*"):
             shutil.copy(str(p), Config.instance().TMP_DIR_PATH + "tmp/data/")
             try:
                 p.unlink()
             except:
-                msgLog("Failed to erase " + str(p) +
-                       "  at model/estacas.py saveLayer")
+                msgLog("Failed to erase " + str(p) + "  at model/estacas.py saveLayer")
         compactZIP(Config.fileName)
 
     def bruckfilename(self):

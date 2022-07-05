@@ -1,7 +1,6 @@
-from builtins import object
-from ..Qt import QtGui, QtCore
 from ..Point import Point
 
+__all__ = ['GraphicsWidgetAnchor']
 
 class GraphicsWidgetAnchor(object):
     """

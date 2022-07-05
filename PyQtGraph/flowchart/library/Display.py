@@ -1,15 +1,11 @@
-from __future__ import print_function
-from builtins import str
-# -*- coding: utf-8 -*-
-from ..Node import Node
-import weakref
-from ...Qt import QtCore, QtGui
-from ...graphicsItems.ScatterPlotItem import ScatterPlotItem
-from ...graphicsItems.PlotCurveItem import PlotCurveItem
-from ... import PlotDataItem, ComboBox
-
-from .common import *
 import numpy as np
+
+from ... import ComboBox, PlotDataItem
+from ...graphicsItems.ScatterPlotItem import ScatterPlotItem
+from ...Qt import QtCore, QtGui, QtWidgets
+from ..Node import Node
+from .common import *
+
 
 class PlotWidgetNode(Node):
     """Connection to PlotWidget. Will plot arrays, metaarrays, and display event lists."""
@@ -51,7 +47,7 @@ class PlotWidgetNode(Node):
         if display and self.plot is not None:
             items = set()
             # Add all new input items to selected plot
-            for name, vals in list(In.items()):
+            for name, vals in In.items():
                 if vals is None:
                     continue
                 if type(vals) is not list:
@@ -67,7 +63,7 @@ class PlotWidgetNode(Node):
                         items.add(vid)
                     else:
                         # Add the item to the plot, or generate a new item if needed.
-                        if isinstance(val, QtGui.QGraphicsItem):
+                        if isinstance(val, QtWidgets.QGraphicsItem):
                             self.plot.addItem(val)
                             item = val
                         else:
@@ -140,7 +136,7 @@ class CanvasNode(Node):
     def process(self, In, display=True):
         if display:
             items = set()
-            for name, vals in list(In.items()):
+            for name, vals in In.items():
                 if vals is None:
                     continue
                 if type(vals) is not list:
@@ -211,12 +207,12 @@ class ScatterPlot(CtrlNode):
         self.item = ScatterPlotItem()
         self.keys = []
         
-        #self.ui = QtGui.QWidget()
-        #self.layout = QtGui.QGridLayout()
+        #self.ui = QtWidgets.QWidget()
+        #self.layout = QtWidgets.QGridLayout()
         #self.ui.setLayout(self.layout)
         
-        #self.xCombo = QtGui.QComboBox()
-        #self.yCombo = QtGui.QComboBox()
+        #self.xCombo = QtWidgets.QComboBox()
+        #self.yCombo = QtWidgets.QComboBox()
         
         
     
@@ -259,11 +255,10 @@ class ScatterPlot(CtrlNode):
         elif isinstance(data, np.ndarray) or isinstance(data, np.void):
             keys = data.dtype.names
         else:
-            # fix_print_with_import
-            print(("Unknown data type:", type(data), data))
+            print("Unknown data type:", type(data), data)
             return
             
-        for c in list(self.ctrls.values()):
+        for c in self.ctrls.values():
             c.blockSignals(True)
         for c in [self.ctrls['x'], self.ctrls['y'], self.ctrls['size']]:
             cur = str(c.currentText())
@@ -274,7 +269,7 @@ class ScatterPlot(CtrlNode):
                     c.setCurrentIndex(c.count()-1)
         for c in [self.ctrls['color'], self.ctrls['border']]:
             c.setArgList(keys)
-        for c in list(self.ctrls.values()):
+        for c in self.ctrls.values():
             c.blockSignals(False)
                 
         self.keys = keys

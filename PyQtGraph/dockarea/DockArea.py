@@ -1,22 +1,21 @@
-from __future__ import print_function
-from builtins import str
-from builtins import range
-# -*- coding: utf-8 -*-
 import weakref
-from ..Qt import QtCore, QtGui
-from .Container import *
-from .DockDrop import *
+
+from ..Qt import QT_LIB, QtWidgets
+from .Container import Container, HContainer, TContainer, VContainer
 from .Dock import Dock
-from .. import debug as debug
-from ..python2_3 import str
+from .DockDrop import DockDrop
 
 
-class DockArea(Container, QtGui.QWidget, DockDrop):
-    def __init__(self, temporary=False, home=None):
+class DockArea(Container, QtWidgets.QWidget, DockDrop):
+    def __init__(self, parent=None, temporary=False, home=None):
         Container.__init__(self, self)
-        QtGui.QWidget.__init__(self)
-        DockDrop.__init__(self, allowedAreas=['left', 'right', 'top', 'bottom'])
-        self.layout = QtGui.QVBoxLayout()
+        allowedAreas=['left', 'right', 'top', 'bottom']
+        if QT_LIB.startswith('PyQt'):
+            QtWidgets.QWidget.__init__(self, parent=parent, allowedAreas=allowedAreas)
+        else:
+            QtWidgets.QWidget.__init__(self, parent=parent)
+            DockDrop.__init__(self, allowedAreas=allowedAreas)
+        self.layout = QtWidgets.QVBoxLayout()
         self.layout.setContentsMargins(0,0,0,0)
         self.layout.setSpacing(0)
         self.setLayout(self.layout)
@@ -49,6 +48,10 @@ class DockArea(Container, QtGui.QWidget, DockDrop):
         """
         if dock is None:
             dock = Dock(**kwds)
+            
+        # store original area that the dock will return to when un-floated
+        if not self.temporary:
+            dock.orig_area = self
         
         
         ## Determine the container to insert this dock into.
@@ -130,6 +133,8 @@ class DockArea(Container, QtGui.QWidget, DockDrop):
             new = HContainer(self)
         elif typ == 'tab':
             new = TContainer(self)
+        else:
+            raise ValueError("typ must be one of 'vertical', 'horizontal', or 'tab'")
         return new
         
     def addContainer(self, typ, obj):
@@ -244,7 +249,7 @@ class DockArea(Container, QtGui.QWidget, DockDrop):
             a.apoptose()  # ask temp area to close itself if it is empty
         
         ## 4) Add any remaining docks to a float
-        for d in list(docks.values()):
+        for d in docks.values():
             if extra == 'float':
                 a = self.addTempArea()
                 a.addDock(d, 'below')
@@ -260,7 +265,6 @@ class DockArea(Container, QtGui.QWidget, DockDrop):
 
     def buildFromState(self, state, docks, root, depth=0, missing='error'):
         typ, contents, state = state
-        pfx = "  " * depth
         if typ == 'dock':
             try:
                 obj = docks[contents]
@@ -279,7 +283,6 @@ class DockArea(Container, QtGui.QWidget, DockDrop):
             obj = self.makeContainer(typ)
             
         root.insert(obj, 'after')
-        #print pfx+"Add:", obj, " -> ", root
         
         if typ != 'dock':
             for o in contents:
@@ -318,13 +321,13 @@ class DockArea(Container, QtGui.QWidget, DockDrop):
         #print "apoptose area:", self.temporary, self.topContainer, self.topContainer.count()
         if self.topContainer is None or self.topContainer.count() == 0:
             self.topContainer = None
-            if self.temporary:
+            if self.temporary and self.home is not None:
                 self.home.removeTempArea(self)
                 #self.close()
                 
     def clear(self):
         docks = self.findAll()[1]
-        for dock in list(docks.values()):
+        for dock in docks.values():
             dock.close()
             
     ## PySide bug: We need to explicitly redefine these methods
@@ -364,15 +367,21 @@ class DockArea(Container, QtGui.QWidget, DockDrop):
 
 
 
-class TempAreaWindow(QtGui.QWidget):
+class TempAreaWindow(QtWidgets.QWidget):
     def __init__(self, area, **kwargs):
-        QtGui.QWidget.__init__(self, **kwargs)
-        self.layout = QtGui.QGridLayout()
+        QtWidgets.QWidget.__init__(self, **kwargs)
+        self.layout = QtWidgets.QGridLayout()
         self.setLayout(self.layout)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.dockarea = area
         self.layout.addWidget(area)
 
     def closeEvent(self, *args):
+        # restore docks to their original area
+        docks = self.dockarea.findAll()[1]
+        for dock in docks.values():
+            if hasattr(dock, 'orig_area'):
+                dock.orig_area.addDock(dock, )
+        # clear dock area, and close remaining docks
         self.dockarea.clear()
-        QtGui.QWidget.closeEvent(self, *args)
+        super().closeEvent(*args)

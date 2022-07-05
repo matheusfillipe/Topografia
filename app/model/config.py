@@ -43,7 +43,7 @@ def compactZIP(filename):
 
 
 class Config(object):
-    # Valore padrão
+    # Valores padrão
 
     FILE_PATH = ""
     PLUGIN_NAME = "GeoRoad"

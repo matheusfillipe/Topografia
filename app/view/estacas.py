@@ -23,10 +23,6 @@ from ..model.config import Config
 from ..model.utils import (fastProg2EstacaStr, formatValue, msgLog, p2QgsPoint,
                            prog2estacaStr)
 
-# -*- coding: utf-8 -*-
-sip.setapi("QString", 2)
-sip.setapi("QVariant", 2)
-
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
@@ -456,13 +452,20 @@ class EstacasUI(QtWidgets.QDialog, FORMESTACA1_CLASS):
         if not path:
             return None
 
-        writer = QgsVectorFileWriter(
+        if not path.endswith(".shp"):
+            path += ".shp"
+
+        save_options = QgsVectorFileWriter.SaveVectorOptions()
+        save_options.driverName = "ESRI Shapefile"
+        save_options.fileEncoding = "UTF-8"
+
+        writer = QgsVectorFileWriter.create(
             path,
-            "UTF-8",
             fields,
             QgsWkbTypes.MultiLineString,
             QgsCoordinateReferenceSystem("EPSG:" + str(crs)),
-            "ESRI Shapefile",
+            transformContext=QgsProject.instance().transformContext(),
+            options=save_options,
         )
         del writer
         self.iface.addVectorLayer(path, "", "ogr")
@@ -814,21 +817,11 @@ class EstacasCv(QtWidgets.QDialog):
 
     def search(self, txt):
         self.searchResults = []
-        columnIndexes = list(
-            set(
-                index.column()
-                for index in self.tableWidget.selectionModel().selectedIndexes()
-            )
-        )
-
-        def searchRange(estaca, columnIndexes):
-            if len(columnIndexes) > 0:
-                estaca = [estaca[i] for i in columnIndexes]
-            return "* ".join(estaca)
-
-        for i, estaca in enumerate(self.get_estacas()):
-            if txt.upper() in searchRange(estaca, columnIndexes).upper():
+        estacas = self.get_estacas()
+        for i, estaca in enumerate(estacas):
+            if txt.casefold() in "* ".join(estaca).casefold():
                 self.searchResults.append(i)
+
         lres = len(self.searchResults)
         if lres > 1:
             self.spinBox.show()
@@ -843,7 +836,7 @@ class EstacasCv(QtWidgets.QDialog):
         widget = self.geometry()
         x = 0  # widget.width()
         y = (screen.height() - widget.height()) / 2
-        self.move(x, y)
+        self.move(int(x), int(y))
 
     def clear(self):
         self.tableWidget.setRowCount(0)
@@ -1377,7 +1370,7 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         widget = self.geometry()
         x = 0  # widget.width()
         y = (screen.height() - widget.height()) / 2
-        self.move(x, y)
+        self.move(int(x), int(y))
 
     def clear(self):
         self.tableWidget.setRowCount(0)
@@ -1385,9 +1378,10 @@ class Estacas(QtWidgets.QDialog, ESTACAS_DIALOG):
         self.comboBox.clear()
 
     def saveEstacasCSV(self):
-        filename = QtWidgets.QFileDialog.getSaveFileName(
+        res = QtWidgets.QFileDialog.getSaveFileName(
             caption="Save Worksheet", filter="Arquivo CSV (*.csv)"
         )
+        filename = (res[0] + ("" if res[0].endswith(".csv") else ".csv"), res[1])
         return filename
 
     def fill_table(self, estaca, f=False):
@@ -2724,7 +2718,7 @@ class ProgressDialog:  # QtWidgets.QProgressDialog):  #, PROGRESS_DIALOG):
 
     def setValue(self, f: float):
         self.progressBar: QtWidgets.QProgressBar
-        self.progressBar.setValue(f)
+        self.progressBar.setValue(int(f))
         self.floor = f
 
     def setLoop(self, ceiling, totalSteps, floor=None):
@@ -2814,8 +2808,12 @@ class EstacaRangeSelect(QtWidgets.QDialog, BRUCKNER_SELECT):
     def itemClick(self, item):
         ests = item.text().split("-")
         index = self.inicial.findText(ests[0])
+        if index < 0:
+            msgLog("Não encontrei:", str(ests[0]))
         self.inicial.setCurrentIndex(index)
         index = self.final_2.findText(ests[1])
+        if index < 0:
+            msgLog("Não encontrei:", str(ests[1]))
         self.final_2.setCurrentIndex(index)
         msgLog("Setting range " + str(ests))
 
@@ -2867,8 +2865,8 @@ class CorteExport(QtWidgets.QDialog, EXPORTAR_CORTE):
         self.checkBox: QtWidgets.QCheckBox
         self.comboBox: QtWidgets.QComboBox
         self.espSb: QtWidgets.QDoubleSpinBox
-        self.finalSb: QtWidgets.QSpinBox
-        self.inicialSb: QtWidgets.QSpinBox
+        self.finalSb: QtWidgets.QDoubleSpinBox
+        self.inicialSb: QtWidgets.QDoubleSpinBox
         self.intSp: QtWidgets.QDoubleSpinBox
         self.label: QtWidgets.QLabel
         self.label_2: QtWidgets.QLabel

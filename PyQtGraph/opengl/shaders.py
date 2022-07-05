@@ -1,12 +1,10 @@
-from builtins import map
-from builtins import str
-from builtins import object
+from OpenGL.GL import *  # noqa
+from OpenGL.GL import shaders  # noqa
 try:
     from OpenGL import NullFunctionError
 except ImportError:
     from OpenGL.error import NullFunctionError
-from OpenGL.GL import *
-from OpenGL.GL import shaders
+import numpy as np
 import re
 
 ## For centralizing and managing vertex/fragment shader programs.
@@ -143,9 +141,9 @@ def initShaders():
         ## colors fragments by z-value.
         ## This is useful for coloring surface plots by height.
         ## This shader uses a uniform called "colorMap" to determine how to map the colors:
-        ##    red   = pow(z * colorMap[0] + colorMap[1], colorMap[2])
-        ##    green = pow(z * colorMap[3] + colorMap[4], colorMap[5])
-        ##    blue  = pow(z * colorMap[6] + colorMap[7], colorMap[8])
+        ##    red   = pow(colorMap[0]*(z + colorMap[1]), colorMap[2])
+        ##    green = pow(colorMap[3]*(z + colorMap[4]), colorMap[5])
+        ##    blue  = pow(colorMap[6]*(z + colorMap[7]), colorMap[8])
         ## (set the values like this: shader['uniformMap'] = array([...])
         ShaderProgram('heightColor', [
             VertexShader("""
@@ -226,7 +224,7 @@ class Shader(object):
             try:
                 self.compiled = shaders.compileShader(self.code, self.shaderType)
             except NullFunctionError:
-                raise Exception("This OpenGL implementation does not support shader programs; many OpenGL features in PyQtGraph will not work.")
+                raise Exception("This OpenGL implementation does not support shader programs; many OpenGL features in pyqtgraph will not work.")
             except RuntimeError as exc:
                 ## Format compile errors a bit more nicely
                 if len(exc.args) == 3:
@@ -252,7 +250,7 @@ class Shader(object):
                             #code[line-1] = '%d\t%s' % (i+1, code[line-1])
                         err = err + "%d %s\n" % (i+1, msg)
                     errNums = [','.join(n) for n in errNums]
-                    maxlen = max(list(map(len, errNums)))
+                    maxlen = max(map(len, errNums))
                     code = [errNums[i] + " "*(maxlen-len(errNums[i])) + line for i, line in enumerate(code)]
                     err = err + '\n'.join(code)
                     raise Exception(err)
@@ -284,7 +282,7 @@ class ShaderProgram(object):
         
         ## parse extra options from the shader definition
         if uniforms is not None:
-            for k,v in list(uniforms.items()):
+            for k,v in uniforms.items():
                 self[k] = v
         
     def setBlockData(self, blockName, data):
@@ -321,11 +319,11 @@ class ShaderProgram(object):
             
             try:
                 ## load uniform values into program
-                for uniformName, data in list(self.uniformData.items()):
+                for uniformName, data in self.uniformData.items():
                     loc = self.uniform(uniformName)
                     if loc == -1:
                         raise Exception('Could not find uniform variable "%s"' % uniformName)
-                    glUniform1fv(loc, len(data), data)
+                    glUniform1fv(loc, len(data), np.array(data, dtype=np.float32))
                     
                 ### bind buffer data to program blocks
                 #if len(self.blockData) > 0:

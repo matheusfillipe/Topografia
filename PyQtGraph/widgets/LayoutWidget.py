@@ -1,15 +1,15 @@
-from ..Qt import QtGui, QtCore
+from ..Qt import QtWidgets
 
 __all__ = ['LayoutWidget']
-class LayoutWidget(QtGui.QWidget):
+class LayoutWidget(QtWidgets.QWidget):
     """
     Convenience class used for laying out QWidgets in a grid.
     (It's just a little less effort to use than QGridLayout)
     """
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
-        self.layout = QtGui.QGridLayout()
+        QtWidgets.QWidget.__init__(self, parent)
+        self.layout = QtWidgets.QGridLayout()
         self.setLayout(self.layout)
         self.items = {}
         self.rows = {}
@@ -38,18 +38,18 @@ class LayoutWidget(QtGui.QWidget):
         All extra keyword arguments are passed to QLabel().
         Returns the created widget.
         """
-        text = QtGui.QLabel(text, **kargs)
-        self.addItem(text, row, col, rowspan, colspan)
+        text = QtWidgets.QLabel(text, **kargs)
+        self.addWidget(text, row, col, rowspan, colspan)
         return text
         
     def addLayout(self, row=None, col=None, rowspan=1, colspan=1, **kargs):
         """
         Create an empty LayoutWidget and place it in the next available cell (or in the cell specified)
-        All extra keyword arguments are passed to :func:`LayoutWidget.__init__ <PyQtGraph.LayoutWidget.__init__>`
+        All extra keyword arguments are passed to :func:`LayoutWidget.__init__ <pyqtgraph.LayoutWidget.__init__>`
         Returns the created widget.
         """
         layout = LayoutWidget(**kargs)
-        self.addItem(layout, row, col, rowspan, colspan)
+        self.addWidget(layout, row, col, rowspan, colspan)
         return layout
         
     def addWidget(self, item, row=None, col=None, rowspan=1, colspan=1):
@@ -75,7 +75,7 @@ class LayoutWidget(QtGui.QWidget):
 
     def getWidget(self, row, col):
         """Return the widget in (*row*, *col*)"""
-        return self.row[row][col]
+        return self.rows[row][col]
 
     #def itemIndex(self, item):
         #for i in range(self.layout.count()):
@@ -97,5 +97,3 @@ class LayoutWidget(QtGui.QWidget):
         #items = []
         #for i in list(self.items.keys()):
             #self.removeItem(i)
-
-

@@ -1,16 +1,16 @@
-# -*- coding: utf-8 -*-
 """
 MultiPlotWidget.py -  Convenience class--GraphicsView widget displaying a MultiPlotItem
 Copyright 2010  Luke Campagnola
-Distributed under MIT/X11 license. See license.txt for more infomation.
+Distributed under MIT/X11 license. See license.txt for more information.
 """
+from ..graphicsItems import MultiPlotItem as MultiPlotItem
 from ..Qt import QtCore
 from .GraphicsView import GraphicsView
-from ..graphicsItems import MultiPlotItem as MultiPlotItem
 
 __all__ = ['MultiPlotWidget']
 class MultiPlotWidget(GraphicsView):
-    """Widget implementing a graphicsView with a single MultiPlotItem inside."""
+    """Widget implementing a :class:`~pyqtgraph.GraphicsView` with a single
+    :class:`~pyqtgraph.MultiPlotItem` inside."""
     def __init__(self, parent=None):
         self.minPlotHeight = 50
         self.mPlotItem = MultiPlotItem.MultiPlotItem()
@@ -20,8 +20,8 @@ class MultiPlotWidget(GraphicsView):
         ## Explicitly wrap methods from mPlotItem
         #for m in ['setData']:
             #setattr(self, m, getattr(self.mPlotItem, m))
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
                 
     def __getattr__(self, attr):  ## implicitly wrap methods from plotItem
         if hasattr(self.mPlotItem, attr):

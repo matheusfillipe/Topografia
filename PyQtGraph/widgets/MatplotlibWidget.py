@@ -1,22 +1,12 @@
-from ..Qt import QtGui, QtCore, USE_PYSIDE, USE_PYQT5
-import matplotlib
-
-if not USE_PYQT5:
-    if USE_PYSIDE:
-        matplotlib.rcParams['backend.qt4']='PySide'
-
-    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-    try:
-        from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-    except ImportError:
-        from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-else:
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-class MatplotlibWidget(QtGui.QWidget):
+from ..Qt import QtWidgets
+
+__all__ = ['MatplotlibWidget']
+
+class MatplotlibWidget(QtWidgets.QWidget):
     """
     Implements a Matplotlib figure inside a QWidget.
     Use getFigure() and redraw() to interact with matplotlib.
@@ -30,13 +20,13 @@ class MatplotlibWidget(QtGui.QWidget):
     """
     
     def __init__(self, size=(5.0, 4.0), dpi=100):
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self)
         self.fig = Figure(size, dpi=dpi)
         self.canvas = FigureCanvas(self.fig)
         self.canvas.setParent(self)
         self.toolbar = NavigationToolbar(self.canvas, self)
         
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.vbox.addWidget(self.toolbar)
         self.vbox.addWidget(self.canvas)
         

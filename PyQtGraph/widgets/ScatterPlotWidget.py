@@ -1,19 +1,19 @@
-from builtins import str
-from builtins import range
-from ..Qt import QtGui, QtCore
-from .PlotWidget import PlotWidget
-from .DataFilterWidget import DataFilterParameter
-from .ColorMapWidget import ColorMapParameter
-from .. import parametertree as ptree
+from collections import OrderedDict
+
+import numpy as np
+
 from .. import functions as fn
 from .. import getConfigOption
+from .. import parametertree as ptree
 from ..graphicsItems.TextItem import TextItem
-import numpy as np
-from ..pgcollections import OrderedDict
+from ..Qt import QtCore, QtWidgets
+from .ColorMapWidget import ColorMapParameter
+from .DataFilterWidget import DataFilterParameter
+from .PlotWidget import PlotWidget
 
 __all__ = ['ScatterPlotWidget']
 
-class ScatterPlotWidget(QtGui.QSplitter):
+class ScatterPlotWidget(QtWidgets.QSplitter):
     """
     This is a high-level widget for exploring relationships in tabular data.
         
@@ -26,7 +26,7 @@ class ScatterPlotWidget(QtGui.QSplitter):
     1) A list of column names from which the user may select 1 or 2 columns
        to plot. If one column is selected, the data for that column will be
        plotted in a histogram-like manner by using :func:`pseudoScatter()
-       <PyQtGraph.pseudoScatter>`. If two columns are selected, then the
+       <pyqtgraph.pseudoScatter>`. If two columns are selected, then the
        scatter plot will be generated with x determined by the first column
        that was selected and y by the second.
     2) A DataFilter that allows the user to select a subset of the data by 
@@ -35,12 +35,15 @@ class ScatterPlotWidget(QtGui.QSplitter):
        specifying multiple criteria.
     4) A PlotWidget for displaying the data.
     """
+    sigScatterPlotClicked = QtCore.Signal(object, object, object)
+    sigScatterPlotHovered = QtCore.Signal(object, object, object)
+
     def __init__(self, parent=None):
-        QtGui.QSplitter.__init__(self, QtCore.Qt.Horizontal)
-        self.ctrlPanel = QtGui.QSplitter(QtCore.Qt.Vertical)
+        QtWidgets.QSplitter.__init__(self, QtCore.Qt.Orientation.Horizontal)
+        self.ctrlPanel = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical)
         self.addWidget(self.ctrlPanel)
-        self.fieldList = QtGui.QListWidget()
-        self.fieldList.setSelectionMode(self.fieldList.ExtendedSelection)
+        self.fieldList = QtWidgets.QListWidget()
+        self.fieldList.setSelectionMode(self.fieldList.SelectionMode.ExtendedSelection)
         self.ptree = ptree.ParameterTree(showHeader=False)
         self.filter = DataFilterParameter()
         self.colorMap = ColorMapParameter()
@@ -52,16 +55,23 @@ class ScatterPlotWidget(QtGui.QSplitter):
         self.ctrlPanel.addWidget(self.ptree)
         self.addWidget(self.plot)
         
-        bg = fn.mkColor(getConfigOption('background'))
-        bg.setAlpha(150)
-        self.filterText = TextItem(border=getConfigOption('foreground'), color=bg)
+        fg = fn.mkColor(getConfigOption('foreground'))
+        fg.setAlpha(150)
+        self.filterText = TextItem(border=getConfigOption('foreground'), color=fg)
         self.filterText.setPos(60,20)
         self.filterText.setParentItem(self.plot.plotItem)
         
         self.data = None
+        self.indices = None
         self.mouseOverField = None
         self.scatterPlot = None
+        self.selectionScatter = None
+        self.selectedIndices = []
         self.style = dict(pen=None, symbol='o')
+        self._visibleXY = None  # currently plotted points
+        self._visibleData = None  # currently plotted records
+        self._visibleIndices = None
+        self._indexMap = None
         
         self.fieldList.itemSelectionChanged.connect(self.fieldSelectionChanged)
         self.filter.sigFilterChanged.connect(self.filterChanged)
@@ -72,27 +82,56 @@ class ScatterPlotWidget(QtGui.QSplitter):
         Set the list of field names/units to be processed.
         
         The format of *fields* is the same as used by 
-        :func:`ColorMapWidget.setFields <PyQtGraph.widgets.ColorMapWidget.ColorMapParameter.setFields>`
+        :func:`ColorMapWidget.setFields <pyqtgraph.widgets.ColorMapWidget.ColorMapParameter.setFields>`
         """
         self.fields = OrderedDict(fields)
         self.mouseOverField = mouseOverField
         self.fieldList.clear()
         for f,opts in fields:
-            item = QtGui.QListWidgetItem(f)
+            item = QtWidgets.QListWidgetItem(f)
             item.opts = opts
             item = self.fieldList.addItem(item)
         self.filter.setFields(fields)
         self.colorMap.setFields(fields)
-        
+
+    def setSelectedFields(self, *fields):
+        self.fieldList.itemSelectionChanged.disconnect(self.fieldSelectionChanged)
+        try:
+            self.fieldList.clearSelection()
+            for f in fields:
+                i = list(self.fields.keys()).index(f)
+                item = self.fieldList.item(i)
+                item.setSelected(True)
+        finally:
+            self.fieldList.itemSelectionChanged.connect(self.fieldSelectionChanged)
+        self.fieldSelectionChanged()
+
     def setData(self, data):
         """
         Set the data to be processed and displayed. 
         Argument must be a numpy record array.
         """
         self.data = data
+        self.indices = np.arange(len(data))
         self.filtered = None
+        self.filteredIndices = None
         self.updatePlot()
         
+    def setSelectedIndices(self, inds):
+        """Mark the specified indices as selected.
+
+        Must be a sequence of integers that index into the array given in setData().
+        """
+        self.selectedIndices = inds
+        self.updateSelected()
+
+    def setSelectedPoints(self, points):
+        """Mark the specified points as selected.
+
+        Must be a list of points as generated by the sigScatterPlotClicked signal.
+        """
+        self.setSelectedIndices([pt.originalIndex for pt in points])
+
     def fieldSelectionChanged(self):
         sel = self.fieldList.selectedItems()
         if len(sel) > 2:
@@ -114,15 +153,16 @@ class ScatterPlotWidget(QtGui.QSplitter):
         else:
             self.filterText.setText('\n'.join(desc))
             self.filterText.setVisible(True)
-            
         
     def updatePlot(self):
         self.plot.clear()
-        if self.data is None:
+        if self.data is None or len(self.data) == 0:
             return
         
         if self.filtered is None:
-            self.filtered = self.filter.filterData(self.data)
+            mask = self.filter.generateMask(self.data)
+            self.filtered = self.data[mask]
+            self.filteredIndices = self.indices[mask]
         data = self.filtered
         if len(data) == 0:
             return
@@ -177,12 +217,14 @@ class ScatterPlotWidget(QtGui.QSplitter):
         ## mask out any nan values
         mask = np.ones(len(xy[0]), dtype=bool)
         if xy[0].dtype.kind == 'f':
-            mask &= ~np.isnan(xy[0])
+            mask &= np.isfinite(xy[0])
         if xy[1] is not None and xy[1].dtype.kind == 'f':
-            mask &= ~np.isnan(xy[1])
+            mask &= np.isfinite(xy[1])
         
         xy[0] = xy[0][mask]
         style['symbolBrush'] = colors[mask]
+        data = data[mask]
+        indices = self.filteredIndices[mask]
 
         ## Scatter y-values for a histogram-like appearance
         if xy[1] is None:
@@ -204,17 +246,48 @@ class ScatterPlotWidget(QtGui.QSplitter):
                     if smax != 0:
                         scatter *= 0.2 / smax
                     xy[ax][keymask] += scatter
-        
+
+
         if self.scatterPlot is not None:
             try:
                 self.scatterPlot.sigPointsClicked.disconnect(self.plotClicked)
             except:
                 pass
-        self.scatterPlot = self.plot.plot(xy[0], xy[1], data=data[mask], **style)
+        
+        self._visibleXY = xy
+        self._visibleData = data
+        self._visibleIndices = indices
+        self._indexMap = None
+        self.scatterPlot = self.plot.plot(xy[0], xy[1], data=data, **style)
         self.scatterPlot.sigPointsClicked.connect(self.plotClicked)
-        
-        
-    def plotClicked(self, plot, points):
-        pass
+        self.scatterPlot.sigPointsHovered.connect(self.plotHovered)
+        self.updateSelected()
 
+    def updateSelected(self):
+        if self._visibleXY is None:
+            return
+        # map from global index to visible index
+        indMap = self._getIndexMap()
+        inds = [indMap[i] for i in self.selectedIndices if i in indMap]
+        x,y = self._visibleXY[0][inds], self._visibleXY[1][inds]
 
+        if self.selectionScatter is not None:
+            self.plot.plotItem.removeItem(self.selectionScatter)
+        if len(x) == 0:
+            return
+        self.selectionScatter = self.plot.plot(x, y, pen=None, symbol='s', symbolSize=12, symbolBrush=None, symbolPen='y')
+
+    def _getIndexMap(self):
+        # mapping from original data index to visible point index
+        if self._indexMap is None:
+            self._indexMap = {j:i for i,j in enumerate(self._visibleIndices)}
+        return self._indexMap
+
+    def plotClicked(self, plot, points, ev):
+        # Tag each point with its index into the original dataset
+        for pt in points:
+            pt.originalIndex = self._visibleIndices[pt.index()]
+        self.sigScatterPlotClicked.emit(self, points, ev)
+
+    def plotHovered(self, plot, points, ev):
+        self.sigScatterPlotHovered.emit(self, points, ev)

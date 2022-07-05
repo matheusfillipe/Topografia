@@ -1,8 +1,6 @@
-from __future__ import print_function
-from builtins import range
 import numpy as np
+
 from ...metaarray import MetaArray
-from ...python2_3 import str, xrange
 
 
 def downsample(data, n, axis=0, xvals='subsample'):
@@ -286,12 +284,9 @@ def concatenateColumns(data):
                 try:
                     out[name] = element[name]
                 except:
-                    # fix_print_with_import
-                    print(("Column:", name))
-                    # fix_print_with_import
-                    print(("Input shape:", element.shape, element.dtype))
-                    # fix_print_with_import
-                    print(("Output shape:", out.shape, out.dtype))
+                    print("Column:", name)
+                    print("Input shape:", element.shape, element.dtype)
+                    print("Output shape:", out.shape, out.dtype)
                     raise
         else:
             name, type, d = element
@@ -312,7 +307,7 @@ def suggestDType(x):
         return float
     elif isinstance(x, int):
         return int
-    #elif isinstance(x, basestring):  ## don't try to guess correct string length; use object instead.
+    #elif isinstance(x, str):  ## don't try to guess correct string length; use object instead.
         #return '<U%d' % len(x)
     else:
         return object
@@ -330,9 +325,8 @@ def removePeriodic(data, f0=60.0, dt=None, harmonics=10, samples=4):
     
     ft = np.fft.fft(data1)
     
-    ## determine frequencies in fft data
+    ## determine frequency step in fft data
     df = 1.0 / (len(data1) * dt)
-    freqs = np.linspace(0.0, (len(ft)-1) * df, len(ft))
     
     ## flatten spikes at f0 and harmonics
     for i in range(1, harmonics + 2):

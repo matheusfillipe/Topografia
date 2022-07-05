@@ -817,21 +817,11 @@ class EstacasCv(QtWidgets.QDialog):
 
     def search(self, txt):
         self.searchResults = []
-        columnIndexes = list(
-            set(
-                index.column()
-                for index in self.tableWidget.selectionModel().selectedIndexes()
-            )
-        )
-
-        def searchRange(estaca, columnIndexes):
-            if len(columnIndexes) > 0:
-                estaca = [estaca[i] for i in columnIndexes]
-            return "* ".join(estaca)
-
-        for i, estaca in enumerate(self.get_estacas()):
-            if txt.upper() in searchRange(estaca, columnIndexes).upper():
+        estacas = self.get_estacas()
+        for i, estaca in enumerate(estacas):
+            if txt.casefold() in "* ".join(estaca).casefold():
                 self.searchResults.append(i)
+
         lres = len(self.searchResults)
         if lres > 1:
             self.spinBox.show()

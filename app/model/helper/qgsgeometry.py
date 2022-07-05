@@ -255,9 +255,9 @@ def polyTransCircle(layer, data, index, layer2, i, ic):
     feat1 = QgsFeature(layerFields())
     feat2 = QgsFeature(layerFields())
     feat3 = QgsFeature(layerFields())
-    feat1.setAttributes(["E", "", data["R"], data["D"], data["T"], data["L"]])
-    feat2.setAttributes(["C", "", data["R"], data["D"], data["T"], data["L"]])
-    feat3.setAttributes(["E", "", data["R"], data["D"], data["T"], data["L"]])
+    feat1.setAttributes(["E", "", float(data["R"]), float(data["D"]), float(data["T"]), float(data["L"])])
+    feat2.setAttributes(["C", "", float(data["R"]), float(data["D"]), float(data["T"]), float(data["L"])])
+    feat3.setAttributes(["E", "", float(data["R"]), float(data["D"]), float(data["T"]), float(data["L"])])
 
     #  if ((a2 - a1 >= 0 and (a1 <= 90 or a1 >= 270)) or (a2 - a1 <= 0 and (a1 >= 90 or a1 <= 270))) and not (
     #         (abs(a1 - a2) > 180 or (a1 < 90 and a2 > 90) or (a1 < 90, a2 < 90)) and not (a2 - a1) < 0):

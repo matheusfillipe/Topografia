@@ -84,7 +84,7 @@ EXPORTAR_CORTE, _ = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "../view/ui/cortePreview.ui")
 )
 
-rb = QgsRubberBand(iface.mapCanvas(), 1)
+rb = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.GeometryType.Line)
 premuto = False
 point0 = iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
 
